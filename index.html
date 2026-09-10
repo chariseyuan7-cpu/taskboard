@@ -445,6 +445,7 @@
   .mkt-form{display:flex; gap:8px; flex-wrap:wrap; margin-left:auto}
   .mkt-form input{font:inherit; border:1px solid var(--border); border-radius:9px; padding:7px 10px;
     background:#fff; color:var(--fg)}
+  .mkt-form label{font-size:12.5px; color:var(--muted)}
   .mkt-form input:focus{outline:2px solid var(--accent)}
   .mkt-list{display:flex; flex-wrap:wrap; gap:8px}
   .mkt-pill{display:inline-flex; align-items:center; gap:7px; background:rgba(219,39,119,.1);
@@ -491,6 +492,49 @@
     .cat-head .track{display:none}
     .stats{grid-template-columns:1fr}
   }
+  /* ---------- 线索采集（Firecrawl） ---------- */
+  .hunt-keybar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--surface);
+    border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:16px}
+  .hunt-keybar input{flex:1; min-width:230px; font:inherit; border:1px solid var(--border); border-radius:9px;
+    padding:8px 11px; font-size:13.5px; background:#fff; color:var(--fg)}
+  .hunt-keybar input:focus{outline:2px solid var(--accent)}
+  .hunt-keybar .ktip{font-size:12px; color:var(--muted); flex-basis:100%}
+  .k-status{font-size:12.5px; font-weight:700; padding:5px 11px; border-radius:20px; white-space:nowrap}
+  .k-status.on{background:rgba(34,196,141,.16); color:#158a63}
+  .k-status.off{background:rgba(244,93,116,.16); color:#c0392b}
+  .hunt-form{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:18px}
+  .hunt-modes{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px}
+  .hunt-modes .hm{border:1px solid var(--border); background:var(--surface); border-radius:20px; padding:7px 15px;
+    font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; transition:.15s}
+  .hunt-modes .hm:hover{border-color:var(--accent); color:var(--accent)}
+  .hunt-modes .hm.active{background:var(--accent); border-color:var(--accent); color:#fff}
+  .hunt-form textarea{width:100%; font:inherit; border:1px solid var(--border); border-radius:10px; padding:11px 13px;
+    font-size:13.5px; resize:vertical; min-height:80px; line-height:1.6; background:#fff; color:var(--fg)}
+  .hunt-form textarea:focus{outline:2px solid var(--accent)}
+  .hunt-row{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:12px}
+  .hunt-row select{font:inherit; border:1px solid var(--border); border-radius:9px; padding:8px 11px; font-size:13.5px; background:#fff}
+  .hunt-row .tip{font-size:12.5px; color:var(--muted); display:inline-flex; align-items:center; gap:6px}
+  .hunt-head{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:12px}
+  .hunt-head h2{font-size:16px; font-weight:700}
+  .hunt-head .hunt-actions{margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .hunt-head .count{font-size:12.5px; color:var(--muted)}
+  .hunt-hintline{font-size:12px; color:var(--muted); margin-bottom:12px}
+  .hunt-card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:15px 16px;
+    display:flex; flex-direction:column; gap:9px; box-shadow:0 2px 10px rgba(47,61,85,.04)}
+  .hunt-card.failed{border-color:#f3c9d0; background:#fff8f9}
+  .hunt-card .hc-title{font-weight:700; font-size:14.5px; word-break:break-word; line-height:1.5}
+  .hunt-card .hc-url{font-size:12px; color:var(--blue); word-break:break-all; text-decoration:none}
+  .hunt-card .hc-url:hover{text-decoration:underline}
+  .hunt-card .hc-text{font-size:13px; color:var(--muted); white-space:pre-wrap; max-height:180px; overflow:auto;
+    line-height:1.65; border-left:3px solid var(--surface2); padding-left:11px; word-break:break-word}
+  .hunt-card .hc-ops{display:flex; gap:8px; flex-wrap:wrap}
+  .hunt-card .hc-ops button{border:1px solid var(--border); background:var(--surface); color:var(--fg);
+    font-size:12.5px; padding:6px 11px; border-radius:8px; cursor:pointer; transition:.15s; font-family:inherit}
+  .hunt-card .hc-ops button:hover{border-color:var(--accent); color:var(--accent)}
+  .hunt-card .hc-ops button.pri{background:var(--accent); border-color:var(--accent); color:#fff}
+  .hunt-empty{border:1px dashed var(--border); border-radius:14px; padding:34px 20px; text-align:center;
+    color:var(--muted); font-size:14px}
+  .hunt-busy{font-size:13px; color:var(--accent); font-weight:600; margin-bottom:10px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -521,6 +565,7 @@
       <button class="nav-item" data-view="tpl" title="查看邮件模板"><span class="nav-ic">✉️</span><span class="nav-tx">邮件模板</span></button>
       <button class="nav-item" data-view="cal" title="查看全年日历"><span class="nav-ic">📅</span><span class="nav-tx">全年日历</span></button>
       <button class="nav-item" data-view="kb" title="查看知识库"><span class="nav-ic">📚</span><span class="nav-tx">知识库</span></button>
+      <button class="nav-item" data-view="hunt" title="采集网页线索"><span class="nav-ic">🔎</span><span class="nav-tx">线索采集</span></button>
     </nav>
     <div class="side-foot">进度保存在本机浏览器<br>离线可用 · 数据不联网<br><a id="signOutLink" style="display:none; text-decoration:underline; cursor:pointer">退出登录</a></div>
   </aside>
@@ -658,7 +703,8 @@
         <div class="mkt-head">
           <h3>营销节点</h3>
           <div class="mkt-form">
-            <input type="date" id="mktDate" />
+            <label>开始</label><input type="date" id="mktStart" />
+            <label>结束</label><input type="date" id="mktEnd" />
             <input type="text" id="mktName" placeholder="节点名称，如：双11 / 黑五 / 圣诞季" />
             <button class="btn primary" id="mktAdd">添加节点</button>
           </div>
@@ -686,6 +732,56 @@
     <div class="kb-editor" id="kbEditor" style="display:none"></div>
     <div class="kb-list" id="kbList"></div>
   </section><!-- /view-kb -->
+
+  <section class="view" id="view-hunt">
+    <header>
+      <div class="kicker">Lead Finder</div>
+      <h1>线索采集</h1>
+      <p>用 Firecrawl 批量找联盟站、媒体、竞品合作页和联系人页。抓到的结果可以直接存进知识库，或者变成一条待办任务。</p>
+      <div class="meta">
+        <span>引擎：<b>Firecrawl</b></span>
+        <span>Key 保存在：<b>本机浏览器</b></span>
+        <span>计费：<b>每抓 1 个页面约 1 个积分</b></span>
+      </div>
+    </header>
+
+    <div class="hunt-keybar" id="huntKeyBar"></div>
+
+    <div class="hunt-form">
+      <div class="hunt-modes" id="huntModes">
+        <button class="hm active" data-mode="search" title="按关键词找候选站点">🔍 搜索候选</button>
+        <button class="hm" data-mode="scrape" title="抓取单个网址的正文">📄 抓取网址</button>
+        <button class="hm" data-mode="batch" title="一次粘贴多个网址批量抓取">📚 批量网址</button>
+        <button class="hm" data-mode="map" title="列出一个网站的全部链接">🗺 站点地图</button>
+      </div>
+      <textarea id="huntInput" rows="3"></textarea>
+      <div class="hunt-row">
+        <button class="btn primary" id="huntRun">开始采集</button>
+        <label class="tip">条数
+          <select id="huntLimit">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+          </select>
+        </label>
+        <label class="tip"><input type="checkbox" id="huntFull" /> 同时抓正文（更准，也更耗积分）</label>
+        <span class="tip" id="huntHint"></span>
+      </div>
+    </div>
+
+    <div class="hunt-head">
+      <span class="dot" style="background:#4ea1f5"></span>
+      <h2>采集结果</h2>
+      <span class="count" id="huntCount"></span>
+      <div class="hunt-actions">
+        <select id="huntCat" title="「存为任务」时归到哪个分类"></select>
+        <button class="btn" id="huntSaveAll">全部存进知识库</button>
+        <button class="btn" id="huntClear">清空结果</button>
+      </div>
+    </div>
+    <div class="hunt-busy" id="huntBusy" style="display:none"></div>
+    <div class="kb-list" id="huntList"></div>
+  </section><!-- /view-hunt -->
   </main><!-- /content -->
 </div><!-- /app -->
 
@@ -1624,6 +1720,255 @@ function bindKb(){
   });
 }
 
+// ---------- 线索采集（Firecrawl） ----------
+const FC_BASE = 'https://api.firecrawl.dev';
+const FC_MAX_RESULTS = 30;
+let huntKey = localStorage.getItem('fc_api_key') || '';
+let huntMode = 'search';
+let huntResults = [];
+let huntBusy = false;
+
+const HUNT_PLACEHOLDER = {
+  search: '输入关键词，例如：personalised gifts affiliate program',
+  scrape: '粘贴一个网址，例如：https://www.yoursurprise.eu/affiliate',
+  batch:  '粘贴多个网址，一行一个（最多 10 个）',
+  map:    '粘贴网站首页地址；第二行可写筛选关键词，例如：affiliate / contact'
+};
+const HUNT_HINT = {
+  search: '按关键词全网找候选站点；勾选「同时抓正文」会多消耗积分',
+  scrape: '抓取单个页面的正文，适合看合作条款、佣金比例、联系方式',
+  batch:  '一次粘贴多个网址逐条抓取，适合批量看竞品合作页',
+  map:    '列出一个网站的全部链接，用来快速定位合作页 / 联系页'
+};
+
+function huntKeyOk(){ return /^fc-[A-Za-z0-9]{8,}$/.test(huntKey.trim()); }
+function huntMask(k){ return k.length>16? k.slice(0,8)+'…'+k.slice(-4) : k; }
+
+async function fcFetch(path, payload){
+  const res = await fetch(FC_BASE + path, {
+    method: payload ? 'POST' : 'GET',
+    headers: { 'Authorization': 'Bearer ' + huntKey.trim(), 'Content-Type': 'application/json' },
+    body: payload ? JSON.stringify(payload) : undefined
+  });
+  let j = null;
+  try { j = await res.json(); } catch(e){}
+  if(!res.ok || (j && j.success === false)){
+    let msg = (j && (j.error || j.message || j.detail)) || ('HTTP ' + res.status);
+    if(typeof msg !== 'string') msg = JSON.stringify(msg);
+    const err = new Error(msg); err.status = res.status; throw err;
+  }
+  return j;
+}
+
+function huntBusyMsg(msg){
+  const el = $('#huntBusy'); if(!el) return;
+  el.style.display = msg ? 'block' : 'none';
+  el.textContent = msg || '';
+}
+
+function renderHuntKeyBar(){
+  const bar = $('#huntKeyBar'); if(!bar) return;
+  const on = huntKeyOk();
+  bar.innerHTML = `
+    <span class="k-status ${on?'on':'off'}">${on? '✓ Key 已配置' : '⚠ 未配置 Key'}</span>
+    <input id="huntKeyInput" type="password" autocomplete="off"
+      placeholder="${on? '已保存：'+escapeHtml(huntMask(huntKey))+'（留空则不改）' : '粘贴 Firecrawl API Key（fc- 开头）'}" />
+    <button class="btn primary" id="huntKeySave">${on?'更新 Key':'保存 Key'}</button>
+    ${on? '<button class="btn" id="huntKeyTest">测试连接</button><button class="btn" id="huntKeyClear">清除</button>' : ''}
+    <span class="ktip">Key 只保存在你这台电脑的浏览器里，不会写进网页文件，局域网其他设备打开这个页面也看不到它。</span>`;
+  $('#huntKeySave').onclick = ()=>{
+    const v = $('#huntKeyInput').value.trim();
+    if(!v){ toast(on? 'Key 未改动' : '请先粘贴 Firecrawl API Key'); return; }
+    if(!/^fc-/.test(v)){ toast('Key 应以 fc- 开头，请检查是否复制完整'); return; }
+    huntKey = v; localStorage.setItem('fc_api_key', huntKey);
+    renderHuntKeyBar(); renderHuntResults(); toast('Key 已保存 ✓');
+  };
+  $('#huntKeyInput').addEventListener('keydown', e=>{ if(e.key==='Enter') $('#huntKeySave').click(); });
+  const tb = $('#huntKeyTest');
+  if(tb) tb.onclick = async ()=>{
+    tb.disabled = true; tb.textContent = '测试中…';
+    try{
+      const j = await fcFetch('/v1/team/credit-usage');
+      const d = (j && j.data) || {};
+      toast(`连接正常 ✓ 剩余积分 ${d.remaining_credits} / ${d.plan_credits}`);
+    }catch(e){ toast('连接失败：' + e.message); }
+    tb.disabled = false; tb.textContent = '测试连接';
+  };
+  const cb = $('#huntKeyClear');
+  if(cb) cb.onclick = ()=>{
+    if(!confirm('清除本机保存的 Firecrawl Key？')) return;
+    huntKey = ''; localStorage.removeItem('fc_api_key');
+    renderHuntKeyBar(); renderHuntResults(); toast('已清除 Key');
+  };
+}
+
+function huntApplyMode(){
+  $$('#huntModes .hm').forEach(b=>b.classList.toggle('active', b.dataset.mode===huntMode));
+  const ta = $('#huntInput'); if(ta) ta.placeholder = HUNT_PLACEHOLDER[huntMode] || '';
+  const h = $('#huntHint'); if(h) h.textContent = HUNT_HINT[huntMode] || '';
+  const lw = $('#huntLimit'); if(lw) lw.parentElement.style.display = (huntMode==='scrape')? 'none' : 'inline-flex';
+  const fw = $('#huntFull'); if(fw) fw.parentElement.style.display = (huntMode==='search')? 'inline-flex' : 'none';
+}
+
+function huntItemHtml(r, i){
+  const text = (r.text||'').slice(0, 1500);
+  return `<article class="hunt-card ${r.failed?'failed':''}" data-i="${i}">
+    <div class="hc-title">${escapeHtml(r.title || r.url || '')}</div>
+    <a class="hc-url" href="${escapeHtml(r.url||'')}" target="_blank" rel="noopener">${escapeHtml(r.url||'')}</a>
+    <div class="hc-text">${escapeHtml(text) || '（没有取到正文）'}</div>
+    <div class="hc-ops">
+      <button class="pri" data-hunt="kb" title="存进知识库">📚 存进知识库</button>
+      <button data-hunt="task" title="存为一条待办任务">＋ 存为任务</button>
+      <button data-hunt="copy" title="复制链接">⧉ 复制链接</button>
+      <button data-hunt="open" title="在新标签打开">🔗 打开</button>
+    </div>
+  </article>`;
+}
+
+function renderHuntResults(){
+  const box = $('#huntList'); if(!box) return;
+  const c = $('#huntCount'); if(c) c.textContent = huntResults.length? `共 ${huntResults.length} 条` : '';
+  box.innerHTML = huntResults.length
+    ? huntResults.map(huntItemHtml).join('')
+    : `<div class="hunt-empty" style="grid-column:1/-1">还没有结果。上面选好模式、填关键词或网址，点「开始采集」。</div>`;
+}
+
+function renderHunt(){ renderHuntKeyBar(); renderHuntResults(); huntApplyMode(); }
+
+function setHuntResults(items){
+  const seen = new Set(); huntResults = [];
+  items.forEach(it=>{
+    if(!it || !it.url) return;
+    if(seen.has(it.url)) return;
+    seen.add(it.url); huntResults.push(it);
+  });
+  huntResults = huntResults.slice(0, FC_MAX_RESULTS);
+  renderHuntResults();
+}
+
+function huntFromScrape(j, fallbackUrl){
+  const d = (j && j.data) || {};
+  const meta = d.metadata || {};
+  return {
+    url: meta.sourceURL || meta.url || fallbackUrl,
+    title: meta.title || fallbackUrl,
+    text: d.markdown || ''
+  };
+}
+
+async function huntRun(){
+  if(huntBusy) return;
+  if(!huntKeyOk()){ toast('请先在页面顶部保存 Firecrawl API Key'); return; }
+  if(readOnly){ toast('只读模式不能采集'); return; }
+  const raw = ($('#huntInput').value || '').trim();
+  if(!raw){ toast('请先输入关键词或网址'); $('#huntInput').focus(); return; }
+  const limit = parseInt($('#huntLimit').value, 10) || 10;
+  const withMd = $('#huntFull').checked;
+
+  huntBusy = true;
+  try{
+    let items = [];
+    if(huntMode === 'search'){
+      huntBusyMsg('正在搜索候选站点…');
+      const payload = { query: raw, limit };
+      if(withMd) payload.scrapeOptions = { formats:['markdown'], onlyMainContent:true };
+      const j = await fcFetch('/v2/search', payload);
+      const d = (j && j.data) || {};
+      const web = Array.isArray(d) ? d : (d.web || []);
+      items = web.map(x=>({ url:x.url, title:x.title || x.url, text:x.markdown || x.description || '' }));
+    }
+    else if(huntMode === 'scrape'){
+      huntBusyMsg('正在抓取页面…');
+      const j = await fcFetch('/v2/scrape', { url: raw, formats:['markdown'], onlyMainContent:true });
+      items = [ huntFromScrape(j, raw) ];
+    }
+    else if(huntMode === 'map'){
+      const lines = raw.split('\n').map(s=>s.trim()).filter(Boolean);
+      const siteUrl = lines[0];
+      const kw = lines[1] || '';
+      huntBusyMsg('正在列出网站链接…');
+      const payload = { url: siteUrl, limit: Math.max(limit, 30) };
+      if(kw) payload.search = kw;
+      const j = await fcFetch('/v2/map', payload);
+      const links = (j && j.links) || [];
+      items = links.map(x=>({ url:x.url, title:x.title || x.url, text:x.description || '' }));
+    }
+    else {
+      const urls = raw.split(/[\s,，]+/).map(s=>s.trim()).filter(u=>/^https?:\/\//i.test(u)).slice(0, 10);
+      if(!urls.length){ toast('请粘贴至少一个以 http 开头的网址'); huntBusy = false; huntBusyMsg(''); return; }
+      for(let i=0;i<urls.length;i++){
+        huntBusyMsg(`批量抓取中… ${i+1}/${urls.length}`);
+        try{
+          const j = await fcFetch('/v2/scrape', { url:urls[i], formats:['markdown'], onlyMainContent:true });
+          items.push(huntFromScrape(j, urls[i]));
+        }catch(e){
+          items.push({ url:urls[i], title:'抓取失败', text:'⚠ ' + e.message, failed:true });
+        }
+      }
+    }
+    setHuntResults(items);
+    toast(items.length? `采集完成，共 ${items.length} 条 ✓` : '没有取到结果，换个关键词或网址试试');
+  }catch(e){
+    const extra = e.status===401? '（Key 无效或已失效）' : e.status===402? '（积分不足）' : e.status===429? '（请求过快，稍后再试）' : '';
+    toast('采集失败：' + e.message + extra);
+  }finally{
+    huntBusy = false; huntBusyMsg('');
+  }
+}
+
+function huntSaveKb(r){
+  if(readOnly){ toast('只读模式不能新增'); return; }
+  if(kbData.some(k=> (k.content||'').includes(r.url))){ toast('这条已经在知识库里了'); return; }
+  kbData.push({ id:uid(), cat:'线索采集', title:(r.title||r.url).slice(0,80),
+    content: r.url + '\n\n' + (r.text||'').slice(0,4000) });
+  saveKb(); renderKb(); toast('已存进知识库 ✓');
+}
+
+function huntSaveTask(r){
+  if(readOnly){ toast('只读模式不能新增'); return; }
+  const cat = ($('#huntCat') && $('#huntCat').value) || 'partner';
+  const title = (r.title||r.url).slice(0,80);
+  if(data.some(t=>t.title===title)){ toast('已存在同名任务'); return; }
+  pushHistory();
+  data.push({ id:uid(), cat, title, priority:'mid', due:'', done:false, status:'未开始',
+    subtasks:[{ id:uid(), text:r.url, due:'', done:false }] });
+  openCats.add(cat); save(); render(); toast('已存为任务 ✓');
+}
+
+function bindHunt(){
+  const sel = $('#huntCat');
+  if(sel) sel.innerHTML = CATS.map(c=>`<option value="${c.id}"${c.id==='partner'?' selected':''}>${c.name}</option>`).join('');
+  $$('#huntModes .hm').forEach(b=>b.onclick=()=>{ huntMode = b.dataset.mode; huntApplyMode(); });
+  $('#huntRun').onclick = huntRun;
+  $('#huntClear').onclick = ()=>{ huntResults = []; renderHuntResults(); toast('已清空结果'); };
+  $('#huntSaveAll').onclick = ()=>{
+    if(!huntResults.length){ toast('还没有结果'); return; }
+    let n = 0;
+    huntResults.forEach(r=>{
+      if(r.failed) return;
+      if(kbData.some(k=> (k.content||'').includes(r.url))) return;
+      kbData.push({ id:uid(), cat:'线索采集', title:(r.title||r.url).slice(0,80),
+        content: r.url + '\n\n' + (r.text||'').slice(0,4000) });
+      n++;
+    });
+    if(!n){ toast('这些结果都已经在知识库里了'); return; }
+    saveKb(); renderKb(); toast(`已存进知识库 ${n} 条 ✓`);
+  };
+  $('#huntList').addEventListener('click', e=>{
+    const btn = e.target.closest('[data-hunt]'); if(!btn) return;
+    const card = e.target.closest('.hunt-card'); if(!card) return;
+    const r = huntResults[+card.dataset.i]; if(!r) return;
+    const act = btn.dataset.hunt;
+    if(act==='kb') huntSaveKb(r);
+    else if(act==='task') huntSaveTask(r);
+    else if(act==='copy') copyText(r.url, '链接已复制');
+    else if(act==='open') window.open(r.url, '_blank', 'noopener');
+  });
+  $('#huntInput').addEventListener('keydown', e=>{
+    if(e.key==='Enter' && (e.ctrlKey || e.metaKey)) huntRun();
+  });
+}
+
 // ---------- 视图切换（任务看板 / 邮件模板） ----------
 function setView(v){
   currentView=v;
@@ -1632,6 +1977,7 @@ function setView(v){
   if(v==='tpl') renderTpl();
   if(v==='cal') renderCalendar();
   if(v==='kb') renderKb();
+  if(v==='hunt') renderHunt();
 }
 function bindView(){
   $$('.nav-item').forEach(b=>b.onclick=()=>setView(b.dataset.view));
@@ -1665,22 +2011,28 @@ function loadPlans(){
   return arr.map(p=>({id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text, tag:p.tag||'日常', done:!!p.done}));
 }
 function savePlans(){ localStorage.setItem('plans', JSON.stringify(plans)); scheduleSync('plans'); }
-function loadMkt(){ const raw=localStorage.getItem('mkt_nodes'); if(raw){ try{return JSON.parse(raw);}catch(e){} } return {}; }
+function loadMkt(){
+  const raw=localStorage.getItem('mkt_nodes'); let arr=[];
+  if(raw){ try{ const o=JSON.parse(raw); if(Array.isArray(o)) arr=o; else Object.keys(o).forEach(d=>arr.push({start:d, end:d, name:o[d]})); }catch(e){} }
+  return arr.map(n=>({id:n.id||uid(), name:n.name, start:n.start||n.date, end:n.end||n.start||n.date}));
+}
 function saveMkt(){ localStorage.setItem('mkt_nodes', JSON.stringify(mktNodes)); }
+function mktOn(date){ return mktNodes.filter(n=> n.start<=date && date<=n.end ); }
 function renderMkt(){
-  const dates=Object.keys(mktNodes).sort();
-  $('#mktList').innerHTML = dates.length? dates.map(d=>`<span class="mkt-pill">🎯 ${d} · ${escapeHtml(mktNodes[d])}<button data-mkt="${d}" title="删除节点">✕</button></span>`).join('')
-    : `<span class="memo-empty">还没有营销节点，选个日期 + 填名称后点「添加节点」。</span>`;
+  const list=[...mktNodes].sort((a,b)=> a.start<b.start?-1:a.start>b.start?1:0);
+  $('#mktList').innerHTML = list.length? list.map(n=>`<span class="mkt-pill">🎯 ${escapeHtml(n.name)} · ${n.start===n.end? n.start : n.start+' ~ '+n.end}<button data-mkt="${n.id}" title="删除节点">✕</button></span>`).join('')
+    : `<span class="memo-empty">还没有营销节点：选好起止日期 + 填名称，点「添加节点」。</span>`;
 }
 function addMkt(){
-  const d=$('#mktDate').value, n=$('#mktName').value.trim();
-  if(!d || !n){ toast('请选择日期并填写节点名称'); return; }
-  mktNodes[d]=n; saveMkt(); renderMkt(); renderCalendar(); $('#mktName').value=''; toast('已添加营销节点 ✓');
+  let s=$('#mktStart').value, e=$('#mktEnd').value; const n=$('#mktName').value.trim();
+  if(!s || !e || !n){ toast('请填写起止日期和节点名称'); return; }
+  if(s>e){ const t=s; s=e; e=t; }
+  mktNodes.push({id:uid(), name:n, start:s, end:e});
+  saveMkt(); renderMkt(); renderCalendar(); $('#mktName').value=''; toast('已添加营销节点 ✓');
 }
-function delMkt(d){ delete mktNodes[d]; saveMkt(); renderMkt(); renderCalendar(); toast('已删除节点'); }
+function delMkt(id){ mktNodes=mktNodes.filter(x=>x.id!==id); saveMkt(); renderMkt(); renderCalendar(); toast('已删除节点'); }
 function bindMkt(){
   $('#mktAdd').onclick=addMkt;
-  $('#mktDate').addEventListener('change',()=>{});
   $('#mktList').addEventListener('click',e=>{ const b=e.target.closest('button[data-mkt]'); if(b) delMkt(b.dataset.mkt); });
 }
 function tagCfg(name){ return MEMO_TAGS.find(t=>t.name===name) || {name, color:'#8091ac', bg:'rgba(128,145,172,.18)'}; }
@@ -1739,9 +2091,9 @@ function renderMonthGrid(){
       return `<span class="cmemo ${it.done?'done':''}" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
     }).join('') + (overflow>0? `<span class="cmemo" style="background:rgba(128,145,172,.18);color:#8091ac">+${overflow}</span>`:'');
     const hol=HOLIDAYS_2026.holidays[ds]; const wk=HOLIDAYS_2026.workdays[ds];
-    const mkt=mktNodes[ds];
+    const mkts=mktOn(ds);
     let flag = hol? `<span class="cal-flag hol" title="公共假期">休·${hol}</span>` : wk? `<span class="cal-flag wk" title="调休上班">调班·上班</span>` : '';
-    if(mkt) flag += `<span class="cal-flag mkt" title="营销节点">🎯 ${escapeHtml(mkt)}</span>`;
+    if(mkts.length) flag += mkts.map(n=>`<span class="cal-flag mkt" title="营销节点">🎯 ${escapeHtml(n.name)}</span>`).join('');
     cells.push(`<div class="cal-day ${other?'other':''} ${today?'today':''} ${sel?'selected':''} ${hol?'holiday':''} ${wk?'workday':''}" data-date="${ds}" ${flag?`title="${hol?('公共假期 '+hol):'调休上班日'}"`:''}>
       <div class="dhead"><span class="dnum">${d}</span>${flag}</div>
       <div class="cmemos">${chips}</div>
@@ -1759,9 +2111,9 @@ function renderWeek(){
     const today=ds===todayStr;
     const subs=subItemsOn(ds);
     const items=[...visiblePlans(ds).map(p=>({kind:'plan', tag:p.tag, text:p.text, done:!!p.done})), ...taskInRange(ds,ds).map(t=>({kind:'task', pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', pri:s.pri, done:s.done, text:s.text}))];
-    const mkt=mktNodes[ds];
+    const mkts=mktOn(ds);
     let flag = hol? `<span class="cal-flag hol">休·${hol}</span>` : wk? `<span class="cal-flag wk">调班·上班</span>` : '';
-    if(mkt) flag += `<span class="cal-flag mkt">🎯 ${escapeHtml(mkt)}</span>`;
+    if(mkts.length) flag += mkts.map(n=>`<span class="cal-flag mkt">🎯 ${escapeHtml(n.name)}</span>`).join('');
     const itemHtml = items.length? items.map(it=>{
       if(it.kind==='plan'){ const st=tagCfg(it.tag); return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.color}">${escapeHtml(it.text)}</span>`; }
       if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
@@ -1926,7 +2278,7 @@ function bootApp(){
   if(appBooted) return; appBooted = true;
   document.body.classList.toggle('readonly', readOnly);
   const rb=$('#roBanner'); if(rb) rb.style.display = readOnly? 'block' : 'none';
-  renderTpl(); bindTpl(); bindKb(); renderKb();
+  renderTpl(); bindTpl(); bindKb(); renderKb(); bindHunt(); renderHunt();
   bindView(); bindSidebar(); bindCal();
   renderCalendar(); quickRange('month'); applySidebar();
   renderMkt(); bindMkt();
