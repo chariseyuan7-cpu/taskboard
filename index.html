@@ -1009,6 +1009,7 @@ function priStyle(p){
     : p==='mid'? {bg:'rgba(255,176,32,.2)', fg:'#c98a12'}
     : {bg:'rgba(78,161,245,.18)', fg:'#2f83d6'};
 }
+const DDL_STYLE = {bg:'rgba(214,60,60,.16)', fg:'#c0392b'};   // 日历中「任务(DDL)」专用色
 function taskInRange(s,e){ return data.filter(t=> t.due && (!s || t.due>=s) && (!e || t.due<=e) ); }
 function subItemsOn(date){
   const out=[];
@@ -1680,8 +1681,8 @@ function renderMonthGrid(){
     const chips = show.map(it=>{
       if(it.kind==='plan') return `<span class="cmemo" style="background:${tagBg(it.tag)};color:${tagColor(it.tag)}">${escapeHtml(it.text)}</span>`;
       if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cmemo ${it.done?'done':''}" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
-      const st=priStyle(it.pri);
-      return `<span class="cmemo ${it.done?'done':''}" style="background:${st.bg};color:${st.fg}">📋 ${escapeHtml(it.text)}</span>`;
+      const st=DDL_STYLE;
+      return `<span class="cmemo ${it.done?'done':''}" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
     }).join('') + (overflow>0? `<span class="cmemo" style="background:rgba(128,145,172,.18);color:#8091ac">+${overflow}</span>`:'');
     const hol=HOLIDAYS_2026.holidays[ds]; const wk=HOLIDAYS_2026.workdays[ds];
     const flag = hol? `<span class="cal-flag hol" title="公共假期">休·${hol}</span>` : wk? `<span class="cal-flag wk" title="调休上班">调班·上班</span>` : '';
@@ -1706,8 +1707,8 @@ function renderWeek(){
     const itemHtml = items.length? items.map(it=>{
       if(it.kind==='plan'){ const st=tagCfg(it.tag); return `<span class="cw-item" style="background:${st.bg};color:${st.color}">${escapeHtml(it.text)}</span>`; }
       if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
-      const st=priStyle(it.pri);
-      return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.fg}">📋 ${escapeHtml(it.text)}</span>`;
+      const st=DDL_STYLE;
+      return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
     }).join('') : `<span class="cw-empty">—</span>`;
     html += `<div class="cal-wday ${today?'today':''} ${hol?'holiday':''} ${wk?'workday':''}" data-date="${ds}">
       <div class="cw-head"><span class="cw-date">${d.getDate()}</span><span class="cw-name">周${names[i]}</span>${flag}</div>
@@ -1750,8 +1751,8 @@ function renderRangeSummary(){
       return `<div class="rs-item">${d}<span class="memo-tag" style="background:${tagBg(p.tag)};color:${tagColor(p.tag)}">${p.tag}</span><span class="rs-text">${escapeHtml(p.text)}</span></div>`;
     }).concat(
       tlist.map(t=>{
-        const st=priStyle(t.priority);
-        return `<div class="rs-item"><span class="rs-date">${t.due}</span><span class="memo-tag" style="background:${st.bg};color:${st.fg}">📋${t.done?'已完成':'任务'}</span><span class="rs-text${t.done?' txt-done':''}">${escapeHtml(t.title)}</span></div>`;
+        const st=DDL_STYLE;
+        return `<div class="rs-item"><span class="rs-date">${t.due}</span><span class="memo-tag" style="background:${st.bg};color:${st.fg};font-weight:700">📋${t.done?'已完成':'任务'}</span><span class="rs-text${t.done?' txt-done':''}">${escapeHtml(t.title)}</span></div>`;
       })
     ).concat(
       slist.map(s=>{
@@ -1807,8 +1808,8 @@ function renderPlanList(){
   }
   if(tk.length){
     html += `<h4>这一天 ${tk.length} 个任务（截止）：</h4>` + tk.map(x=>{
-      const st=priStyle(x.priority);
-      return `<div class="memo-item"><span class="memo-tag" style="background:${st.bg};color:${st.fg}">📋任务</span><span class="${isDone(x)?'txt-done':''}">${escapeHtml(x.title)}</span><span class="memo-date">${x.due}</span></div>`;
+      const st=DDL_STYLE;
+      return `<div class="memo-item"><span class="memo-tag" style="background:${st.bg};color:${st.fg};font-weight:700">📋任务</span><span class="${isDone(x)?'txt-done':''}">${escapeHtml(x.title)}</span><span class="memo-date">${x.due}</span></div>`;
     }).join('');
   }
   if(sl.length){
