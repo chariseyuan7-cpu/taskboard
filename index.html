@@ -462,6 +462,13 @@
   .memo-item span{flex:1; font-size:13px; word-break:break-word}
   .memo-item button{border:none; background:none; color:var(--muted); cursor:pointer; font-size:14px}
   .memo-item button:hover{color:var(--bad)}
+  .memo-item .plan-chk{flex:0 0 auto; width:18px; height:18px; border:2px solid var(--border); border-radius:6px;
+    cursor:pointer; display:grid; place-items:center; color:#fff; transition:.15s}
+  .memo-item .plan-chk:hover{border-color:var(--good)}
+  .memo-item .plan-chk svg{width:12px; height:12px; opacity:0}
+  .memo-item.done .plan-chk{background:var(--good); border-color:var(--good)}
+  .memo-item.done .plan-chk svg{opacity:1}
+  .plan-tx{flex:1; font-size:13px; word-break:break-word}
   .memo-empty{font-size:12.5px; color:var(--muted)}
   .memo-note{font-size:12.5px; font-weight:600; padding:7px 11px; border-radius:8px; margin-bottom:10px}
   .memo-note.hol{background:rgba(142,123,240,.12); color:#6f5fe0}
@@ -898,8 +905,9 @@ async function syncPlans(){
   if(!sb) return;
   try{
     const rows=[];
-    plans.forEach(x=>rows.push({id:String(x.id), start:x.start, end:x.end, text:x.text, tag:x.tag||'日常', updated_at:new Date().toISOString()}));
-    await sb.from('plans').upsert(rows, {onConflict:'id'});
+    plans.forEach(x=>rows.push({id:String(x.id), start:x.start, end:x.end, text:x.text, tag:x.tag||'日常', done:!!x.done, updated_at:new Date().toISOString()}));
+    const res = await sb.from('plans').upsert(rows, {onConflict:'id'});
+    if(res && res.error){ await sb.from('plans').upsert(rows.map(r=>{const {done,...rest}=r; return rest;}), {onConflict:'id'}); }
     const {data:ex} = await sb.from('plans').select('id');
     const local = new Set(rows.map(r=>r.id));
     const del = (ex||[]).map(r=>r.id).filter(id=>!local.has(id));
@@ -941,7 +949,7 @@ async function initCloud(){
     if(byMonth[ym] && byMonth[ym].length){ data=byMonth[ym]; localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); }
     if(tpls.length){ tplData=tpls.map(t=>({id:t.id, tag:t.tag, purpose:t.purpose, content:t.content, aiNote:t.ai_note||''}));
       localStorage.setItem('tpl_lib', JSON.stringify(tplData)); renderTpl(); }
-    const plist = pls.map(x=>({id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:x.tag||'日常'}));
+    const plist = pls.map(x=>({id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:x.tag||'日常', done:!!x.done}));
     if(plist.length){ plans=plist; localStorage.setItem('plans', JSON.stringify(plans)); renderCalendar(); }
     if(kbs.length){ kbData=kbs.map(k=>({id:k.id, cat:k.cat||'', title:k.title||'', content:k.content||''}));
       localStorage.setItem('kb_lib', JSON.stringify(kbData)); renderKb(); }
@@ -1626,7 +1634,7 @@ function loadPlans(){
     const raw2=localStorage.getItem('memos');
     if(raw2){ try{ const obj=JSON.parse(raw2); Object.keys(obj).forEach(d=>(obj[d]||[]).forEach(m=>arr.push({id:m.id, start:d, end:d, text:m.text, tag:m.tag||'日常'}))); }catch(e){} }
   }
-  return arr.map(p=>({id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text, tag:p.tag||'日常'}));
+  return arr.map(p=>({id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text, tag:p.tag||'日常', done:!!p.done}));
 }
 function savePlans(){ localStorage.setItem('plans', JSON.stringify(plans)); scheduleSync('plans'); }
 function tagCfg(name){ return MEMO_TAGS.find(t=>t.name===name) || {name, color:'#8091ac', bg:'rgba(128,145,172,.18)'}; }
@@ -1676,10 +1684,10 @@ function renderMonthGrid(){
     const ps=visiblePlans(ds); const ts=taskInRange(ds,ds);
     const today=ds===todayStr; const sel = planStart && ds>=planStart && ds<=planEnd;
     const subs=subItemsOn(ds);
-    const items=[...ps.slice(0,3).map(p=>({kind:'plan', tag:p.tag, text:p.text})), ...ts.map(t=>({kind:'task', pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', pri:s.pri, done:s.done, text:s.text}))];
+    const items=[...ps.slice(0,3).map(p=>({kind:'plan', tag:p.tag, text:p.text, done:!!p.done})), ...ts.map(t=>({kind:'task', pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', pri:s.pri, done:s.done, text:s.text}))];
     const show=items.slice(0,3); const overflow=items.length-show.length;
     const chips = show.map(it=>{
-      if(it.kind==='plan') return `<span class="cmemo" style="background:${tagBg(it.tag)};color:${tagColor(it.tag)}">${escapeHtml(it.text)}</span>`;
+      if(it.kind==='plan') return `<span class="cmemo ${it.done?'done':''}" style="background:${tagBg(it.tag)};color:${tagColor(it.tag)}">${escapeHtml(it.text)}</span>`;
       if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cmemo ${it.done?'done':''}" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
       const st=DDL_STYLE;
       return `<span class="cmemo ${it.done?'done':''}" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
@@ -1702,10 +1710,10 @@ function renderWeek(){
     const hol=HOLIDAYS_2026.holidays[ds]; const wk=HOLIDAYS_2026.workdays[ds];
     const today=ds===todayStr;
     const subs=subItemsOn(ds);
-    const items=[...visiblePlans(ds).map(p=>({kind:'plan', tag:p.tag, text:p.text})), ...taskInRange(ds,ds).map(t=>({kind:'task', pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', pri:s.pri, done:s.done, text:s.text}))];
+    const items=[...visiblePlans(ds).map(p=>({kind:'plan', tag:p.tag, text:p.text, done:!!p.done})), ...taskInRange(ds,ds).map(t=>({kind:'task', pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', pri:s.pri, done:s.done, text:s.text}))];
     const flag = hol? `<span class="cal-flag hol">休·${hol}</span>` : wk? `<span class="cal-flag wk">调班·上班</span>` : '';
     const itemHtml = items.length? items.map(it=>{
-      if(it.kind==='plan'){ const st=tagCfg(it.tag); return `<span class="cw-item" style="background:${st.bg};color:${st.color}">${escapeHtml(it.text)}</span>`; }
+      if(it.kind==='plan'){ const st=tagCfg(it.tag); return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.color}">${escapeHtml(it.text)}</span>`; }
       if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
       const st=DDL_STYLE;
       return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
@@ -1803,7 +1811,7 @@ function renderPlanList(){
   if(pl.length){
     html += `<h4>这一天已有 ${pl.length} 个计划：</h4>` + pl.map(x=>{
       const d = x.start===x.end ? x.start : `${x.start} ~ ${x.end}`;
-      return `<div class="memo-item"><span class="memo-tag" style="background:${tagBg(x.tag)};color:${tagColor(x.tag)}">${x.tag}</span><span>${escapeHtml(x.text)}</span><span class="memo-date">${d}</span><button data-id="${x.id}" title="删除">✕</button></div>`;
+      return `<div class="memo-item ${x.done?'done':''}"><span class="plan-chk" data-act="pchk" data-id="${x.id}" title="${x.done?'取消完成':'标记完成'}">${CHECK_SVG}</span><span class="memo-tag" style="background:${tagBg(x.tag)};color:${tagColor(x.tag)}">${x.tag}</span><span class="plan-tx ${x.done?'txt-done':''}">${escapeHtml(x.text)}</span><span class="memo-date">${d}</span><button data-id="${x.id}" title="删除">✕</button></div>`;
     }).join('');
   }
   if(tk.length){
@@ -1828,7 +1836,7 @@ function addPlan(){
   let s=$('#planStart').value, e=$('#planEnd').value;
   if(!v || !s || !e){ $('#planText').focus(); toast('请填写内容与起止日期'); return; }
   if(s>e){ const t=s; s=e; e=t; }
-  plans.push({id:uid(), start:s, end:e, text:v, tag:memoNewTag});
+  plans.push({id:uid(), start:s, end:e, text:v, tag:memoNewTag, done:false});
   savePlans(); renderCalendar(); renderPlanList();
   $('#planText').value=''; $('#planText').focus(); toast('已添加计划 ✓');
 }
@@ -1849,6 +1857,8 @@ function bindCal(){
   $('#memoAdd').onclick=addPlan;
   $('#planText').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); addPlan(); } });
   $('#memoList').addEventListener('click',e=>{
+    const ck=e.target.closest('[data-act=pchk]');
+    if(ck){ const p=plans.find(x=>x.id===ck.dataset.id); if(p){ p.done=!p.done; savePlans(); renderCalendar(); renderPlanList(); } return; }
     const b=e.target.closest('button[data-id]'); if(!b) return;
     const id=b.dataset.id;
     if(confirm('删除这条计划？')){
