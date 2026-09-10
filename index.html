@@ -117,7 +117,8 @@
   select,input[type=date]{font:inherit; border:1px solid var(--border); border-radius:9px;
     background:var(--surface); color:var(--fg); padding:8px 11px; font-size:13.5px}
 
-  .stats{display:grid; grid-template-columns:1.25fr 1fr 1fr 1fr; gap:16px; margin-bottom:22px}
+  .stats{display:grid; grid-template-columns:1.25fr 1fr 1fr 1fr 1fr; gap:14px; margin-bottom:22px}
+  @media(max-width:1150px){.stats{grid-template-columns:1fr 1fr 1fr}}
   @media(max-width:860px){.stats{grid-template-columns:1fr 1fr}}
   @media(max-width:560px){.stats{grid-template-columns:1fr}}
   .card{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px;
@@ -1026,6 +1027,7 @@ function render(){
   const deg=s.total?Math.round(s.pct*3.6):0;
   const milestone = s.total? (s.pct>=100?'完成':s.pct>=80?'冲线':s.pct>=50?'过半':s.pct>0?'推进':'起步') : '无数据';
   const mColor = s.pct>=80?'var(--good)':s.pct>=50?'var(--accent2)':'var(--warn)';
+  const alertN = dueAlertCount();
   $('#statsBox').innerHTML = `
     <div class="card donut-card">
       <div class="donut" style="background:conic-gradient(var(--good) ${deg}deg, var(--surface2) ${deg}deg)">
@@ -1035,6 +1037,7 @@ function render(){
     </div>
     <div class="card kpi clickable ${doneFilter==='done'?'active':''}" data-filter="done"><div class="lab">已完成</div><div class="val" style="color:var(--good)">${s.done}</div><div class="sub">点击只看已完成</div></div>
     <div class="card kpi clickable ${doneFilter==='todo'?'active':''}" data-filter="todo"><div class="lab">剩余待办</div><div class="val" style="color:${s.remain? 'var(--warn)':'var(--fg)'}">${s.remain}</div><div class="sub">点击只看未完成</div></div>
+    <div class="card kpi clickable ${soonFilter?'active':''}" data-filter="soon"><div class="lab">临期任务</div><div class="val" style="color:${alertN? 'var(--bad)':'var(--fg)'}">${alertN}</div><div class="sub">点击只看临期</div></div>
     <div class="card milestone-card">
       <div class="lab" style="color:var(--muted);font-size:13px">本月进度档</div>
       <div class="milestone" style="color:${mColor}">${milestone}</div>
@@ -1042,7 +1045,9 @@ function render(){
       <div class="sub" style="color:var(--muted);margin-top:8px">总任务 <b style="color:var(--fg)">${s.total}</b> 项</div>
     </div>`;
   $$('#statsBox .kpi[data-filter]').forEach(el=>el.onclick=()=>{
-    const f=el.dataset.filter; doneFilter = (doneFilter===f)? 'all' : f; render();
+    const f=el.dataset.filter;
+    if(f==='soon'){ soonFilter=!soonFilter; if(soonFilter) openCats=new Set(CATS.map(c=>c.id)); render(); }
+    else { doneFilter = (doneFilter===f)? 'all' : f; render(); }
   });
 
   // 分类卡片（手风琴）
@@ -1071,7 +1076,6 @@ function render(){
   mb.textContent = multiMode? '☑ 退出多选' : '☑ 多选';
   mb.classList.toggle('primary', multiMode);
   $('#undoBtn').disabled = history.length===0;
-  const alertN=dueAlertCount();
   const badge=$('#tasksBadge');
   if(badge){
     badge.textContent = alertN>99? '99+' : alertN;
