@@ -32,6 +32,10 @@
   .auth-alt:hover{color:var(--accent)}
   .ro-banner{background:#fff6e6; color:#b57b0c; border:1px solid #f0d9a8; border-radius:10px;
     padding:9px 14px; font-size:13px; font-weight:600; margin-bottom:14px}
+  .soon-bar{background:#fdeff1; color:#c04b5a; border:1px solid #f3c9d0; border-radius:10px;
+    padding:9px 14px; font-size:13px; font-weight:600; margin-bottom:14px}
+  .soon-bar a{color:#c04b5a; text-decoration:underline; cursor:pointer; margin-left:4px}
+  .nav-badge{cursor:pointer}
   body.readonly .chk, body.readonly .selchk, body.readonly .status-select, body.readonly .sub-toggle,
   body.readonly .sub-chk, body.readonly .sub-del, body.readonly .sub-add, body.readonly .due-editor,
   body.readonly .sub-due, body.readonly .sub-duebtn, body.readonly .ops, body.readonly .add-toggle,
@@ -528,6 +532,8 @@
     <button class="btn" id="resetBtn">重置本月</button>
   </div>
 
+  <div class="soon-bar" id="soonBar" style="display:none">⏰ 仅显示<b>临期任务</b>（5 天内到期或已逾期，且未完成） · <a id="soonClear">显示全部</a></div>
+
   <div class="stats" id="statsBox"></div>
 
   <div class="cat-strip" id="catStrip"></div>
@@ -778,6 +784,7 @@ let multiMode = false;                             // 多选模式
 let selected = new Set();                          // 被选中的任务 id
 let openSubtasks = new Set();                       // 展开了子任务面板的任务 id
 let doneFilter = 'all';                             // 完成状态筛选：all / done / todo
+let soonFilter = false;                             // 是否只看临期任务
 const STATUSES = ['未开始','推进中','暂不进行','已完成'];
 let history = [];                                  // 撤销栈（每次改动前的快照）
 const MAX_HIST = 50;
@@ -973,6 +980,12 @@ function dueAlertCount(){
   });
   return n;
 }
+function isSoon(t){
+  if(!t.due || isDone(t)) return false;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const maxD=new Date(today); maxD.setDate(maxD.getDate()+5);
+  return new Date(t.due+'T00:00:00') <= maxD;
+}
 function importReviewTodos(){
   const exist = new Set(data.map(t=>t.title));
   const cats=new Set(); let added=0;
@@ -1063,8 +1076,13 @@ function render(){
   if(badge){
     badge.textContent = alertN>99? '99+' : alertN;
     badge.style.display = alertN>0? 'grid' : 'none';
-    badge.title = alertN>0? `${alertN} 个任务临近截止` : '';
+    badge.title = alertN>0? `${alertN} 个任务临近截止（点击查看）` : '';
+    badge.onclick=(e)=>{ e.stopPropagation(); soonFilter=!soonFilter;
+      if(soonFilter) openCats=new Set(CATS.map(c=>c.id));
+      setView('tasks'); render(); };
   }
+  const sbEl=$('#soonBar'); if(sbEl) sbEl.style.display = soonFilter? 'block' : 'none';
+  const sc=$('#soonClear'); if(sc) sc.onclick=()=>{ soonFilter=false; render(); };
   document.body.classList.toggle('multi', multiMode);
   const bar=$('#multibar');
   if(multiMode){
@@ -1090,6 +1108,7 @@ function catPanelHtml(c){
   let list = cs.list;
   if(doneFilter==='done') list = list.filter(t=>isDone(t));
   else if(doneFilter==='todo') list = list.filter(t=>!isDone(t));
+  if(soonFilter) list = list.filter(t=>isSoon(t));
   if(hideDone) list = list.filter(t=>!isDone(t));
   return `
     <div class="cat-head">
