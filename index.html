@@ -987,6 +987,7 @@ function isSoon(t){
   const maxD=new Date(today); maxD.setDate(maxD.getDate()+5);
   return new Date(t.due+'T00:00:00') <= maxD;
 }
+function soonCats(){ const s=new Set(); data.forEach(t=>{ if(isSoon(t)) s.add(t.cat); }); return s; }
 function importReviewTodos(){
   const exist = new Set(data.map(t=>t.title));
   const cats=new Set(); let added=0;
@@ -1046,7 +1047,7 @@ function render(){
     </div>`;
   $$('#statsBox .kpi[data-filter]').forEach(el=>el.onclick=()=>{
     const f=el.dataset.filter;
-    if(f==='soon'){ soonFilter=!soonFilter; if(soonFilter) openCats=new Set(CATS.map(c=>c.id)); render(); }
+    if(f==='soon'){ soonFilter=!soonFilter; if(soonFilter) openCats=soonCats(); render(); }
     else { doneFilter = (doneFilter===f)? 'all' : f; render(); }
   });
 
@@ -1082,7 +1083,7 @@ function render(){
     badge.style.display = alertN>0? 'grid' : 'none';
     badge.title = alertN>0? `${alertN} 个任务临近截止（点击查看）` : '';
     badge.onclick=(e)=>{ e.stopPropagation(); soonFilter=!soonFilter;
-      if(soonFilter) openCats=new Set(CATS.map(c=>c.id));
+      if(soonFilter) openCats=soonCats();
       setView('tasks'); render(); };
   }
   const sbEl=$('#soonBar'); if(sbEl) sbEl.style.display = soonFilter? 'block' : 'none';
