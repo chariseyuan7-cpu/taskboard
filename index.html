@@ -579,7 +579,7 @@
       <button class="nav-item" data-view="kb" title="查看知识库"><span class="nav-ic">📚</span><span class="nav-tx">知识库</span></button>
       <button class="nav-item" data-view="hunt" title="采集网页线索"><span class="nav-ic">🔎</span><span class="nav-tx">线索采集</span></button>
     </nav>
-    <div class="side-foot">进度保存在本机浏览器<br>离线可用 · 数据不联网<br><a id="signOutLink" style="display:none; text-decoration:underline; cursor:pointer">退出登录</a></div>
+    <div class="side-foot">进度保存在本机浏览器<br>离线可用 · 数据不联网<br>Ctrl+F 搜索 · Esc 关闭<br><a id="signOutLink" style="display:none; text-decoration:underline; cursor:pointer">退出登录</a></div>
   </aside>
   <main class="content">
   <div class="ro-banner" id="roBanner" style="display:none">🔒 只读模式：你正在查看这个看板，登录后可编辑。</div>
@@ -2355,8 +2355,25 @@ function bindCal(){
 let cloudOff = false;     // 选择“本地模式”时置为 true
 let readOnly = false;     // 只读查看（访客不登录）
 let appBooted = false;
+function globalKeys(e){
+  if((e.ctrlKey||e.metaKey) && !e.shiftKey && !e.altKey && (e.key==='f'||e.key==='F')){
+    const map={tasks:'#taskSearch', tpl:'#tplSearch', kb:'#kbSearch', hunt:'#huntInput'};
+    const sel=map[currentView]; const el=sel?$(sel):null;
+    if(el){ e.preventDefault(); try{ el.focus(); el.select(); }catch(_){} }
+    return;
+  }
+  if(e.key==='Escape'){
+    const ovs=$$('.modal-overlay.show');
+    if(ovs.length){ ovs[ovs.length-1].classList.remove('show'); return; }
+    const me=$('#memoEditor'); if(me && me.style.display!=='none'){ closePlanEditor(); return; }
+    const ke=$('#kbEditor'); if(ke && ke.style.display!=='none'){ closeKbEditor(); return; }
+    const de=$('.due-editor'); if(de){ de.remove(); return; }
+    if(multiMode){ multiMode=false; selected.clear(); render(); return; }
+  }
+}
 function bootApp(){
   if(appBooted) return; appBooted = true;
+  document.addEventListener('keydown', globalKeys);
   document.body.classList.toggle('readonly', readOnly);
   const rb=$('#roBanner'); if(rb) rb.style.display = readOnly? 'block' : 'none';
   renderTpl(); bindTpl(); bindKb(); renderKb(); bindHunt(); renderHunt();
