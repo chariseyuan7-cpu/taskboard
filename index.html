@@ -366,22 +366,25 @@
     padding:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:12px}
   .kb-editor .me-head{display:flex; align-items:center; justify-content:space-between}
   .kb-editor h3{font-size:16px; font-weight:700}
-  .kb-list{display:grid; grid-template-columns:1fr 1fr; gap:14px}
-  @media(max-width:860px){.kb-list{grid-template-columns:1fr}}
-  .kb-card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px;
-    display:flex; flex-direction:column; gap:10px; box-shadow:0 2px 10px rgba(47,61,85,.04)}
-  .kb-top{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-  .kb-cat{background:rgba(34,196,141,.16); color:#14a077; font-weight:700; font-size:12px;
-    padding:3px 11px; border-radius:20px}
-  .kb-title{font-size:15px; font-weight:700; flex:1; min-width:120px}
-  .kb-top .ops{margin-left:auto; display:flex; gap:6px; opacity:0; transition:.15s}
-  .kb-card:hover .kb-top .ops{opacity:1}
-  .kb-top .ops button{border:1px solid var(--border); background:var(--surface); border-radius:8px;
-    color:var(--muted); font-size:12px; padding:5px 10px; cursor:pointer; transition:.15s}
-  .kb-top .ops button:hover{color:var(--accent); border-color:var(--accent)}
-  .kb-top .ops button.del:hover{color:var(--bad); border-color:var(--bad)}
-  .kb-body{font-size:13.5px; color:var(--fg); white-space:pre-wrap; word-break:break-word; line-height:1.7;
-    background:rgba(255,253,248,.6); border-radius:8px; padding:10px 12px; max-height:340px; overflow:auto}
+  .kb-layout{display:grid; grid-template-columns:330px 1fr; gap:18px; align-items:start}
+  @media(max-width:900px){.kb-layout{grid-template-columns:1fr}}
+  .kb-side{display:flex; flex-direction:column; gap:12px; min-width:0}
+  .kb-list{display:flex; flex-direction:column; gap:8px; max-height:72vh; overflow:auto; padding-right:2px}
+  .kb-item{background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:11px 13px;
+    cursor:pointer; transition:.15s}
+  .kb-item:hover{border-color:var(--accent)}
+  .kb-item.active{border-color:var(--accent); box-shadow:0 0 0 2px rgba(255,122,89,.18)}
+  .kb-item .kb-t{font-size:14px; font-weight:700; display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .kb-item .kb-c{font-size:12px; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .kb-cat{background:rgba(34,196,141,.16); color:#14a077; font-weight:700; font-size:11.5px;
+    padding:2px 9px; border-radius:20px}
+  .kb-main{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px 26px;
+    min-height:340px; position:sticky; top:80px}
+  .kb-main .kb-h{font-size:20px; font-weight:700; margin-bottom:8px}
+  .kb-main .kb-m{display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap}
+  .kb-main .kb-content{white-space:pre-wrap; word-break:break-word; line-height:1.9; font-size:14.5px; max-width:74ch}
+  .kb-main .kb-actions{display:flex; gap:8px; margin-top:22px; flex-wrap:wrap}
+  .kb-main .kb-empty{color:var(--muted); font-size:14px}
   .cal-wrap{background:var(--surface); border:1px solid var(--border); border-radius:16px;
     padding:20px; box-shadow:0 2px 10px rgba(47,61,85,.04)}
   .cal-top{display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap}
@@ -747,9 +750,14 @@
       <input id="kbSearch" type="text" placeholder="搜索知识库…" />
       <button class="btn primary" id="kbAddBtn">＋ 新增词条</button>
     </div>
-    <div class="kb-filter" id="kbFilter"></div>
     <div class="kb-editor" id="kbEditor" style="display:none"></div>
-    <div class="kb-list" id="kbList"></div>
+    <div class="kb-layout">
+      <aside class="kb-side">
+        <div class="kb-filter" id="kbFilter"></div>
+        <div class="kb-list" id="kbList"></div>
+      </aside>
+      <section class="kb-main" id="kbMain"></section>
+    </div>
   </section><!-- /view-kb -->
 
   <section class="view" id="view-hunt">
@@ -953,6 +961,7 @@ let tplFilter = '全部'; let tplSearch=''; let tplEditId=null;
 let tplGroup = 'develop';                          // 模板板块：develop=开发 / activate=激活
 let kbData = loadKb();                              // 知识库
 let kbFilter = '全部'; let kbSearch=''; let kbEditId=null;
+let kbSelId = null;                                 // 知识库当前选中的词条
 let currentView = 'tasks';                          // 当前视图：tasks / tpl
 let plans = loadPlans();                            // 日历计划：[{id,start,end,text,tag}]
 let calYM = new Date().toISOString().slice(0,7);    // 日历当前显示的月份
@@ -1744,22 +1753,28 @@ function renderKb(){
   if(q) list = list.filter(k=> ((k.title||'')+' '+(k.cat||'')+' '+(k.content||'')).toLowerCase().includes(q));
   const cats=['全部', ...new Set(kbData.map(k=>k.cat||'未分类'))];
   $('#kbFilter').innerHTML = cats.map(c=>`<span class="tpl-tag ${kbFilter===c?'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join('');
-  $('#kbList').innerHTML = list.length? list.map(kbCardHtml).join('')
-    : `<div class="hint" style="grid-column:1/-1">${kbData.length? '没有匹配的词条':'还没有内容，点右上角「＋ 新增词条」开始记录'}</div>`;
+  if(!kbSelId || !kbData.some(k=>k.id===kbSelId)) kbSelId = list.length? list[0].id : null;
+  $('#kbList').innerHTML = list.length? list.map(k=>{
+    const ex=(k.content||'').replace(/\s+/g,' ').trim().slice(0,46);
+    return `<div class="kb-item ${k.id===kbSelId?'active':''}" data-id="${k.id}">
+      <div class="kb-t"><span class="kb-cat">${escapeHtml(k.cat||'未分类')}</span>${escapeHtml(k.title||'(无标题)')}</div>
+      <div class="kb-c">${escapeHtml(ex||'（无内容）')}${(k.content||'').length>46? '…':''}</div>
+    </div>`;
+  }).join('') : `<div class="hint">${kbData.length? '没有匹配的词条':'还没有内容，点右上角「＋ 新增词条」开始记录'}</div>`;
+  renderKbMain();
 }
-function kbCardHtml(k){
-  return `<article class="kb-card" data-id="${k.id}">
-    <div class="kb-top">
-      <span class="kb-cat">${escapeHtml(k.cat||'未分类')}</span>
-      <span class="kb-title">${escapeHtml(k.title||'(无标题)')}</span>
-      <div class="ops">
-        <button data-kb="copy" title="复制内容">⧉ 复制</button>
-        <button data-kb="edit" title="编辑">✎</button>
-        <button class="del" data-kb="del" title="删除">✕</button>
-      </div>
-    </div>
-    <div class="kb-body">${escapeHtml(k.content||'')}</div>
-  </article>`;
+function renderKbMain(){
+  const el=$('#kbMain'); if(!el) return;
+  const k = kbData.find(x=>x.id===kbSelId);
+  if(!k){ el.innerHTML = `<div class="kb-empty">从左侧选择一条词条查看内容；或点右上角「＋ 新增词条」新建。</div>`; return; }
+  el.innerHTML = `<div class="kb-h">${escapeHtml(k.title||'(无标题)')}</div>
+    <div class="kb-m"><span class="kb-cat">${escapeHtml(k.cat||'未分类')}</span></div>
+    <div class="kb-content">${escapeHtml(k.content||'')}</div>
+    <div class="kb-actions">
+      <button class="btn primary" data-kbm="copy">⧉ 复制内容</button>
+      <button class="btn" data-kbm="edit">✎ 编辑</button>
+      <button class="btn" data-kbm="del">✕ 删除</button>
+    </div>`;
 }
 function openKbEditor(id){
   kbEditId = id||null;
@@ -1783,22 +1798,24 @@ function saveKbEntry(){
   const title=$('#kbTitle').value.trim();
   const content=$('#kbContent').value.trim();
   if(!title && !content){ toast('请填写标题或内容'); return; }
-  if(kbEditId){ const k=kbData.find(x=>x.id===kbEditId); if(k){ k.cat=cat; k.title=title; k.content=content; } }
-  else kbData.push({id:uid(), cat, title, content});
+  let savedId=kbEditId;
+  if(kbEditId){ const k=kbData.find(x=>x.id===kbEditId); if(k){ k.cat=cat; k.title=title; k.content=content; savedId=k.id; } }
+  else { const nk={id:uid(), cat, title, content}; kbData.push(nk); savedId=nk.id; }
+  kbSelId=savedId;
   saveKb(); closeKbEditor(); renderKb(); toast('已保存 ✓');
 }
 function bindKb(){
   $('#kbSearch').oninput=e=>{ kbSearch=e.target.value; renderKb(); };
   $('#kbAddBtn').onclick=()=>openKbEditor(null);
-  $('#kbFilter').addEventListener('click',e=>{ const el=e.target.closest('.tpl-tag'); if(el){ kbFilter=el.dataset.cat; renderKb(); } });
-  $('#kbList').addEventListener('click',e=>{
-    const btn=e.target.closest('[data-kb]'); if(!btn) return;
-    const card=e.target.closest('.kb-card'); if(!card) return;
-    const id=card.dataset.id; const act=btn.dataset.kb;
-    if(act==='copy'){ const k=kbData.find(x=>x.id===id); if(k) copyText(k.content||'', '内容已复制'); }
-    else if(act==='edit'){ openKbEditor(id); }
-    else if(act==='del'){ if(confirm('确定删除这条词条？')){ kbData=kbData.filter(x=>x.id!==id); saveKb(); renderKb(); toast('已删除'); } }
-  });
+  $('#kbFilter').onclick=e=>{ const el=e.target.closest('.tpl-tag'); if(el){ kbFilter=el.dataset.cat; renderKb(); } };
+  $('#kbList').onclick=e=>{ const it=e.target.closest('.kb-item'); if(it){ kbSelId=it.dataset.id; renderKb(); } };
+  $('#kbMain').onclick=e=>{
+    const btn=e.target.closest('[data-kbm]'); if(!btn) return;
+    const act=btn.dataset.kbm;
+    if(act==='copy'){ const k=kbData.find(x=>x.id===kbSelId); if(k) copyText(k.content||'', '内容已复制'); }
+    else if(act==='edit'){ openKbEditor(kbSelId); }
+    else if(act==='del'){ if(confirm('确定删除这条词条？')){ kbData=kbData.filter(x=>x.id!==kbSelId); kbSelId=null; saveKb(); renderKb(); toast('已删除'); } }
+  };
 }
 
 // ---------- 线索采集（Firecrawl） ----------
