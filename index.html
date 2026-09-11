@@ -366,9 +366,12 @@
     padding:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:12px}
   .kb-editor .me-head{display:flex; align-items:center; justify-content:space-between}
   .kb-editor h3{font-size:16px; font-weight:700}
-  .kb-layout{display:grid; grid-template-columns:330px 1fr; gap:18px; align-items:start}
-  @media(max-width:900px){.kb-layout{grid-template-columns:1fr}}
-  .kb-side{display:flex; flex-direction:column; gap:12px; min-width:0}
+  .kb-layout{display:flex; align-items:flex-start}
+  .kb-side{display:flex; flex-direction:column; gap:12px; min-width:0; width:330px; flex:0 0 auto}
+  .kb-resizer{flex:0 0 auto; width:10px; align-self:stretch; cursor:col-resize; border-radius:5px;
+    margin:0 4px; background:transparent; transition:background .15s}
+  .kb-resizer:hover,.kb-resizer.dragging{background:rgba(255,122,89,.28)}
+  @media(max-width:900px){.kb-layout{flex-direction:column}.kb-resizer{display:none}.kb-side{width:auto}}
   .kb-list{display:flex; flex-direction:column; gap:8px; max-height:72vh; overflow:auto; padding-right:2px}
   .kb-item{background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:11px 13px;
     cursor:pointer; transition:.15s}
@@ -379,7 +382,7 @@
   .kb-cat{background:rgba(34,196,141,.16); color:#14a077; font-weight:700; font-size:11.5px;
     padding:2px 9px; border-radius:20px}
   .kb-main{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px 26px;
-    min-height:340px; position:sticky; top:80px}
+    min-height:340px; position:sticky; top:80px; flex:1; min-width:0}
   .kb-main .kb-h{font-size:20px; font-weight:700; margin-bottom:8px}
   .kb-main .kb-m{display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap}
   .kb-main .kb-content{white-space:pre-wrap; word-break:break-word; line-height:1.9; font-size:14.5px; max-width:74ch}
@@ -752,10 +755,11 @@
     </div>
     <div class="kb-editor" id="kbEditor" style="display:none"></div>
     <div class="kb-layout">
-      <aside class="kb-side">
+      <aside class="kb-side" id="kbSide">
         <div class="kb-filter" id="kbFilter"></div>
         <div class="kb-list" id="kbList"></div>
       </aside>
+      <div class="kb-resizer" id="kbResizer" title="拖动调整宽度"></div>
       <section class="kb-main" id="kbMain"></section>
     </div>
   </section><!-- /view-kb -->
@@ -962,6 +966,7 @@ let tplGroup = 'develop';                          // 模板板块：develop=开
 let kbData = loadKb();                              // 知识库
 let kbFilter = '全部'; let kbSearch=''; let kbEditId=null;
 let kbSelId = null;                                 // 知识库当前选中的词条
+let kbSideW = parseInt(localStorage.getItem('kb_side_w'),10) || 330;   // 知识库左栏宽度
 let currentView = 'tasks';                          // 当前视图：tasks / tpl
 let plans = loadPlans();                            // 日历计划：[{id,start,end,text,tag}]
 let calYM = new Date().toISOString().slice(0,7);    // 日历当前显示的月份
@@ -1816,7 +1821,23 @@ function bindKb(){
     else if(act==='edit'){ openKbEditor(kbSelId); }
     else if(act==='del'){ if(confirm('确定删除这条词条？')){ kbData=kbData.filter(x=>x.id!==kbSelId); kbSelId=null; saveKb(); renderKb(); toast('已删除'); } }
   };
+  applyKbSideW();
+  const rz=$('#kbResizer');
+  if(rz && !rz.dataset.bound){
+    rz.dataset.bound='1';
+    let dragging=false, startX=0, startW=0;
+    const down=x=>{ dragging=true; rz.classList.add('dragging'); startX=x; startW=$('#kbSide').offsetWidth; document.body.style.userSelect='none'; };
+    const move=x=>{ if(!dragging) return; kbSideW=Math.max(220, Math.min(640, startW + (x-startX))); applyKbSideW(); };
+    const up=()=>{ if(!dragging) return; dragging=false; rz.classList.remove('dragging'); document.body.style.userSelect=''; try{localStorage.setItem('kb_side_w', kbSideW);}catch(e){} };
+    rz.addEventListener('mousedown',e=>{ down(e.clientX); e.preventDefault(); });
+    document.addEventListener('mousemove',e=>move(e.clientX));
+    document.addEventListener('mouseup',up);
+    rz.addEventListener('touchstart',e=>{ down(e.touches[0].clientX); e.preventDefault(); }, {passive:false});
+    document.addEventListener('touchmove',e=>{ if(dragging) move(e.touches[0].clientX); }, {passive:false});
+    document.addEventListener('touchend',up);
+  }
 }
+function applyKbSideW(){ const el=$('#kbSide'); if(el) el.style.width = kbSideW+'px'; }
 
 // ---------- 线索采集（Firecrawl） ----------
 const FC_BASE = 'https://api.firecrawl.dev';
