@@ -37,6 +37,15 @@
   .soon-bar{background:#fdeff1; color:#c04b5a; border:1px solid #f3c9d0; border-radius:10px;
     padding:9px 14px; font-size:13px; font-weight:600; margin-bottom:14px}
   .soon-bar a{color:#c04b5a; text-decoration:underline; cursor:pointer; margin-left:4px}
+  .task-filterbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px}
+  #taskSearch{flex:1; min-width:200px; font:inherit; border:1px solid var(--border); border-radius:9px;
+    padding:8px 12px; background:#fff; color:var(--fg)}
+  #taskSearch:focus{outline:2px solid var(--accent)}
+  .tf-grp{display:flex; gap:6px; flex-wrap:wrap}
+  .tf-chip{border:1px solid var(--border); border-radius:20px; padding:5px 12px; font-size:12.5px;
+    cursor:pointer; color:var(--muted); transition:.15s; user-select:none}
+  .tf-chip:hover{border-color:var(--accent); color:var(--accent)}
+  .tf-chip.active{background:var(--accent); color:#fff; border-color:var(--accent)}
   .nav-badge{cursor:pointer}
   body.readonly .chk, body.readonly .selchk, body.readonly .status-select, body.readonly .sub-toggle,
   body.readonly .sub-chk, body.readonly .sub-del, body.readonly .sub-add, body.readonly .due-editor,
@@ -292,6 +301,7 @@
   .cloud-badge.ok{color:#12a97a} .cloud-badge.ok .dot2{background:#22c48d}
   .cloud-badge.off{color:#b78912} .cloud-badge.off .dot2{background:#ffb020}
   .cloud-badge.load{color:#2f83d6} .cloud-badge.load .dot2{background:#4ea1f5}
+  .cloud-badge.bad{color:#c0524a} .cloud-badge.bad .dot2{background:#f45d74}
   .modal-overlay{position:fixed; inset:0; background:rgba(62,52,44,.45); backdrop-filter:blur(3px);
     display:none; align-items:center; justify-content:center; z-index:200; padding:20px}
   .modal-overlay.show{display:flex}
@@ -604,6 +614,12 @@
   </div>
 
   <div class="soon-bar" id="soonBar" style="display:none">⏰ 仅显示<b>临期任务</b>（5 天内到期或已逾期，且未完成） · <a id="soonClear">显示全部</a></div>
+  <div class="task-filterbar">
+    <input id="taskSearch" type="text" placeholder="搜索任务标题…" />
+    <div class="tf-grp" id="tfStatus"></div>
+    <div class="tf-grp" id="tfPri"></div>
+    <button class="btn" id="tfClear">清除筛选</button>
+  </div>
 
   <div class="stats" id="statsBox"></div>
 
@@ -926,6 +942,9 @@ let selected = new Set();                          // 被选中的任务 id
 let openSubtasks = new Set();                       // 展开了子任务面板的任务 id
 let doneFilter = 'all';                             // 完成状态筛选：all / done / todo
 let soonFilter = false;                             // 是否只看临期任务
+let taskSearch = '';                                // 任务搜索关键词
+let statusFilter = '全部';                           // 任务状态筛选
+let priFilter = '全部';                              // 任务优先级筛选
 const STATUSES = ['未开始','推进中','暂不进行','已完成'];
 let history = [];                                  // 撤销栈（每次改动前的快照）
 const MAX_HIST = 50;
@@ -999,67 +1018,94 @@ function undo(){
 function resetMonth(){ pushHistory(); data = DEFAULT_TASKS.map(t=>({ id:uid(), ...t, done:false, status:'未开始', subtasks:[] })); save(); render(); toast('已重置为本月默认模板');}
 
 // ---------- Supabase 云端同步 ----------
-function setBadge(state){ // load / ok / off
+let connState='off', syncInFlight=0, syncFail=false, lastSyncOk=null;
+function setBadge(state){ connState=state; renderSyncBadge(); }
+function renderSyncBadge(){
   const el=$('#cloudBadge'); const txt=$('#cloudBadgeTxt');
   if(!el||!txt) return;
-  el.className='cloud-badge '+state;
-  txt.textContent = state==='ok'?'云端已连接' : state==='load'?'连接云端…' : '本地模式';
+  let cls='off', label='本地模式', clickable=false;
+  if(connState==='off'){ cls='off'; label='本地模式'; }
+  else if(syncInFlight>0){ cls='load'; label='同步中…'; }
+  else if(syncFail){ cls='bad'; label='同步失败（点击重试）'; clickable=true; }
+  else if(connState==='load'){ cls='load'; label='连接云端…'; }
+  else {
+    cls='ok';
+    label = lastSyncOk? ('已同步 · '+String(lastSyncOk.getHours()).padStart(2,'0')+':'+String(lastSyncOk.getMinutes()).padStart(2,'0')) : '云端已连接';
+  }
+  el.className='cloud-badge '+cls;
+  txt.textContent=label;
+  el.style.cursor = clickable? 'pointer' : 'default';
+  el.title = clickable? '点击重试同步' : (connState==='ok'? '数据已同步到 Supabase' : '');
+}
+function markSyncStart(){ syncInFlight++; renderSyncBadge(); }
+function markSyncEnd(ok){ syncInFlight=Math.max(0,syncInFlight-1); if(ok){ syncFail=false; lastSyncOk=new Date(); } else { syncFail=true; } renderSyncBadge(); }
+async function retrySync(){
+  syncFail=false; renderSyncBadge();
+  const fns=[syncTasks, syncPlans, syncTemplates, syncKb];
+  for(const f of fns){ markSyncStart(); let ok=false; try{ ok=await f(); }catch(e){ ok=false; } markSyncEnd(ok); }
 }
 function scheduleSync(kind){
   if(!cloudReady || !sb || cloudOff || readOnly) return;
+  const map={tasks:syncTasks, plans:syncPlans, templates:syncTemplates, kb:syncKb};
+  const fn=map[kind]; if(!fn) return;
   clearTimeout(cloudTimer);
-  cloudTimer = setTimeout(()=>{ if(kind==='tasks') syncTasks(); else if(kind==='plans') syncPlans(); else if(kind==='templates') syncTemplates(); else if(kind==='kb') syncKb(); }, 600);
+  cloudTimer = setTimeout(async ()=>{ markSyncStart(); let ok=false; try{ ok=await fn(); }catch(e){ ok=false; } markSyncEnd(ok); }, 600);
 }
 async function syncTasks(){
-  if(!sb) return;
+  if(!sb) return false;
   const base = t=>({id:String(t.id), month:ym, cat:t.cat, title:t.title,
     priority:t.priority, due:t.due||null, done:!!t.done, updated_at:new Date().toISOString()});
   const full = t=>({...base(t), status:t.status||'未开始', subtasks:(t.subtasks||[])});
   try{
     const res = await sb.from('tasks').upsert(data.map(full), {onConflict:'id'});
-    if(res && res.error){ await sb.from('tasks').upsert(data.map(base), {onConflict:'id'}); }
+    if(res && res.error){ const r2=await sb.from('tasks').upsert(data.map(base), {onConflict:'id'}); if(r2 && r2.error) return false; }
     const {data:ex} = await sb.from('tasks').select('id').eq('month', ym);
     const local = new Set(data.map(t=>String(t.id)));
     const del = (ex||[]).map(r=>r.id).filter(id=>!local.has(id));
     if(del.length) await sb.from('tasks').delete().in('id', del);
-  }catch(e){}
+    return true;
+  }catch(e){ return false; }
 }
 async function syncTemplates(){
-  if(!sb) return;
+  if(!sb) return false;
   try{
     const rows = tplData.map(t=>({id:String(t.id), grp:t.group||'develop', tag:t.tag, purpose:t.purpose,
       content:t.content, ai_note:t.aiNote||'', updated_at:new Date().toISOString()}));
     const res = await sb.from('templates').upsert(rows, {onConflict:'id'});
-    if(res && res.error){ await sb.from('templates').upsert(rows.map(r=>{const {grp,...rest}=r; return rest;}), {onConflict:'id'}); }
+    if(res && res.error){ const r2=await sb.from('templates').upsert(rows.map(r=>{const {grp,...rest}=r; return rest;}), {onConflict:'id'}); if(r2 && r2.error) return false; }
     const {data:ex} = await sb.from('templates').select('id');
     const local = new Set(rows.map(r=>r.id));
     const del = (ex||[]).map(r=>r.id).filter(id=>!local.has(id));
     if(del.length) await sb.from('templates').delete().in('id', del);
-  }catch(e){}
+    return true;
+  }catch(e){ return false; }
 }
 async function syncPlans(){
-  if(!sb) return;
+  if(!sb) return false;
   try{
     const rows=[];
     plans.forEach(x=>rows.push({id:String(x.id), start:x.start, end:x.end, text:x.text, tag:x.tag||'日常', done:!!x.done, updated_at:new Date().toISOString()}));
     const res = await sb.from('plans').upsert(rows, {onConflict:'id'});
-    if(res && res.error){ await sb.from('plans').upsert(rows.map(r=>{const {done,...rest}=r; return rest;}), {onConflict:'id'}); }
+    if(res && res.error){ const r2=await sb.from('plans').upsert(rows.map(r=>{const {done,...rest}=r; return rest;}), {onConflict:'id'}); if(r2 && r2.error) return false; }
     const {data:ex} = await sb.from('plans').select('id');
     const local = new Set(rows.map(r=>r.id));
     const del = (ex||[]).map(r=>r.id).filter(id=>!local.has(id));
     if(del.length) await sb.from('plans').delete().in('id', del);
-  }catch(e){}
+    return true;
+  }catch(e){ return false; }
 }
 async function syncKb(){
-  if(!sb) return;
+  if(!sb) return false;
   try{
     const rows=kbData.map(k=>({id:String(k.id), cat:k.cat||'', title:k.title||'', content:k.content||'', updated_at:new Date().toISOString()}));
-    await sb.from('kb').upsert(rows, {onConflict:'id'});
+    const res = await sb.from('kb').upsert(rows, {onConflict:'id'});
+    if(res && res.error) return false;
     const {data:ex} = await sb.from('kb').select('id');
     const local = new Set(rows.map(r=>r.id));
     const del = (ex||[]).map(r=>r.id).filter(id=>!local.has(id));
     if(del.length) await sb.from('kb').delete().in('id', del);
-  }catch(e){}
+    return true;
+  }catch(e){ return false; }
 }
 async function initCloud(){
   if(!sb || cloudOff){ setBadge('off'); return; }
@@ -1136,6 +1182,13 @@ function isSoon(t){
   return new Date(t.due+'T00:00:00') <= maxD;
 }
 function soonCats(){ const s=new Set(); data.forEach(t=>{ if(isSoon(t)) s.add(t.cat); }); return s; }
+function renderTaskFilters(){
+  const elS=$('#tfStatus');
+  if(elS) elS.innerHTML = ['全部','未开始','推进中','暂不进行'].map(s=>`<span class="tf-chip ${statusFilter===s?'active':''}" data-tfstatus="${s}">${s}</span>`).join('');
+  const elP=$('#tfPri');
+  if(elP) elP.innerHTML = ['全部','高','中','低'].map(s=>`<span class="tf-chip ${priFilter===s?'active':''}" data-tfpri="${s}">${s}</span>`).join('');
+  const si=$('#taskSearch'); if(si && si.value!==taskSearch) si.value=taskSearch;
+}
 function importReviewTodos(){
   const exist = new Set(data.map(t=>t.title));
   const cats=new Set(); let added=0;
@@ -1237,6 +1290,7 @@ function render(){
   }
   const sbEl=$('#soonBar'); if(sbEl) sbEl.style.display = soonFilter? 'block' : 'none';
   const sc=$('#soonClear'); if(sc) sc.onclick=()=>{ soonFilter=false; render(); };
+  renderTaskFilters();
   document.body.classList.toggle('multi', multiMode);
   const bar=$('#multibar');
   if(multiMode){
@@ -1260,6 +1314,9 @@ function render(){
 function catPanelHtml(c){
   const cs=catStats(c.id);
   let list = cs.list;
+  if(statusFilter!=='全部') list = list.filter(t=>(t.status||'未开始')===statusFilter);
+  if(priFilter!=='全部'){ const p=(priFilter==='高'?'high':priFilter==='中'?'mid':'low'); list = list.filter(t=>t.priority===p); }
+  if(taskSearch){ const q=taskSearch.toLowerCase(); list = list.filter(t=>(t.title||'').toLowerCase().includes(q)); }
   if(doneFilter==='done') list = list.filter(t=>isDone(t));
   else if(doneFilter==='todo') list = list.filter(t=>!isDone(t));
   if(soonFilter) list = list.filter(t=>isSoon(t));
@@ -1362,6 +1419,10 @@ function bind(){
   $('#monthPick').onchange=e=>{ym=e.target.value; history=[]; data=load(ym); render();};
   $('#hideDone').onchange=e=>{hideDone=e.target.checked; render();};
   $('#undoBtn').onclick=undo;
+  $('#taskSearch').oninput=e=>{ taskSearch=e.target.value; render(); };
+  $('#tfStatus').onclick=e=>{ const c=e.target.closest('.tf-chip'); if(c){ statusFilter=c.dataset.tfstatus; render(); } };
+  $('#tfPri').onclick=e=>{ const c=e.target.closest('.tf-chip'); if(c){ priFilter=c.dataset.tfpri; render(); } };
+  $('#tfClear').onclick=()=>{ taskSearch=''; statusFilter='全部'; priFilter='全部'; doneFilter='all'; soonFilter=false; render(); };
   $('#exportBtn').onclick=exportSummary;
   $('#importReviewBtn').onclick=importReviewTodos;
   $('#resetBtn').onclick=()=>{ if(confirm('确定要重置本月任务吗？当前进度与自建任务会被清除。')) resetMonth(); };
@@ -2304,6 +2365,7 @@ function bootApp(){
   const so=$('#signOutLink');
   if(so){ so.style.display = (sb && !cloudOff)? 'inline' : 'none';
     so.onclick=async ()=>{ try{ await sb.auth.signOut(); }catch(e){} location.reload(); }; }
+  const cb=$('#cloudBadge'); if(cb) cb.onclick=()=>{ if(syncFail) retrySync(); };
 }
 function showAuth(msg){ const g=$('#authGate'); if(g) g.style.display='flex'; if(msg!==undefined && $('#authMsg')) $('#authMsg').textContent=msg||''; }
 function hideAuth(){ const g=$('#authGate'); if(g) g.style.display='none'; }
