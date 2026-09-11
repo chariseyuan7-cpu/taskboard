@@ -322,6 +322,8 @@
     background:#fff; color:var(--fg); min-width:200px}
   #tplSearch:focus{outline:2px solid var(--accent)}
   .tpl-filter{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px}
+  .tpl-groups{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px}
+  .tpl-groups .tpl-tag{font-size:14px; font-weight:700; padding:7px 20px}
   .tpl-tag{border:1px solid var(--border); border-radius:20px; padding:5px 13px; font-size:12.5px;
     cursor:pointer; color:var(--muted); transition:.15s}
   .tpl-tag:hover{border-color:var(--accent); color:var(--accent)}
@@ -632,6 +634,7 @@
           <button class="btn primary" id="tplAdd">＋ 新增模板</button>
         </div>
       </div>
+      <div class="tpl-groups" id="tplGroups"></div>
       <div class="tpl-filter" id="tplFilter"></div>
       <div class="tpl-hint">卡片右上角可「⧉ 复制正文 / ✎ 编辑 / ✕ 删除」，正文支持多行，方便直接复制去发邮件或私信。</div>
       <div class="tpl-list" id="tplList"></div>
@@ -830,6 +833,13 @@
     </div>
     <div class="modal-body">
       <div class="field">
+        <label>板块</label>
+        <select id="tGroup">
+          <option value="develop">开发</option>
+          <option value="activate">激活</option>
+        </select>
+      </div>
+      <div class="field">
         <label>标签</label>
         <input id="tTag" type="text" placeholder="如：Coupon / Gift for review / Collaboration" />
       </div>
@@ -921,6 +931,7 @@ let history = [];                                  // 撤销栈（每次改动�
 const MAX_HIST = 50;
 let tplData = loadTpl();                           // 开发模板库
 let tplFilter = '全部'; let tplSearch=''; let tplEditId=null;
+let tplGroup = 'develop';                          // 模板板块：develop=开发 / activate=激活
 let kbData = loadKb();                              // 知识库
 let kbFilter = '全部'; let kbSearch=''; let kbEditId=null;
 let currentView = 'tasks';                          // 当前视图：tasks / tpl
@@ -1016,9 +1027,10 @@ async function syncTasks(){
 async function syncTemplates(){
   if(!sb) return;
   try{
-    const rows = tplData.map(t=>({id:String(t.id), tag:t.tag, purpose:t.purpose,
+    const rows = tplData.map(t=>({id:String(t.id), grp:t.group||'develop', tag:t.tag, purpose:t.purpose,
       content:t.content, ai_note:t.aiNote||'', updated_at:new Date().toISOString()}));
-    await sb.from('templates').upsert(rows, {onConflict:'id'});
+    const res = await sb.from('templates').upsert(rows, {onConflict:'id'});
+    if(res && res.error){ await sb.from('templates').upsert(rows.map(r=>{const {grp,...rest}=r; return rest;}), {onConflict:'id'}); }
     const {data:ex} = await sb.from('templates').select('id');
     const local = new Set(rows.map(r=>r.id));
     const del = (ex||[]).map(r=>r.id).filter(id=>!local.has(id));
@@ -1071,7 +1083,7 @@ async function initCloud(){
       });
     });
     if(byMonth[ym] && byMonth[ym].length){ data=byMonth[ym]; localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); }
-    if(tpls.length){ tplData=tpls.map(t=>({id:t.id, tag:t.tag, purpose:t.purpose, content:t.content, aiNote:t.ai_note||''}));
+    if(tpls.length){ tplData=tpls.map(t=>({id:t.id, group:t.grp||'develop', tag:t.tag, purpose:t.purpose, content:t.content, aiNote:t.ai_note||''}));
       localStorage.setItem('tpl_lib', JSON.stringify(tplData)); renderTpl(); }
     const plist = pls.map(x=>({id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:x.tag||'日常', done:!!x.done}));
     if(plist.length){ plans=plist; localStorage.setItem('plans', JSON.stringify(plans)); renderCalendar(); }
@@ -1567,15 +1579,15 @@ function toast(msg){const el=$('#toast'); el.textContent=msg; el.classList.add('
 // ---------- 开发模板库 ----------
 function loadTpl(){
   const raw = localStorage.getItem('tpl_lib');
-  if(raw){ try{return JSON.parse(raw);}catch(e){} }
+  if(raw){ try{ return JSON.parse(raw).map(t=>({ ...t, group: t.group || 'develop' })); }catch(e){} }
   return [
-    {id:uid(), tag:'Gift for review', purpose:'礼物置换 / Content·review 红人开发',
+    {id:uid(), group:'develop', tag:'Gift for review', purpose:'礼物置换 / Content·review 红人开发',
       content:'Hi [Name],\n\nThis email is for the person who curates your amazing gift guide! I\'m reaching out to propose a highly-converting, emotionally resonant product that your readers will genuinely love.\n\nWe are "Callie" — a leading D2C brand specializing in premium novelty and gifts: best-sellers like Trendy Necklace, Personalized Gifts, and Custom Name Necklace.\n\nWe are ready to ship you a complimentary sample for review! Since you love exploring new products, we think our pieces will be a great fit for your audience.\n\nIf you\'re interested in featuring us, I\'d love to send you a complimentary sample. Let me know!',
       aiNote:'根据收件人账号定位定制；Gift for review 可对标礼盒 / 带娃 / 亲情类账号'},
-    {id:uid(), tag:'Collaboration', purpose:'内容合作 / 联动洽淡',
+    {id:uid(), group:'develop', tag:'Collaboration', purpose:'内容合作 / 联动洽淡',
       content:'Hi [Name],\n\nI was just reading your guide on [topic] and noticed a recurring mention of products you love (e.g. Top 10 Gifts for Mom). I\'m reaching out because I believe our new personalized gift line will be a perfect addition to your future gift lists.\n\nI represent Callie, a global brand for custom, personalized gifts. We have a strong niche audience looking for meaningful, non-generic gifts.\n\nI\'m Charise, Affiliate Manager at Callie (a leading localized custom gift brand in Europe). I am tracking your content and would love to explore a collaboration.',
       aiNote:'根据对方账号垂类定制；可在开头加入对方指南 / 榜单的具体标题'},
-    {id:uid(), tag:'Coupon', purpose:'专属优惠券合作（含佣金 / Program ID）',
+    {id:uid(), group:'develop', tag:'Coupon', purpose:'专属优惠券合作（含佣金 / Program ID）',
       content:'Hi [Name],\n\nI\'m Charise, Affiliate Manager at Callie (a leading localized custom gift brand in Europe). I am tracking your content.\n\nTo ensure a successful partnership, we are ready to offer you:\n· Exclusive Code: a dedicated 11%-15% off coupon featuring your site name\n· High Payout: 15% base commission on validated coupon sales (AOV €65+)\n· Fast Track: Auto-approval via our Impact Direct Join Link / Program ID\n\nPersonalized gifts are high-margin and fast-selling in the Europe market right now.\n\nIf you\'re open to putting Callie in your Premium / Top Merchant list or newsletter, please share your media kit. Let me know if you\'d like me to set up your exclusive code today!',
       aiNote:'佣金比例 / 客单价 / Program ID 等数据需按实际更新'},
   ];
@@ -1599,18 +1611,22 @@ function tplCardHtml(t){
 }
 function renderTpl(){
   const q=tplSearch.toLowerCase();
-  let list = tplData.filter(t=> (tplFilter==='全部' || t.tag===tplFilter));
+  const inGroup = tplData.filter(t=>(t.group||'develop')===tplGroup);
+  let list = inGroup.filter(t=> (tplFilter==='全部' || t.tag===tplFilter));
   if(q) list = list.filter(t=>(t.tag+' '+t.purpose+' '+t.content+' '+t.aiNote).toLowerCase().includes(q));
-  $('#tplCount').textContent = `共 ${tplData.length} 条`;
-  const tags=['全部', ...new Set(tplData.map(t=>t.tag))];
+  $('#tplCount').textContent = `共 ${inGroup.length} 条`;
+  const gEl=$('#tplGroups');
+  if(gEl) gEl.innerHTML = `<span class="tpl-tag ${tplGroup==='develop'?'active':''}" data-grp="develop">开发</span><span class="tpl-tag ${tplGroup==='activate'?'active':''}" data-grp="activate">激活</span>`;
+  const tags=['全部', ...new Set(inGroup.map(t=>t.tag))];
   $('#tplFilter').innerHTML = tags.map(tg=>`<span class="tpl-tag ${tplFilter===tg?'active':''}" data-tag="${escapeHtml(tg)}">${escapeHtml(tg)}</span>`).join('');
   $('#tplList').innerHTML = list.length? list.map(tplCardHtml).join('')
-    : `<div class="hint" style="grid-column:1/-1">${tplData.length? '没有匹配的模板':'还没有模板，点右上角「＋ 新增模板」开始记录'}</div>`;
+    : `<div class="hint" style="grid-column:1/-1">${inGroup.length? '没有匹配的模板':'该板块还没有模板，点右上角「＋ 新增模板」开始记录'}</div>`;
 }
 function openTplModal(id){
   const t = id? tplData.find(x=>x.id===id) : null;
   tplEditId = id || null;
   $('#tplModalTitle').textContent = id? '编辑模板' : '新增模板';
+  $('#tGroup').value = t? (t.group||'develop') : tplGroup;
   $('#tTag').value = t? t.tag : '';
   $('#tPurpose').value = t? t.purpose : '';
   $('#tContent').value = t? t.content : '';
@@ -1620,13 +1636,14 @@ function openTplModal(id){
 }
 function closeTplModal(){$('#tplModal').classList.remove('show');}
 function saveTplModal(){
+  const group=$('#tGroup').value||'develop';
   const tag=$('#tTag').value.trim()||'未分类';
   const purpose=$('#tPurpose').value.trim();
   const content=$('#tContent').value.trim();
   const aiNote=$('#tAi').value.trim();
   if(!content){ $('#tContent').focus(); return; }
-  if(tplEditId){ const t=tplData.find(x=>x.id===tplEditId); if(t){t.tag=tag;t.purpose=purpose;t.content=content;t.aiNote=aiNote;} }
-  else tplData.push({id:uid(), tag, purpose, content, aiNote});
+  if(tplEditId){ const t=tplData.find(x=>x.id===tplEditId); if(t){t.group=group;t.tag=tag;t.purpose=purpose;t.content=content;t.aiNote=aiNote;} }
+  else tplData.push({id:uid(), group, tag, purpose, content, aiNote});
   saveTpl(); closeTplModal(); renderTpl(); toast('模板已保存 ✓');
 }
 function copyText(text,msg){
@@ -1642,6 +1659,7 @@ function bindTpl(){
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeTplModal(); });
   $('#tplSave').onclick=saveTplModal;
   $('#tplSearch').oninput=e=>{ tplSearch=e.target.value; renderTpl(); };
+  $('#tplGroups').addEventListener('click',e=>{ const el=e.target.closest('.tpl-tag'); if(el){ tplGroup=el.dataset.grp; tplFilter='全部'; renderTpl(); } });
   $('#tplFilter').addEventListener('click',e=>{ const el=e.target.closest('.tpl-tag'); if(el){ tplFilter=el.dataset.tag; renderTpl(); } });
   $('#tplList').addEventListener('click',e=>{
     const btn=e.target.closest('[data-tpl]'); if(!btn) return;
