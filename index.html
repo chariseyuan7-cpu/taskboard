@@ -432,6 +432,9 @@
   .cal-day .cmemo{font-size:11.5px; color:var(--fg); background:rgba(78,161,245,.14);
     border-radius:5px; padding:1px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .cal-day .cmemo.done{text-decoration:line-through; opacity:.6}
+  .chip-edit{font:inherit; font-size:12.5px; border:1px solid var(--accent); border-radius:6px;
+    padding:1px 6px; background:#fff; color:var(--fg); width:180px; max-width:100%}
+  .chip-edit:focus{outline:2px solid var(--accent)}
   .cal-day.selected{border-color:var(--accent); background:rgba(255,122,89,.14)}
   .memo-editor{margin-top:18px; border-top:1px dashed var(--border); padding-top:16px}
   .me-head{display:flex; align-items:center; gap:10px; margin-bottom:10px}
@@ -1225,7 +1228,7 @@ const DDL_STYLE = {bg:'rgba(214,60,60,.16)', fg:'#c0392b'};   // 日历中「任
 function taskInRange(s,e){ return data.filter(t=> t.due && (!s || t.due>=s) && (!e || t.due<=e) ); }
 function subItemsOn(date){
   const out=[];
-  data.forEach(t=>(t.subtasks||[]).forEach(s=>{ if(s.due===date) out.push({pri:t.priority, done:!!s.done, text:s.text}); }));
+  data.forEach(t=>(t.subtasks||[]).forEach(s=>{ if(s.due===date) out.push({id:s.id, pri:t.priority, done:!!s.done, text:s.text}); }));
   return out;
 }
 function subtaskInRange(start,end){
@@ -2201,13 +2204,13 @@ function renderMonthGrid(){
     const ps=visiblePlans(ds); const ts=taskInRange(ds,ds);
     const today=ds===todayStr; const sel = planStart && ds>=planStart && ds<=planEnd;
     const subs=subItemsOn(ds);
-    const items=[...ps.slice(0,3).map(p=>({kind:'plan', tag:p.tag, text:p.text, done:!!p.done})), ...ts.map(t=>({kind:'task', pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', pri:s.pri, done:s.done, text:s.text}))];
+    const items=[...ps.slice(0,3).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done})), ...ts.map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
     const show=items.slice(0,3); const overflow=items.length-show.length;
     const chips = show.map(it=>{
-      if(it.kind==='plan') return `<span class="cmemo ${it.done?'done':''}" style="background:${tagBg(it.tag)};color:${tagColor(it.tag)}">${escapeHtml(it.text)}</span>`;
-      if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cmemo ${it.done?'done':''}" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
+      if(it.kind==='plan') return `<span class="cmemo ${it.done?'done':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${tagBg(it.tag)};color:${tagColor(it.tag)}">${escapeHtml(it.text)}</span>`;
+      if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cmemo ${it.done?'done':''}" data-kind="sub" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
       const st=DDL_STYLE;
-      return `<span class="cmemo ${it.done?'done':''}" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
+      return `<span class="cmemo ${it.done?'done':''}" data-kind="task" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
     }).join('') + (overflow>0? `<span class="cmemo" style="background:rgba(128,145,172,.18);color:#8091ac">+${overflow}</span>`:'');
     const hol=HOLIDAYS_2026.holidays[ds]; const wk=HOLIDAYS_2026.workdays[ds];
     const mkts=mktOn(ds);
@@ -2229,15 +2232,15 @@ function renderWeek(){
     const hol=HOLIDAYS_2026.holidays[ds]; const wk=HOLIDAYS_2026.workdays[ds];
     const today=ds===todayStr;
     const subs=subItemsOn(ds);
-    const items=[...visiblePlans(ds).map(p=>({kind:'plan', tag:p.tag, text:p.text, done:!!p.done})), ...taskInRange(ds,ds).map(t=>({kind:'task', pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', pri:s.pri, done:s.done, text:s.text}))];
+    const items=[...visiblePlans(ds).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done})), ...taskInRange(ds,ds).map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
     const mkts=mktOn(ds);
     let flag = hol? `<span class="cal-flag hol">休·${hol}</span>` : wk? `<span class="cal-flag wk">调班·上班</span>` : '';
     if(mkts.length) flag += mkts.map(n=>`<span class="cal-flag mkt">🎯 ${escapeHtml(n.name)}</span>`).join('');
     const itemHtml = items.length? items.map(it=>{
-      if(it.kind==='plan'){ const st=tagCfg(it.tag); return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.color}">${escapeHtml(it.text)}</span>`; }
-      if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
+      if(it.kind==='plan'){ const st=tagCfg(it.tag); return `<span class="cw-item ${it.done?'done':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.color}">${escapeHtml(it.text)}</span>`; }
+      if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cw-item ${it.done?'done':''}" data-kind="sub" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
       const st=DDL_STYLE;
-      return `<span class="cw-item ${it.done?'done':''}" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
+      return `<span class="cw-item ${it.done?'done':''}" data-kind="task" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
     }).join('') : `<span class="cw-empty">—</span>`;
     html += `<div class="cal-wday ${today?'today':''} ${hol?'holiday':''} ${wk?'workday':''}" data-date="${ds}">
       <div class="cw-head"><span class="cw-date">${d.getDate()}</span><span class="cw-name">周${names[i]}</span>${flag}</div>
@@ -2304,6 +2307,27 @@ function quickRange(q){
   if($('#rangeEnd')) $('#rangeEnd').value=e;
   renderRangeSummary();
 }
+function editCalItem(kind,id,chipEl){
+  if(!chipEl) return;
+  const cur=chipEl.textContent.replace(/^\s*↳\s*/,'').replace(/^\s*📋\s*/,'');
+  const inp=document.createElement('input');
+  inp.type='text'; inp.className='chip-edit'; inp.value=cur;
+  chipEl.replaceWith(inp); inp.focus(); inp.select();
+  let done=false;
+  const commit=()=>{
+    if(done) return; done=true;
+    const v=inp.value.trim();
+    if(v){
+      if(kind==='plan'){ const p=plans.find(x=>x.id===id); if(p) p.text=v; savePlans(); }
+      else if(kind==='task'){ const t=data.find(x=>x.id===id); if(t){ pushHistory(); t.title=v; save(); } }
+      else if(kind==='sub'){ data.forEach(t=>(t.subtasks||[]).forEach(s=>{ if(s.id===id){ pushHistory(); s.text=v; save(); } })); }
+    }
+    render(); renderCalendar(); renderPlanList(); toast('已修改 ✓');
+  };
+  const cancel=()=>{ if(done) return; done=true; renderCalendar(); };
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); commit(); } else if(e.key==='Escape'){ e.preventDefault(); cancel(); } });
+  inp.addEventListener('blur',commit);
+}
 function openPlanEditor(start){
   planStart = start || fmtDate(new Date()); planEnd = planStart;
   $('#planStart').value=planStart; $('#planEnd').value=planEnd;
@@ -2367,8 +2391,14 @@ function bindCal(){
   $('#calToday').onclick=()=>{ if(calMode==='week'){ weekStart=getMonday(new Date()); } else { calYM=new Date().toISOString().slice(0,7); } renderCalendar(); };
   $$('.cal-modes .cal-tag').forEach(b=>b.onclick=()=>{ calMode=b.dataset.mode; if(calMode==='week') weekStart=getMonday(new Date()); renderCalendar(); });
   $('#addPlanBtn').onclick=()=>openPlanEditor(fmtDate(new Date()));
-  $('#calGrid').addEventListener('click',e=>{ const day=e.target.closest('.cal-day'); if(day) openPlanEditor(day.dataset.date); });
-  $('#calWeek').addEventListener('click',e=>{ const day=e.target.closest('.cal-wday'); if(day) openPlanEditor(day.dataset.date); });
+  $('#calGrid').addEventListener('click',e=>{
+    const chip=e.target.closest('[data-kind]'); if(chip){ e.stopPropagation(); editCalItem(chip.dataset.kind, chip.dataset.id, chip); return; }
+    const day=e.target.closest('.cal-day'); if(day) openPlanEditor(day.dataset.date);
+  });
+  $('#calWeek').addEventListener('click',e=>{
+    const chip=e.target.closest('[data-kind]'); if(chip){ e.stopPropagation(); editCalItem(chip.dataset.kind, chip.dataset.id, chip); return; }
+    const day=e.target.closest('.cal-wday'); if(day) openPlanEditor(day.dataset.date);
+  });
   $('#calFilter').addEventListener('click',e=>{ const c=e.target.closest('.cal-tag'); if(c){ memoTagFilter=c.dataset.tag; renderCalendar(); renderRangeSummary(); } });
   $('#meTags').addEventListener('click',e=>{ const c=e.target.closest('.cal-tag'); if(c){ memoNewTag=c.dataset.mt; renderPlanTagPicker(); } });
   $$('.range-quick .cal-tag').forEach(b=>b.onclick=()=>{ quickRange(b.dataset.q); });
