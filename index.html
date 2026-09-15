@@ -58,6 +58,7 @@
   body.readonly .memo-item button, body.readonly #memoList button { pointer-events:none !important; opacity:.55 }
   body.readonly .dy-chk, body.readonly .dy-subrow, body.readonly .dy-tk-title,
   body.readonly #calDay .dy-slot, body.readonly #memoList .memo-item button { pointer-events:none !important; opacity:.55 }
+  body.readonly .tk-edit { pointer-events:none !important; opacity:.6 }
   .sidebar{width:232px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--border);
     position:sticky; top:0; height:100vh; display:flex; flex-direction:column;
     padding:24px 16px 18px; gap:20px}
@@ -252,6 +253,9 @@
     padding:2px 9px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:4px}
   .sub-toggle:hover{background:rgba(78,161,245,.22)}
   .sub-toggle.open{background:rgba(78,161,245,.24)}
+  .edit-toggle{border:none; background:rgba(255,122,89,.14); color:#e2603c; font-size:11.5px; font-weight:700;
+    padding:2px 10px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:4px}
+  .edit-toggle:hover{background:rgba(255,122,89,.28)}
   .subtask{margin-top:9px; padding:10px; background:rgba(47,61,85,.05); border-radius:9px;
     display:flex; flex-direction:column; gap:8px}
   .sub-head{display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--muted)}
@@ -465,6 +469,26 @@
   .dy-ddl{font-size:11.5px; font-weight:700; color:#c0392b; background:rgba(214,60,60,.14);
     border-radius:6px; padding:2px 7px}
   .dy-ddl.over{background:#c0392b; color:#fff}
+  .dy-editbtn{margin-left:auto; font-size:11.5px; font-weight:600; color:var(--accent);
+    background:transparent; border:1px solid var(--border); border-radius:7px; padding:2px 9px; cursor:pointer}
+  .dy-editbtn:hover{border-color:var(--accent); background:rgba(255,122,89,.1)}
+  /* 任务「修改内容」内嵌面板 */
+  .tk-edit{margin-top:10px; background:var(--surface2); border:1px solid var(--border);
+    border-radius:11px; padding:12px 14px; display:flex; flex-direction:column; gap:9px}
+  #calEditHost .tk-edit{margin:14px 0 0; background:var(--surface); border-color:var(--accent)}
+  #calDay .dy-editwrap{margin:0 0 8px}
+  #calDay .dy-editwrap .tk-edit{margin-top:0; background:var(--surface); border-color:var(--accent)}
+  .tk-edit-h{display:flex; align-items:center; gap:10px}
+  .tk-edit-h b{font-size:13.5px}
+  .tk-edit-tip{font-size:11.5px; color:var(--muted)}
+  .tk-edit-title{width:100%; font-size:13.5px; padding:8px 10px; border:1px solid var(--border);
+    border-radius:9px; background:var(--surface); color:var(--fg)}
+  .tk-edit-title:focus{outline:none; border-color:var(--accent)}
+  .tk-edit-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .tk-edit-row label{font-size:12px; color:var(--muted)}
+  .tk-edit-row select, .tk-edit-row input{font-size:12.5px; padding:5px 8px; border:1px solid var(--border);
+    border-radius:8px; background:var(--surface); color:var(--fg)}
+  .tk-edit-ops{display:flex; gap:8px}
   .dy-subrow{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--fg);
     margin-top:5px; padding-left:2px; cursor:pointer}
   .dy-subrow.done{opacity:.55}
@@ -758,6 +782,7 @@
       <div class="cal-grid" id="calGrid"></div>
       <div class="cal-weekview" id="calWeek" style="display:none"></div>
       <div class="cal-dayview" id="calDay" style="display:none"></div>
+      <div id="calEditHost"></div>
       <div class="memo-editor" id="memoEditor" style="display:none">
         <div class="me-head">
           <h3 id="memoEditorTitle">增加计划</h3>
@@ -1024,6 +1049,8 @@ let openCats = new Set([CATS[0].id]);               // 当前展开的分类（�
 let multiMode = false;                             // 多选模式
 let selected = new Set();                          // 被选中的任务 id
 let openSubtasks = new Set();                       // 展开了子任务面板的任务 id
+let editTaskId = null;                              // 任务看板里正在编辑的任务 id
+let calEditTaskId = null;                           // 日历里正在编辑的任务 id
 let doneFilter = 'all';                             // 完成状态筛选：all / done / todo
 let soonFilter = false;                             // 是否只看临期任务
 let taskSearch = '';                                // 任务搜索关键词
@@ -1462,6 +1489,7 @@ function taskHtml(t){
         <span class="pill ${t.priority}">${priLabel}</span>
         ${t.due? `<span class="due ${over?'over':''}">📅 ${t.due}</span>`:''}
         ${subBtn}
+        ${multiMode? '' : `<button class="edit-toggle" data-act="editpanel" title="修改任务内容（标题 / 分类 / 优先级 / 状态 / 截止）">✎ 修改</button>`}
       </div>
       ${openSubtasks.has(t.id)? subtaskEditor(t) : ''}
     </div>
@@ -1473,6 +1501,82 @@ function statusColor(s){
     : s==='暂不进行'? {bg:'rgba(255,176,32,.22)', fg:'#b57b0c'}
     : s==='被封'? {bg:'rgba(90,90,90,.18)', fg:'#5a5a5a'}
     : {bg:'rgba(128,145,172,.2)', fg:'#5b6b80'};
+}
+
+/* ---------- 任务「修改内容」内嵌面板（任务看板 + 日历共用） ---------- */
+function taskEditPanelHtml(t){
+  const cats = CATS.map(c=>`<option value="${c.id}" ${(t.cat||'')===c.id?'selected':''}>${escapeHtml(c.name)}</option>`).join('');
+  return `<div class="tk-edit" data-editid="${t.id}">
+    <div class="tk-edit-h"><b>修改任务内容</b><span class="tk-edit-tip">改完点「保存」</span></div>
+    <input class="tk-edit-title" data-tk="title" type="text" value="${escapeHtml(t.title)}" placeholder="任务内容…" />
+    <div class="tk-edit-row">
+      <label>分类</label><select data-tk="cat">${cats}</select>
+      <label>优先级</label><select data-tk="pri">
+        <option value="high" ${t.priority==='high'?'selected':''}>高</option>
+        <option value="mid" ${t.priority==='mid'?'selected':''}>中</option>
+        <option value="low" ${t.priority==='low'?'selected':''}>低</option>
+      </select>
+      <label>状态</label><select data-tk="status">${STATUSES.map(s=>`<option ${(t.status||'未开始')===s?'selected':''}>${s}</option>`).join('')}</select>
+      <label>截止</label><input data-tk="due" type="date" value="${t.due||''}" />
+    </div>
+    <div class="tk-edit-ops">
+      <button class="btn primary" data-tk="save">保存</button>
+      <button class="btn" data-tk="cancel">取消</button>
+      ${t.due? `<button class="btn" data-tk="cleardue">清空 DDL</button>`:''}
+    </div>
+  </div>`;
+}
+// 在某个容器里挂载面板（任务看板挂在任务行内，日历挂在日历下方）
+function mountTaskEdit(hostEl, id, focus=true){
+  if(!hostEl) return;
+  const t=data.find(x=>x.id===id);
+  const old=hostEl.querySelector('.tk-edit'); if(old) old.remove();
+  if(!t) return;
+  hostEl.insertAdjacentHTML('beforeend', taskEditPanelHtml(t));
+  const panel=hostEl.querySelector('.tk-edit[data-editid="'+id+'"]');
+  if(!panel) return;
+  const titleInp=panel.querySelector('[data-tk="title"]');
+  if(focus){ titleInp.focus(); titleInp.select(); }
+  panel.addEventListener('keydown',e=>{
+    if(e.key==='Enter' && e.target.tagName!=='SELECT'){ e.preventDefault(); applyTaskEdit(panel, id); }
+    else if(e.key==='Escape'){ e.preventDefault(); closeTaskEdit(id); }
+  });
+  panel.addEventListener('click',e=>{
+    const b=e.target.closest('[data-tk]'); if(!b) return;
+    const a=b.dataset.tk;
+    if(a==='save'){ e.preventDefault(); applyTaskEdit(panel, id); }
+    else if(a==='cancel'){ e.preventDefault(); closeTaskEdit(id); }
+    else if(a==='cleardue'){ e.preventDefault(); const d=panel.querySelector('[data-tk="due"]'); d.value=''; d.focus(); }
+  });
+}
+function applyTaskEdit(panel, id){
+  const t=data.find(x=>x.id===id); if(!t) return;
+  const g=k=>panel.querySelector('[data-tk="'+k+'"]');
+  const title=g('title').value.trim();
+  const cat=g('cat').value, pri=g('pri').value, status=g('status').value, due=g('due').value;
+  pushHistory();
+  if(title) t.title=title;
+  if(cat) t.cat=cat;
+  t.priority=pri; t.status=status; t.due=due||'';
+  t.done = status==='已完成';
+  if(editTaskId===id) editTaskId=null;
+  if(calEditTaskId===id) calEditTaskId=null;
+  save(); render(); renderCalendar(); renderPlanList(); renderRangeSummary();
+  toast('任务内容已更新 ✓');
+}
+function closeTaskEdit(id){
+  editTaskId = (editTaskId===id)? null : editTaskId;
+  calEditTaskId = (calEditTaskId===id)? null : calEditTaskId;
+  render(); renderCalendar();
+}
+function openTaskEdit(id){ editTaskId=id; calEditTaskId=null; render(); renderCalendar();
+  const row=document.querySelector('#detail .task[data-id="'+id+'"] .tk-edit');
+  if(row) row.scrollIntoView({behavior:'smooth',block:'center'});
+  setTimeout(()=>{ const i=document.querySelector('#detail .task[data-id="'+id+'"] .tk-edit-title'); if(i){ i.focus(); i.select(); } },80);
+}
+function openCalTaskEdit(id){ calEditTaskId=id; editTaskId=null; renderCalendar();
+  const p=document.querySelector('#calEditHost .tk-edit') || document.querySelector('#calDay .dy-editwrap .tk-edit');
+  if(p) p.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function subtaskEditor(t){
   const subs = t.subtasks || [];
@@ -1543,9 +1647,12 @@ function bind(){
       if(delBtn) delBtn.onclick=()=>{ if(confirm('确定删除这项任务？')){pushHistory(); data=data.filter(t=>t.id!==id); save(); render(); toast('已删除');} };
       const priBtn=row.querySelector('[data-act=pri]');
       if(priBtn) priBtn.onclick=()=>cyclePriority(id);
+      const editBtn=row.querySelector('[data-act=editpanel]');
+      if(editBtn) editBtn.onclick=()=>openTaskEdit(id);
       const dueBtn=row.querySelector('[data-act=due]');
       if(dueBtn) dueBtn.onclick=()=>openDueEditor(row, id);
     }
+    if(editTaskId===id) mountTaskEdit(row.querySelector('.body'), id, false);
     const title=row.querySelector('[data-act=edit]');
     title.addEventListener('blur',()=>{
       const v=title.textContent.trim();
@@ -2255,6 +2362,19 @@ function renderCalendar(){
     const wk=document.querySelector('.cal-week'); if(wk) wk.style.display='none';
     renderDay();
   }
+  renderCalEditHost();
+}
+function renderCalEditHost(){
+  const host=document.getElementById('calEditHost'); if(!host) return;
+  host.innerHTML='';
+  document.querySelectorAll('#calDay .dy-editwrap').forEach(w=>w.remove());
+  if(!calEditTaskId || !data.some(t=>t.id===calEditTaskId)){ calEditTaskId=null; return; }
+  let target=null;
+  if(calMode==='day'){
+    const bar=document.querySelector('#calDay .dy-task[data-id="'+calEditTaskId+'"]');
+    if(bar){ const w=document.createElement('div'); w.className='dy-editwrap'; bar.after(w); target=w; }
+  }
+  mountTaskEdit(target||host, calEditTaskId, false);
 }
 function getMonday(d){ const off=(d.getDay()+6)%7; const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()-off); return fmtDate(dd); }
 function weekLabel(){
@@ -2359,6 +2479,7 @@ function dayTaskBar(t, ds){
           ${STATUSES.map(s=>`<option value="${s}" ${(t.status||'未开始')===s?'selected':''}>${s}</option>`).join('')}
         </select>
         ${t.due? `<span class="dy-ddl ${over?'over':''}">📅 DDL ${t.due.slice(5)}</span>`:''}
+        <button class="dy-editbtn" data-act="edittask" title="修改任务内容">✎ 修改</button>
       </div>
       ${subHtml}
       ${others>0? `<div class="dy-more">另有 ${others} 个子任务（DDL 不在今天）</div>`:''}
@@ -2586,11 +2707,17 @@ function bindCal(){
   $$('.cal-modes .cal-tag').forEach(b=>b.onclick=()=>{ calMode=b.dataset.mode; if(calMode==='week') weekStart=getMonday(new Date()); if(calMode==='day') dayDate=fmtDate(new Date()); renderCalendar(); if(calMode==='day') scrollDayToNow(); });
   $('#addPlanBtn').onclick=()=>openPlanEditor(fmtDate(new Date()));
   $('#calGrid').addEventListener('click',e=>{
-    const chip=e.target.closest('[data-kind]'); if(chip){ e.stopPropagation(); editCalItem(chip.dataset.kind, chip.dataset.id, chip); return; }
+    const chip=e.target.closest('[data-kind]'); if(chip){ e.stopPropagation();
+      if(chip.dataset.kind==='task') openCalTaskEdit(chip.dataset.id);
+      else editCalItem(chip.dataset.kind, chip.dataset.id, chip);
+      return; }
     const day=e.target.closest('.cal-day'); if(day) openPlanEditor(day.dataset.date);
   });
   $('#calWeek').addEventListener('click',e=>{
-    const chip=e.target.closest('[data-kind]'); if(chip){ e.stopPropagation(); editCalItem(chip.dataset.kind, chip.dataset.id, chip); return; }
+    const chip=e.target.closest('[data-kind]'); if(chip){ e.stopPropagation();
+      if(chip.dataset.kind==='task') openCalTaskEdit(chip.dataset.id);
+      else editCalItem(chip.dataset.kind, chip.dataset.id, chip);
+      return; }
     const day=e.target.closest('.cal-wday'); if(day) openPlanEditor(day.dataset.date);
   });
   $('#calDay').addEventListener('click',e=>{
@@ -2599,9 +2726,13 @@ function bindCal(){
       const row=act.closest('.dy-task'); const tid=row&&row.dataset.id;
       if(act.dataset.act==='taskdone'){ e.stopPropagation(); toggle(tid); renderCalendar(); return; }
       if(act.dataset.act==='subdone'){ e.stopPropagation(); toggleSub(tid, act.dataset.sid); renderCalendar(); return; }
+      if(act.dataset.act==='edittask'){ e.stopPropagation(); openCalTaskEdit(tid); return; }
       if(act.dataset.act==='taskstatus') return;   // 交给下面的 change 事件
     }
-    const item=e.target.closest('[data-kind]'); if(item){ e.stopPropagation(); editCalItem(item.dataset.kind, item.dataset.id, item); return; }
+    const item=e.target.closest('[data-kind]'); if(item){ e.stopPropagation();
+      if(item.dataset.kind==='task') openCalTaskEdit(item.dataset.id);
+      else editCalItem(item.dataset.kind, item.dataset.id, item);
+      return; }
     const slot=e.target.closest('.dy-slot'); if(slot){ openPlanEditor(dayDate); const hh=String(slot.dataset.hour||'').padStart(2,'0'); const st=$('#planSt'); if(st && hh) st.value=hh+':00'; }
   });
   $('#calDay').addEventListener('change',e=>{
