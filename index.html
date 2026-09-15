@@ -578,12 +578,15 @@
   .rs-text{flex:1; font-size:13px; word-break:break-word}
   .rs-text.txt-done{text-decoration:line-through; opacity:.6}
   .memo-list{margin-top:16px; display:flex; flex-direction:column; gap:8px; max-height:240px; overflow:auto}
+  .memo-list.editing{max-height:none}
   .memo-list h4{font-size:12.5px; color:var(--muted); margin-bottom:2px}
   .memo-item{display:flex; align-items:center; gap:10px; background:var(--surface2);
     border-radius:8px; padding:8px 11px}
   .memo-item span{flex:1; font-size:13px; word-break:break-word}
   .memo-item button{border:none; background:none; color:var(--muted); cursor:pointer; font-size:14px}
   .memo-item button:hover{color:var(--bad)}
+  .memo-item .memo-editbtn:hover, .memo-item .memo-editbtn.open{color:var(--accent)}
+  #memoList .plan-edit{margin:6px 0 12px; background:var(--surface); border-color:var(--accent)}
   .memo-item .plan-chk{flex:0 0 auto; width:18px; height:18px; border:2px solid var(--border); border-radius:6px;
     cursor:pointer; display:grid; place-items:center; color:#fff; transition:.15s}
   .memo-item .plan-chk:hover{border-color:var(--good)}
@@ -1051,6 +1054,7 @@ let selected = new Set();                          // 被选中的任务 id
 let openSubtasks = new Set();                       // 展开了子任务面板的任务 id
 let editTaskId = null;                              // 任务看板里正在编辑的任务 id
 let calEditTaskId = null;                           // 日历里正在编辑的任务 id
+let editPlanId = null;                              // 计划清单里正在编辑的计划 id
 let doneFilter = 'all';                             // 完成状态筛选：all / done / todo
 let soonFilter = false;                             // 是否只看临期任务
 let taskSearch = '';                                // 任务搜索关键词
@@ -1568,6 +1572,44 @@ function closeTaskEdit(id){
   editTaskId = (editTaskId===id)? null : editTaskId;
   calEditTaskId = (calEditTaskId===id)? null : calEditTaskId;
   render(); renderCalendar();
+}
+/* ---------- 计划（日历备忘）「修改内容」内嵌面板 ---------- */
+function planEditPanelHtml(p){
+  const opts = MEMO_TAGS.map(t=>`<option ${p.tag===t.name?'selected':''}>${escapeHtml(t.name)}</option>`).join('');
+  return `<div class="tk-edit plan-edit" data-planid="${p.id}">
+    <div class="tk-edit-h"><b>修改这条计划</b><span class="tk-edit-tip">内容 / 时间 / 标签都能改，改完点「保存」</span></div>
+    <input class="tk-edit-title" data-pl="text" type="text" value="${escapeHtml(p.text)}" placeholder="计划内容…" />
+    <div class="tk-edit-row">
+      <label>标签</label><select data-pl="tag">${opts}</select>
+      <label>开始</label><input data-pl="start" type="date" value="${p.start}" />
+      <label>结束</label><input data-pl="end" type="date" value="${p.end}" />
+    </div>
+    <div class="tk-edit-row">
+      <label>时间</label><input data-pl="st" type="time" value="${p.st||''}" />
+      <span>~</span><input data-pl="et" type="time" value="${p.et||''}" />
+      <span class="tk-edit-tip">（可留空）</span>
+    </div>
+    <div class="tk-edit-ops">
+      <button class="btn primary" data-pl="save">保存</button>
+      <button class="btn" data-pl="cancel">取消</button>
+      <button class="btn" data-pl="cleartime">清空时间</button>
+    </div>
+  </div>`;
+}
+function applyPlanEdit(){
+  const panel=document.querySelector('#memoList .plan-edit'); if(!panel) return;
+  const p=plans.find(x=>x.id===panel.dataset.planid); if(!p) return;
+  const g=k=>panel.querySelector('[data-pl="'+k+'"]');
+  const text=g('text').value.trim();
+  let s=g('start').value, e=g('end').value;
+  if(!text || !s || !e){ toast('内容和起止日期不能为空'); return; }
+  if(s>e){ const t=s; s=e; e=t; }
+  let st=g('st').value||'', et=g('et').value||'';
+  if(st && et && et<st){ const t=st; st=et; et=t; }
+  p.text=text; p.tag=g('tag').value; p.start=s; p.end=e; p.st=st; p.et=et;
+  editPlanId=null;
+  savePlans(); renderCalendar(); renderPlanList(); renderRangeSummary();
+  toast('计划已更新 ✓');
 }
 function openTaskEdit(id){ editTaskId=id; calEditTaskId=null; render(); renderCalendar();
   const row=document.querySelector('#detail .task[data-id="'+id+'"] .tk-edit');
@@ -2669,13 +2711,14 @@ function renderPlanList(){
   if(pl.length){
     html += `<h4>这一天已有 ${pl.length} 个计划：</h4>` + pl.map(x=>{
       const d = (x.start===x.end ? x.start : `${x.start} ~ ${x.end}`) + (x.st? '  '+x.st+(x.et? '~'+x.et : ''):'');
-      return `<div class="memo-item ${x.done?'done':''}"><span class="plan-chk" data-act="pchk" data-id="${x.id}" title="${x.done?'取消完成':'标记完成'}">${CHECK_SVG}</span><span class="memo-tag" style="background:${tagBg(x.tag)};color:${tagColor(x.tag)}">${x.tag}</span><span class="plan-tx ${x.done?'txt-done':''}">${escapeHtml(x.text)}</span><span class="memo-date">${d}</span><button data-id="${x.id}" title="删除">✕</button></div>`;
+      const row = `<div class="memo-item ${x.done?'done':''}"><span class="plan-chk" data-act="pchk" data-id="${x.id}" title="${x.done?'取消完成':'标记完成'}">${CHECK_SVG}</span><span class="memo-tag" style="background:${tagBg(x.tag)};color:${tagColor(x.tag)}">${x.tag}</span><span class="plan-tx ${x.done?'txt-done':''}">${escapeHtml(x.text)}</span><span class="memo-date">${d}</span><button class="memo-editbtn ${editPlanId===x.id?'open':''}" data-edit="${x.id}" title="修改内容 / 时间 / 标签">✎</button><button data-id="${x.id}" title="删除">✕</button></div>`;
+      return row + (editPlanId===x.id? planEditPanelHtml(x) : '');
     }).join('');
   }
   if(tk.length){
     html += `<h4>这一天 ${tk.length} 个任务（截止）：</h4>` + tk.map(x=>{
       const st=DDL_STYLE;
-      return `<div class="memo-item"><span class="memo-tag" style="background:${st.bg};color:${st.fg};font-weight:700">📋任务</span><span class="${isDone(x)?'txt-done':''}">${escapeHtml(x.title)}</span><span class="memo-date">${x.due}</span></div>`;
+      return `<div class="memo-item"><span class="memo-tag" style="background:${st.bg};color:${st.fg};font-weight:700">📋任务</span><span class="${isDone(x)?'txt-done':''}">${escapeHtml(x.title)}</span><span class="memo-date">${x.due}</span><button class="memo-editbtn" data-edittask="${x.id}" title="修改任务内容（内容 / 优先级 / 状态 / 截止）">✎</button></div>`;
     }).join('');
   }
   if(sl.length){
@@ -2688,6 +2731,7 @@ function renderPlanList(){
     html += `<div class="memo-empty">这一天还没有计划或任务。</div>`;
   }
   $('#memoList').innerHTML = html;
+  $('#memoList').classList.toggle('editing', !!editPlanId);
 }
 function addPlan(){
   const v=$('#planText').value.trim();
@@ -2753,12 +2797,30 @@ function bindCal(){
   $('#memoList').addEventListener('click',e=>{
     const ck=e.target.closest('[data-act=pchk]');
     if(ck){ const p=plans.find(x=>x.id===ck.dataset.id); if(p){ p.done=!p.done; savePlans(); renderCalendar(); renderPlanList(); } return; }
+    const tkBtn=e.target.closest('[data-edittask]');
+    if(tkBtn){ openCalTaskEdit(tkBtn.dataset.edittask); return; }
+    const plSave=e.target.closest('[data-pl="save"]');
+    if(plSave){ applyPlanEdit(); return; }
+    const plCancel=e.target.closest('[data-pl="cancel"]');
+    if(plCancel){ editPlanId=null; renderPlanList(); return; }
+    const plClear=e.target.closest('[data-pl="cleartime"]');
+    if(plClear){ const panel=$('#memoList .plan-edit'); if(panel){ panel.querySelector('[data-pl="st"]').value=''; panel.querySelector('[data-pl="et"]').value=''; } return; }
+    const eb=e.target.closest('[data-edit]');
+    if(eb){ editPlanId = (editPlanId===eb.dataset.edit)? null : eb.dataset.edit; renderPlanList();
+      const p=$('#memoList .plan-edit'); if(p) p.scrollIntoView({behavior:'smooth',block:'nearest'});
+      setTimeout(()=>{ const i=$('#memoList .plan-edit [data-pl="text"]'); if(i){ i.focus(); i.select(); } },80);
+      return; }
     const b=e.target.closest('button[data-id]'); if(!b) return;
     const id=b.dataset.id;
     if(confirm('删除这条计划？')){
       plans=plans.filter(x=>x.id!==id);
       savePlans(); renderCalendar(); renderPlanList(); toast('已删除');
     }
+  });
+  $('#memoList').addEventListener('keydown',e=>{
+    const panel=$('#memoList .plan-edit'); if(!panel || !panel.contains(e.target)) return;
+    if(e.key==='Enter' && e.target.tagName!=='SELECT'){ e.preventDefault(); applyPlanEdit(); }
+    else if(e.key==='Escape'){ e.preventDefault(); editPlanId=null; renderPlanList(); }
   });
 }
 
