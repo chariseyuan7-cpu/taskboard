@@ -587,6 +587,14 @@
   .memo-item button:hover{color:var(--bad)}
   .memo-item .memo-editbtn:hover, .memo-item .memo-editbtn.open{color:var(--accent)}
   #memoList .plan-edit{margin:6px 0 12px; background:var(--surface); border-color:var(--accent)}
+  .schema-fix{background:rgba(255,176,32,.14); border:1px solid rgba(255,176,32,.5); border-radius:11px;
+    padding:12px 14px; display:flex; flex-direction:column; gap:8px}
+  .sf-head{font-size:13px; font-weight:700; color:#b57b0c}
+  .sf-body{font-size:12.5px; color:var(--fg); line-height:1.6}
+  .sf-sql{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 12px;
+    font-size:12px; line-height:1.7; white-space:pre-wrap; word-break:break-word; margin:0;
+    font-family:ui-monospace,Consolas,monospace; color:var(--fg)}
+  .sf-ops{display:flex; gap:8px}
   .memo-item .plan-chk{flex:0 0 auto; width:18px; height:18px; border:2px solid var(--border); border-radius:6px;
     cursor:pointer; display:grid; place-items:center; color:#fff; transition:.15s}
   .memo-item .plan-chk:hover{border-color:var(--good)}
@@ -1055,6 +1063,7 @@ let openSubtasks = new Set();                       // 展开了子任务面板�
 let editTaskId = null;                              // 任务看板里正在编辑的任务 id
 let calEditTaskId = null;                           // 日历里正在编辑的任务 id
 let editPlanId = null;                              // 计划清单里正在编辑的计划 id
+let planSchemaLimited = false;                      // 云端 plans 表缺少 done/时间 字段时的提示开关
 let doneFilter = 'all';                             // 完成状态筛选：all / done / todo
 let soonFilter = false;                             // 是否只看临期任务
 let taskSearch = '';                                // 任务搜索关键词
@@ -1205,7 +1214,11 @@ async function syncPlans(){
     const rows=[];
     plans.forEach(x=>rows.push({id:String(x.id), start:x.start, end:x.end, text:x.text, tag:x.tag||'日常', done:!!x.done, st:x.st||'', et:x.et||'', updated_at:new Date().toISOString()}));
     const res = await sb.from('plans').upsert(rows, {onConflict:'id'});
-    if(res && res.error){ const r2=await sb.from('plans').upsert(rows.map(r=>{const {done,st,et,...rest}=r; return rest;}), {onConflict:'id'}); if(r2 && r2.error) return false; }
+    if(res && res.error){
+      const r2=await sb.from('plans').upsert(rows.map(r=>{const {done,st,et,...rest}=r; return rest;}), {onConflict:'id'});
+      if(r2 && r2.error) return false;
+      planSchemaLimited=true;            // 云端表缺 done/st/et 字段：打勾先只存本机
+    } else planSchemaLimited=false;
     const {data:ex} = await sb.from('plans').select('id');
     const local = new Set(rows.map(r=>r.id));
     const del = (ex||[]).map(r=>r.id).filter(id=>!local.has(id));
@@ -1234,6 +1247,8 @@ async function initCloud(){
     const tasks = tr.data||[]; const tpls = tp.data||[];
     let pls=[];
     try{ const pp=await sb.from('plans').select('*'); pls=pp.data||[]; }catch(e){}
+    // 云端 plans 表若还没有 done 字段，就在日历里提示怎么补（补完会自动消失）
+    if(pls.length && !('done' in pls[0])) planSchemaLimited=true;
     let kbs=[];
     try{ const kk=await sb.from('kb').select('*'); kbs=kk.data||[]; }catch(e){}
     const localById={}; data.forEach(t=>{ localById[t.id]=t; });
@@ -1250,7 +1265,15 @@ async function initCloud(){
     if(byMonth[ym] && byMonth[ym].length){ data=byMonth[ym]; localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); }
     if(tpls.length){ tplData=tpls.map(t=>({id:t.id, group:t.grp||'develop', tag:t.tag, purpose:t.purpose, content:t.content, aiNote:t.ai_note||''}));
       localStorage.setItem('tpl_lib', JSON.stringify(tplData)); renderTpl(); }
-    const plist = pls.map(x=>({id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:x.tag||'日常', done:!!x.done, st:x.st||'', et:x.et||''}));
+    // 云端 plans 表如果还没有 done / st / et 字段，就保留本机已有的值，避免刷新后打勾丢失
+    const planLocal={}; plans.forEach(p=>{ planLocal[p.id]=p; });
+    const plist = pls.map(x=>{
+      const loc=planLocal[x.id]||{};
+      return {id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:x.tag||'日常',
+        done: ('done' in x)? !!x.done : !!loc.done,
+        st:   ('st'   in x)? (x.st||'') : (loc.st||''),
+        et:   ('et'   in x)? (x.et||'') : (loc.et||'')};
+    });
     if(plist.length){ plans=plist; localStorage.setItem('plans', JSON.stringify(plans)); renderCalendar(); }
     if(kbs.length){ kbData=kbs.map(k=>({id:k.id, cat:k.cat||'', title:k.title||'', content:k.content||''}));
       localStorage.setItem('kb_lib', JSON.stringify(kbData)); renderKb(); }
@@ -1574,6 +1597,21 @@ function closeTaskEdit(id){
   render(); renderCalendar();
 }
 /* ---------- 计划（日历备忘）「修改内容」内嵌面板 ---------- */
+const PLAN_FIX_SQL = `alter table plans add column if not exists done boolean default false;
+alter table plans add column if not exists st text;
+alter table plans add column if not exists et text;
+alter table plans add column if not exists "updated_at" timestamptz default now();`;
+function schemaFixNotice(){
+  return `<div class="schema-fix">
+    <div class="sf-head">⚠️ 云端「计划」表还缺「完成 / 时间」字段，打勾目前只保存在本机</div>
+    <div class="sf-body">去 Supabase 左侧 <b>SQL Editor</b> → 粘贴下面这段 → 点 <b>Run</b>，之后打勾和多设备同步就正常了：</div>
+    <pre class="sf-sql" id="sfSql">${PLAN_FIX_SQL}</pre>
+    <div class="sf-ops">
+      <button class="btn primary" id="sfCopy">⧉ 复制这段 SQL</button>
+      <button class="btn" id="sfHide">先隐藏</button>
+    </div>
+  </div>`;
+}
 function planEditPanelHtml(p){
   const opts = MEMO_TAGS.map(t=>`<option ${p.tag===t.name?'selected':''}>${escapeHtml(t.name)}</option>`).join('');
   return `<div class="tk-edit plan-edit" data-planid="${p.id}">
@@ -2706,6 +2744,7 @@ function renderPlanList(){
   const wk = day ? HOLIDAYS_2026.workdays[day] : null;
   const sl = day ? subItemsOn(day) : [];
   let html = '';
+  if(planSchemaLimited) html += schemaFixNotice();
   if(hol){ html += `<div class="memo-note hol">🎉 公共假期：${hol}（放假）</div>`; }
   else if(wk){ html += `<div class="memo-note wk">🟠 调休上班日：今天上班</div>`; }
   if(pl.length){
@@ -2732,6 +2771,8 @@ function renderPlanList(){
   }
   $('#memoList').innerHTML = html;
   $('#memoList').classList.toggle('editing', !!editPlanId);
+  const cp=$('#sfCopy'); if(cp) cp.onclick=()=>copyText(PLAN_FIX_SQL,'SQL 已复制，去 Supabase 粘贴运行即可 ✓');
+  const hd=$('#sfHide'); if(hd) hd.onclick=()=>{ planSchemaLimited=false; renderPlanList(); };
 }
 function addPlan(){
   const v=$('#planText').value.trim();
