@@ -394,6 +394,43 @@
   .kb-main .kb-h{font-size:20px; font-weight:700; margin-bottom:8px}
   .kb-main .kb-m{display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap}
   .kb-main .kb-content{white-space:pre-wrap; word-break:break-word; line-height:1.9; font-size:14.5px; max-width:74ch}
+  .kb-main .kb-content.rich{white-space:normal; max-width:none}
+  /* ---- 富文本编辑器（知识库） ---- */
+  .rt{border:1px solid var(--border); border-radius:11px; overflow:hidden; background:var(--surface); position:relative}
+  .rt-bar{display:flex; gap:4px; flex-wrap:wrap; align-items:center; padding:6px 8px;
+    border-bottom:1px solid var(--border); background:var(--surface2)}
+  .rt-bar button{min-width:30px; height:28px; padding:0 8px; font-size:12.5px; font-weight:600; color:var(--muted);
+    background:var(--surface); border:1px solid var(--border); border-radius:7px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:3px}
+  .rt-bar button:hover{color:var(--accent); border-color:var(--accent)}
+  .rt-bar button.on{background:var(--accent); border-color:var(--accent); color:#fff}
+  .rt-bar .rt-sep{width:1px; height:18px; background:var(--border); margin:0 3px}
+  .rt-area{min-height:200px; max-height:520px; overflow:auto; padding:14px 16px; font-size:14px;
+    line-height:1.8; outline:none; word-break:break-word}
+  .rt-hint{font-size:11.5px; color:var(--muted); margin-top:6px; line-height:1.6}
+  .rt-pop{position:absolute; z-index:20; background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; box-shadow:0 12px 32px rgba(15,23,42,.18); padding:10px 12px;
+    display:flex; flex-direction:column; gap:8px}
+  .rt-pop-t{font-size:12px; color:var(--muted); display:flex; gap:8px; align-items:center}
+  .rt-sw{display:flex; gap:6px; flex-wrap:wrap}
+  .rt-sw i{width:22px; height:22px; border-radius:6px; border:1px solid var(--border); cursor:pointer; display:block}
+  .rt-sw i:hover{transform:scale(1.12)}
+  .rt-grid{display:grid; grid-template-columns:repeat(6,20px); gap:3px}
+  .rt-grid i{width:20px; height:20px; border:1px solid var(--border); border-radius:3px; cursor:pointer; display:block}
+  .rt-grid i.on{background:var(--accent); border-color:var(--accent)}
+  .rt-pop input{font-size:12.5px; padding:6px 9px; border:1px solid var(--border); border-radius:7px;
+    background:var(--surface); color:var(--fg); min-width:230px}
+  .rt-ops{display:flex; gap:8px}
+  /* 富文本正文排版：编辑区与阅读区共用 */
+  .rt-area img, .kb-main .kb-content img{max-width:100%; border-radius:8px; margin:8px 0; display:block}
+  .rt-area table, .kb-main .kb-content table{border-collapse:collapse; width:100%; margin:10px 0; font-size:13.5px}
+  .rt-area td, .rt-area th, .kb-main .kb-content td, .kb-main .kb-content th{
+    border:1px solid var(--border); padding:7px 10px; vertical-align:top}
+  .rt-area th, .kb-main .kb-content th{background:var(--surface2); font-weight:700}
+  .rt-area blockquote, .kb-main .kb-content blockquote{border-left:3px solid var(--accent);
+    margin:10px 0; padding:2px 12px; color:var(--muted)}
+  .rt-area h2, .kb-main .kb-content h2{font-size:18px; margin:12px 0 6px; font-weight:700}
+  .rt-area h3, .kb-main .kb-content h3{font-size:15.5px; margin:10px 0 5px; font-weight:700}
   .kb-main .kb-actions{display:flex; gap:8px; margin-top:22px; flex-wrap:wrap}
   .kb-main .kb-empty{color:var(--muted); font-size:14px}
   .cal-wrap{background:var(--surface); border:1px solid var(--border); border-radius:16px;
@@ -2016,18 +2053,157 @@ function bindTpl(){
 // ---------- 知识库 ----------
 function loadKb(){ const raw=localStorage.getItem('kb_lib'); if(raw){ try{return JSON.parse(raw);}catch(e){} } return []; }
 function saveKb(){ localStorage.setItem('kb_lib', JSON.stringify(kbData)); scheduleSync('kb'); }
+/* ---------- 知识库富文本：工具函数 ---------- */
+const RT_TEXT_COLORS=['#1f2937','#c0392b','#e2603c','#b57b0c','#12a97a','#2f83d6','#7c3aed','#db2777'];
+const RT_BG_COLORS=['#fff3bf','#d3f9d8','#d0ebff','#ffd6e0','#ede9fe','#ffe8cc'];
+let rtSavedRange=null;
+function kbIsHtml(s){ return /<\/?[a-z][\s\S]*?>/i.test(String(s||'')); }
+function kbSanitize(html){
+  let h=String(html||'');
+  h=h.replace(/<\s*(script|style|iframe|object|embed|link|meta|form|input|button)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi,'');
+  h=h.replace(/<\s*(script|style|iframe|object|embed|link|meta|form|input|button)\b[^>]*\/?>/gi,'');
+  h=h.replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,'');
+  h=h.replace(/(href|src)\s*=\s*(?:"|')\s*javascript:[^"']*(?:"|')/gi,'$1="#"');
+  return h;
+}
+function kbPlain(s){
+  const str=String(s||'');
+  if(!kbIsHtml(str)) return str.replace(/\s+/g,' ').trim();
+  const d=document.createElement('div');
+  d.innerHTML=kbSanitize(str).replace(/<img[^>]*>/gi,' [图片] ');
+  return (d.textContent||'').replace(/\s+/g,' ').trim();
+}
+function kbToHtml(content){
+  const s=String(content||'');
+  return kbIsHtml(s)? kbSanitize(s) : escapeHtml(s).replace(/\n/g,'<br>');
+}
+function rtSaveSel(){
+  const area=$('#kbContent'); if(!area) return;
+  const sel=window.getSelection();
+  if(sel && sel.rangeCount){ const r=sel.getRangeAt(0);
+    if(area.contains(r.commonAncestorContainer) || area===r.commonAncestorContainer) rtSavedRange=r.cloneRange(); }
+}
+function rtRestoreSel(){
+  const area=$('#kbContent'); if(!area) return;
+  area.focus();
+  if(rtSavedRange){ const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rtSavedRange); }
+}
+function rtExec(cmd,val){ rtRestoreSel(); rtExecNow(cmd,val); }
+function rtExecNow(cmd,val){
+  try{ document.execCommand(cmd,false,val===undefined?null:val); }catch(e){}
+  rtSaveSel(); rtSyncBar();
+}
+function rtSyncBar(){
+  const bar=$('#rtBar'); if(!bar) return;
+  const cmds=['bold','italic','underline','strikeThrough','insertUnorderedList','insertOrderedList'];
+  bar.querySelectorAll('[data-rt]').forEach(b=>{
+    if(cmds.indexOf(b.dataset.rt)<0) return;
+    let on=false; try{ on=document.queryCommandState(b.dataset.rt); }catch(e){}
+    b.classList.toggle('on', !!on);
+  });
+}
+function rtInsertTable(rows,cols){
+  let html='<table><tbody>';
+  for(let i=0;i<rows;i++){ html+='<tr>'; for(let j=0;j<cols;j++) html+='<td><br></td>'; html+='</tr>'; }
+  html+='</tbody></table><p><br></p>';
+  rtExec('insertHTML', html);
+}
+function rtInsertImageFile(file){
+  if(!file || !/^image\//.test(file.type)) return;
+  const fr=new FileReader();
+  fr.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const maxW=1100; let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+      let url=fr.result;
+      try{
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        url=cv.toDataURL(file.type==='image/png'?'image/png':'image/jpeg',0.9);
+      }catch(e){}
+      rtExec('insertHTML', `<img src="${url}" alt="">`);
+      toast('图片已插入 ✓');
+    };
+    img.onerror=()=>{ rtExec('insertHTML', `<img src="${fr.result}" alt="">`); };
+    img.src=fr.result;
+  };
+  fr.readAsDataURL(file);
+}
+// 复制词条：富文本内容带格式复制，纯文本内容走普通复制
+function kbCopy(k){
+  const text=kbPlain(k.content||'');
+  if(kbIsHtml(k.content) && navigator.clipboard && window.ClipboardItem){
+    try{
+      const item=new ClipboardItem({
+        'text/html': new Blob([kbSanitize(k.content)], {type:'text/html'}),
+        'text/plain': new Blob([text], {type:'text/plain'})
+      });
+      navigator.clipboard.write([item]).then(()=>toast('内容已复制（含格式）✓')).catch(()=>copyText(text,'内容已复制'));
+      return;
+    }catch(e){}
+  }
+  copyText(text,'内容已复制');
+}
+function openRtPop(kind){
+  const pop=$('#rtPop'); if(!pop) return;
+  rtSaveSel();
+  if(kind==='color' || kind==='bg'){
+    const list=kind==='color'? RT_TEXT_COLORS : RT_BG_COLORS;
+    pop.innerHTML = `<div class="rt-pop-t">${kind==='color'?'文字颜色':'背景高亮'}</div>
+      <div class="rt-sw">${list.map(c=>`<i data-color="${c}" style="background:${c}" title="${c}"></i>`).join('')}
+        ${kind==='bg'? '<i data-color="transparent" style="background:#fff" title="去掉高亮"></i>':''}</div>
+      <div class="rt-ops"><button class="btn" data-rtclose="1">关闭</button></div>`;
+    pop.style.display='flex';
+    pop.querySelectorAll('[data-color]').forEach(el=>el.onclick=()=>{
+      rtRestoreSel();
+      if(kind==='color') document.execCommand('foreColor',false,el.dataset.color);
+      else { let ok=false; try{ ok=document.execCommand('hiliteColor',false,el.dataset.color); }catch(e){}
+             if(!ok){ try{ document.execCommand('backColor',false,el.dataset.color); }catch(e){} } }
+      rtSaveSel(); pop.style.display='none';
+    });
+  } else if(kind==='table'){
+    let cells='';
+    for(let r=1;r<=6;r++) for(let c=1;c<=6;c++) cells+=`<i data-r="${r}" data-c="${c}"></i>`;
+    pop.innerHTML = `<div class="rt-pop-t">插入表格 <span id="rtTblTip">滑动选择行列</span></div>
+      <div class="rt-grid">${cells}</div>
+      <div class="rt-ops"><button class="btn" data-rtclose="1">取消</button></div>`;
+    pop.style.display='flex';
+    const grid=pop.querySelector('.rt-grid');
+    grid.addEventListener('mouseover',e=>{ const i=e.target.closest('i'); if(!i) return;
+      const R=+i.dataset.r, C=+i.dataset.c;
+      grid.querySelectorAll('i').forEach(x=>x.classList.toggle('on', +x.dataset.r<=R && +x.dataset.c<=C));
+      const tip=pop.querySelector('#rtTblTip'); if(tip) tip.textContent=`${R} 行 × ${C} 列`;
+    });
+    grid.addEventListener('click',e=>{ const i=e.target.closest('i'); if(!i) return;
+      rtInsertTable(+i.dataset.r, +i.dataset.c); pop.style.display='none'; });
+  } else if(kind==='link'){
+    pop.innerHTML = `<div class="rt-pop-t">插入链接</div>
+      <input id="rtLinkUrl" placeholder="https://…" />
+      <div class="rt-ops"><button class="btn primary" id="rtLinkOk">插入</button>
+        <button class="btn" data-rtclose="1">取消</button></div>`;
+    pop.style.display='flex';
+    const inp=pop.querySelector('#rtLinkUrl'); if(inp) inp.focus();
+    pop.querySelector('#rtLinkOk').onclick=()=>{
+      const u=(inp.value||'').trim(); if(!u) return;
+      rtRestoreSel(); document.execCommand('createLink',false,u); rtSaveSel(); pop.style.display='none';
+    };
+  }
+  const cl=pop.querySelector('[data-rtclose]'); if(cl) cl.onclick=()=>{ pop.style.display='none'; };
+}
 function renderKb(){
   const q=kbSearch.toLowerCase();
   let list = kbData.filter(k=> kbFilter==='全部' || (k.cat||'未分类')===kbFilter);
-  if(q) list = list.filter(k=> ((k.title||'')+' '+(k.cat||'')+' '+(k.content||'')).toLowerCase().includes(q));
+  if(q) list = list.filter(k=> ((k.title||'')+' '+(k.cat||'')+' '+kbPlain(k.content||'')).toLowerCase().includes(q));
   const cats=['全部', ...new Set([...KB_CATS, ...kbData.map(k=>k.cat||'未分类')])];
   $('#kbFilter').innerHTML = cats.map(c=>`<span class="tpl-tag ${kbFilter===c?'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join('');
   if(!kbSelId || !kbData.some(k=>k.id===kbSelId)) kbSelId = list.length? list[0].id : null;
   $('#kbList').innerHTML = list.length? list.map(k=>{
-    const ex=(k.content||'').replace(/\s+/g,' ').trim().slice(0,46);
+    const plain=kbPlain(k.content||'');
+    const ex=plain.slice(0,46);
     return `<div class="kb-item ${k.id===kbSelId?'active':''}" data-id="${k.id}">
       <div class="kb-t"><span class="kb-cat">${escapeHtml(k.cat||'未分类')}</span>${escapeHtml(k.title||'(无标题)')}</div>
-      <div class="kb-c">${escapeHtml(ex||'（无内容）')}${(k.content||'').length>46? '…':''}</div>
+      <div class="kb-c">${escapeHtml(ex||'（无内容）')}${plain.length>46? '…':''}</div>
     </div>`;
   }).join('') : `<div class="hint">${kbData.length? '没有匹配的词条':'还没有内容，点右上角「＋ 新增词条」开始记录'}</div>`;
   renderKbMain();
@@ -2038,7 +2214,7 @@ function renderKbMain(){
   if(!k){ el.innerHTML = `<div class="kb-empty">从左侧选择一条词条查看内容；或点右上角「＋ 新增词条」新建。</div>`; return; }
   el.innerHTML = `<div class="kb-h">${escapeHtml(k.title||'(无标题)')}</div>
     <div class="kb-m"><span class="kb-cat">${escapeHtml(k.cat||'未分类')}</span></div>
-    <div class="kb-content">${escapeHtml(k.content||'')}</div>
+    <div class="kb-content ${kbIsHtml(k.content)?'rich':''}">${kbIsHtml(k.content)? kbSanitize(k.content) : escapeHtml(k.content||'')}</div>
     <div class="kb-actions">
       <button class="btn primary" data-kbm="copy">⧉ 复制内容</button>
       <button class="btn" data-kbm="edit">✎ 编辑</button>
@@ -2056,12 +2232,45 @@ function openKbEditor(id){
       <input id="kbCat" type="text" placeholder="上面点一个，或自己填（如：联盟客分析）" value="${k?escapeHtml(k.cat||''):''}" />
     </div>
     <div class="field"><label>标题</label><input id="kbTitle" type="text" placeholder="标题" value="${k?escapeHtml(k.title||''):''}" /></div>
-    <div class="field"><label>内容</label><textarea id="kbContent" rows="6" placeholder="在这里记录内容…">${k?escapeHtml(k.content||''):''}</textarea></div>
+    <div class="field"><label>内容</label>
+      <div class="rt" id="rt">
+        <div class="rt-bar" id="rtBar">
+          <button type="button" data-rt="bold" title="加粗"><b>B</b></button>
+          <button type="button" data-rt="italic" title="斜体"><i>I</i></button>
+          <button type="button" data-rt="underline" title="下划线"><u>U</u></button>
+          <button type="button" data-rt="strikeThrough" title="删除线"><s>S</s></button>
+          <span class="rt-sep"></span>
+          <button type="button" data-rt="h2" title="大标题">大标题</button>
+          <button type="button" data-rt="h3" title="小标题">小标题</button>
+          <button type="button" data-rt="p" title="普通正文">正文</button>
+          <span class="rt-sep"></span>
+          <button type="button" data-pop="color" title="文字颜色">A<span style="color:#e2603c">▾</span></button>
+          <button type="button" data-pop="bg" title="背景高亮" style="background:#fff3bf">▮</button>
+          <span class="rt-sep"></span>
+          <button type="button" data-rt="insertUnorderedList" title="项目符号">• 列表</button>
+          <button type="button" data-rt="insertOrderedList" title="编号列表">1. 列表</button>
+          <button type="button" data-rt="quote" title="引用">❝ 引用</button>
+          <span class="rt-sep"></span>
+          <button type="button" data-pop="table" title="插入表格">▦ 表格</button>
+          <button type="button" data-rt="image" title="插入图片（也可直接粘贴 / 拖入）">🖼 图片</button>
+          <button type="button" data-pop="link" title="插入链接">🔗 链接</button>
+          <span class="rt-sep"></span>
+          <button type="button" data-rt="removeFormat" title="清除格式">⌫ 清格式</button>
+          <button type="button" data-rt="undo" title="撤销">↺</button>
+          <button type="button" data-rt="redo" title="重做">↻</button>
+        </div>
+        <div class="rt-area" id="kbContent" contenteditable="true"></div>
+        <div class="rt-pop" id="rtPop" style="display:none"></div>
+      </div>
+      <input type="file" id="rtFile" accept="image/*" style="display:none" />
+      <div class="rt-hint">支持加粗 / 颜色 / 高亮 / 标题 / 列表 / 引用 / 表格 / 图片；图片可以直接从截图粘贴或拖进来。</div>
+    </div>
     <button class="btn primary" id="kbSave" style="width:100%">保存</button>`;
   ed.style.display='flex';
   ed.scrollIntoView({behavior:'smooth',block:'nearest'});
   $('#kbSave').onclick=saveKbEntry;
   $('#kbCancel').onclick=closeKbEditor;
+  bindRtEditor(k);
   const pick=$('#kbCatPick');
   const syncChk=()=>{ const v=$('#kbCat').value.trim();
     pick.querySelectorAll('[data-kcat]').forEach(s=>s.classList.toggle('active', s.dataset.kcat===v)); };
@@ -2071,10 +2280,62 @@ function openKbEditor(id){
   setTimeout(()=>{ const t=$('#kbTitle'); if(t) t.focus(); },60);
 }
 function closeKbEditor(){ kbEditId=null; $('#kbEditor').style.display='none'; $('#kbEditor').innerHTML=''; }
+function bindRtEditor(k){
+  const area=$('#kbContent'); if(!area) return;
+  area.innerHTML = k? kbToHtml(k.content) : '';
+  rtSavedRange=null;
+  const bar=$('#rtBar'), pop=$('#rtPop');
+  // 工具条按下时不抢焦点，保证选区不丢
+  bar.addEventListener('mousedown',e=>{ if(e.target.closest('button')) e.preventDefault(); });
+  bar.addEventListener('click',e=>{
+    const btn=e.target.closest('button'); if(!btn) return;
+    if(btn.dataset.pop){ openRtPop(btn.dataset.pop); return; }
+    const cmd=btn.dataset.rt;
+    if(cmd==='h2'||cmd==='h3'||cmd==='p') rtExec('formatBlock','<'+cmd+'>');
+    else if(cmd==='quote') rtExec('formatBlock','<blockquote>');
+    else if(cmd==='image'){ rtSaveSel(); const f=$('#rtFile'); if(f) f.click(); }
+    else rtExec(cmd);
+  });
+  ['keyup','mouseup','blur','input'].forEach(ev=>area.addEventListener(ev,()=>{ rtSaveSel(); rtSyncBar(); }));
+  area.addEventListener('paste',e=>{
+    const cd=e.clipboardData; if(!cd) return;
+    const items=cd.items||[];
+    for(let i=0;i<items.length;i++){
+      const it=items[i];
+      if(it.type && it.type.indexOf('image')===0){
+        const f=it.getAsFile(); if(f){ e.preventDefault(); rtInsertImageFile(f); return; }
+      }
+    }
+    const html=cd.getData('text/html');
+    if(html){
+      e.preventDefault();
+      const clean=kbSanitize(html).replace(/\s(?:id|class)="[^"]*"/gi,'');
+      rtExecNow('insertHTML', clean);
+    }
+  });
+  area.addEventListener('dragover',e=>{ const dt=e.dataTransfer; if(dt && Array.prototype.indexOf.call(dt.types||[],'Files')>=0) e.preventDefault(); });
+  area.addEventListener('drop',e=>{
+    const f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f && /^image\//.test(f.type)){ e.preventDefault(); rtInsertImageFile(f); }
+  });
+  const fi=$('#rtFile');
+  if(fi) fi.onchange=e=>{ const f=e.target.files && e.target.files[0]; if(f) rtInsertImageFile(f); e.target.value=''; };
+  document.addEventListener('mousedown', rtClosePopOnOutside, true);
+}
+function rtClosePopOnOutside(e){
+  const pop=document.getElementById('rtPop'); if(!pop || pop.style.display==='none') return;
+  if(pop.contains(e.target)) return;
+  const bar=document.getElementById('rtBar'); if(bar && bar.contains(e.target)) return;
+  pop.style.display='none';
+}
 function saveKbEntry(){
   const cat=$('#kbCat').value.trim();
   const title=$('#kbTitle').value.trim();
-  const content=$('#kbContent').value.trim();
+  const area=$('#kbContent');
+  let content = area? area.innerHTML : '';
+  content = content.replace(/(?:<br\s*\/?>\s*)+$/i,'').trim();
+  const empty = !kbPlain(content) && !/<(?:img|table)/i.test(content);
+  if(empty) content='';
   if(!title && !content){ toast('请填写标题或内容'); return; }
   let savedId=kbEditId;
   if(kbEditId){ const k=kbData.find(x=>x.id===kbEditId); if(k){ k.cat=cat; k.title=title; k.content=content; savedId=k.id; } }
@@ -2090,7 +2351,7 @@ function bindKb(){
   $('#kbMain').onclick=e=>{
     const btn=e.target.closest('[data-kbm]'); if(!btn) return;
     const act=btn.dataset.kbm;
-    if(act==='copy'){ const k=kbData.find(x=>x.id===kbSelId); if(k) copyText(k.content||'', '内容已复制'); }
+    if(act==='copy'){ const k=kbData.find(x=>x.id===kbSelId); if(k) kbCopy(k); }
     else if(act==='edit'){ openKbEditor(kbSelId); }
     else if(act==='del'){ if(confirm('确定删除这条词条？')){ kbData=kbData.filter(x=>x.id!==kbSelId); kbSelId=null; saveKb(); renderKb(); toast('已删除'); } }
   };
