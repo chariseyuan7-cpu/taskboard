@@ -413,6 +413,32 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .cw-item.done{text-decoration:line-through; opacity:.6}
   .cw-empty{font-size:13px; color:var(--muted)}
+  .cal-dayview{display:block}
+  .dy-head{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px}
+  .dy-date{font-size:18px; font-weight:700}
+  .dy-sub{color:var(--accent); font-size:13px; font-weight:600}
+  .dy-allday{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px}
+  .dy-ad{display:inline-flex; align-items:center; gap:4px; border-radius:7px; padding:4px 10px;
+    font-size:12.5px; cursor:pointer}
+  .dy-grid{position:relative; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--surface)}
+  .dy-row{display:flex; height:56px; border-bottom:1px solid var(--surface2)}
+  .dy-row:last-child{border-bottom:none}
+  .dy-h{width:64px; flex:0 0 auto; text-align:right; padding:2px 10px 0 0; font-size:11.5px;
+    color:var(--muted); font-variant-numeric:tabular-nums}
+  .dy-slot{flex:1; border-left:1px solid var(--surface2); cursor:pointer}
+  .dy-slot:hover{background:rgba(255,122,89,.06)}
+  .dy-events{position:absolute; left:64px; right:8px; top:0; bottom:0; pointer-events:none}
+  .dy-ev{position:absolute; left:0; right:0; border-radius:7px; padding:4px 8px; overflow:hidden;
+    pointer-events:auto; cursor:pointer}
+  .dy-ev.done{opacity:.6}
+  .dy-ev.done .dy-ev-t{text-decoration:line-through}
+  .dy-ev-t{font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .dy-ev-g{font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .dy-now{position:absolute; left:64px; right:0; border-top:2px solid #f45d74; z-index:5; pointer-events:none}
+  .dy-now::before{content:''; position:absolute; left:-4px; top:-5px; width:8px; height:8px;
+    border-radius:50%; background:#f45d74}
+  .dy-now-t{position:absolute; left:-58px; top:-8px; width:52px; text-align:right; font-size:11px;
+    font-weight:700; color:#f45d74; font-variant-numeric:tabular-nums}
   .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px}
   .cal-day{min-height:92px; background:var(--surface2); border:1px solid var(--border); border-radius:11px;
     padding:8px; cursor:pointer; transition:.15s; display:flex; flex-direction:column; gap:4px; overflow:hidden}
@@ -685,6 +711,7 @@
         <div class="cal-modes">
           <button class="cal-tag" data-mode="month" title="月视图">月</button>
           <button class="cal-tag" data-mode="week" title="周视图">周</button>
+          <button class="cal-tag" data-mode="day" title="日视图（时间轴）">日</button>
         </div>
         <div class="spacer"></div>
         <button class="btn primary" id="addPlanBtn">＋ 增加计划</button>
@@ -694,6 +721,7 @@
       <div class="cal-week"><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span></div>
       <div class="cal-grid" id="calGrid"></div>
       <div class="cal-weekview" id="calWeek" style="display:none"></div>
+      <div class="cal-dayview" id="calDay" style="display:none"></div>
       <div class="memo-editor" id="memoEditor" style="display:none">
         <div class="me-head">
           <h3 id="memoEditorTitle">增加计划</h3>
@@ -703,6 +731,11 @@
         <div class="me-dates">
           <label>开始</label><input type="date" id="planStart" />
           <label>结束</label><input type="date" id="planEnd" />
+        </div>
+        <div class="me-dates">
+          <label>时间</label><input type="time" id="planSt" />
+          <span>~</span><input type="time" id="planEt" />
+          <span style="color:var(--muted);font-size:12px">（可留空）</span>
         </div>
         <div class="me-input">
           <textarea id="planText" rows="3" placeholder="写点什么…（Enter 添加计划）"></textarea>
@@ -975,6 +1008,7 @@ let plans = loadPlans();                            // 日历计划：[{id,start
 let calYM = new Date().toISOString().slice(0,7);    // 日历当前显示的月份
 let calMode = 'month';                               // 日历视图：month / week
 let weekStart = getMonday(new Date());               // 周视图当前周（周一）
+let dayDate = fmtDate(new Date());                   // 日视图当前日期
 let mktNodes = loadMkt();                            // 营销节点：{ 'YYYY-MM-DD': '名称' }
 let planStart = ''; let planEnd = '';               // 正在编辑的计划起止
 let memoTagFilter = '全部';                          // 备忘标签筛选
@@ -1102,9 +1136,9 @@ async function syncPlans(){
   if(!sb) return false;
   try{
     const rows=[];
-    plans.forEach(x=>rows.push({id:String(x.id), start:x.start, end:x.end, text:x.text, tag:x.tag||'日常', done:!!x.done, updated_at:new Date().toISOString()}));
+    plans.forEach(x=>rows.push({id:String(x.id), start:x.start, end:x.end, text:x.text, tag:x.tag||'日常', done:!!x.done, st:x.st||'', et:x.et||'', updated_at:new Date().toISOString()}));
     const res = await sb.from('plans').upsert(rows, {onConflict:'id'});
-    if(res && res.error){ const r2=await sb.from('plans').upsert(rows.map(r=>{const {done,...rest}=r; return rest;}), {onConflict:'id'}); if(r2 && r2.error) return false; }
+    if(res && res.error){ const r2=await sb.from('plans').upsert(rows.map(r=>{const {done,st,et,...rest}=r; return rest;}), {onConflict:'id'}); if(r2 && r2.error) return false; }
     const {data:ex} = await sb.from('plans').select('id');
     const local = new Set(rows.map(r=>r.id));
     const del = (ex||[]).map(r=>r.id).filter(id=>!local.has(id));
@@ -1149,7 +1183,7 @@ async function initCloud(){
     if(byMonth[ym] && byMonth[ym].length){ data=byMonth[ym]; localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); }
     if(tpls.length){ tplData=tpls.map(t=>({id:t.id, group:t.grp||'develop', tag:t.tag, purpose:t.purpose, content:t.content, aiNote:t.ai_note||''}));
       localStorage.setItem('tpl_lib', JSON.stringify(tplData)); renderTpl(); }
-    const plist = pls.map(x=>({id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:x.tag||'日常', done:!!x.done}));
+    const plist = pls.map(x=>({id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:x.tag||'日常', done:!!x.done, st:x.st||'', et:x.et||''}));
     if(plist.length){ plans=plist; localStorage.setItem('plans', JSON.stringify(plans)); renderCalendar(); }
     if(kbs.length){ kbData=kbs.map(k=>({id:k.id, cat:k.cat||'', title:k.title||'', content:k.content||''}));
       localStorage.setItem('kb_lib', JSON.stringify(kbData)); renderKb(); }
@@ -2130,7 +2164,7 @@ function loadPlans(){
     const raw2=localStorage.getItem('memos');
     if(raw2){ try{ const obj=JSON.parse(raw2); Object.keys(obj).forEach(d=>(obj[d]||[]).forEach(m=>arr.push({id:m.id, start:d, end:d, text:m.text, tag:m.tag||'日常'}))); }catch(e){} }
   }
-  return arr.map(p=>({id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text, tag:p.tag||'日常', done:!!p.done}));
+  return arr.map(p=>({id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text, tag:p.tag||'日常', done:!!p.done, st:p.st||'', et:p.et||''}));
 }
 function savePlans(){ localStorage.setItem('plans', JSON.stringify(plans)); scheduleSync('plans'); }
 function loadMkt(){
@@ -2170,14 +2204,20 @@ function renderCalendar(){
   renderTagFilter();
   if(calMode==='month'){
     $('#calTitle').textContent = monthLabel(calYM);
-    $('#calGrid').style.display='grid'; $('#calWeek').style.display='none';
+    $('#calGrid').style.display='grid'; $('#calWeek').style.display='none'; $('#calDay').style.display='none';
     const wk=document.querySelector('.cal-week'); if(wk) wk.style.display='grid';
     renderMonthGrid();
-  } else {
+  } else if(calMode==='week'){
     $('#calTitle').textContent = weekLabel();
-    $('#calGrid').style.display='none'; $('#calWeek').style.display='grid';
+    $('#calGrid').style.display='none'; $('#calWeek').style.display='grid'; $('#calDay').style.display='none';
     const wk=document.querySelector('.cal-week'); if(wk) wk.style.display='none';
     renderWeek();
+  } else {
+    const d=new Date(dayDate+'T00:00:00');
+    $('#calTitle').textContent = `${d.getMonth()+1}月${d.getDate()}日`;
+    $('#calGrid').style.display='none'; $('#calWeek').style.display='none'; $('#calDay').style.display='block';
+    const wk=document.querySelector('.cal-week'); if(wk) wk.style.display='none';
+    renderDay();
   }
 }
 function getMonday(d){ const off=(d.getDay()+6)%7; const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()-off); return fmtDate(dd); }
@@ -2185,8 +2225,74 @@ function weekLabel(){
   const w0=new Date(weekStart+'T00:00:00'); const w1=new Date(w0); w1.setDate(w1.getDate()+6);
   return `${w0.getMonth()+1}月${w0.getDate()}日 ~ ${w1.getMonth()+1}月${w1.getDate()}日`;
 }
+function renderDay(){
+  const ds=dayDate, HOUR=56;
+  const d=new Date(ds+'T00:00:00');
+  const names=['日','一','二','三','四','五','六'];
+  const isToday = ds===fmtDate(new Date());
+  const hol=HOLIDAYS_2026.holidays[ds]; const wk=HOLIDAYS_2026.workdays[ds]; const mkts=mktOn(ds);
+  const pl = visiblePlans(ds);
+  const timed = pl.filter(p=>p.st).slice().sort((a,b)=>a.st.localeCompare(b.st));
+  const untimed = pl.filter(p=>!p.st);
+  const tasks = taskInRange(ds,ds);
+  // 时间轴范围：默认 06:00~23:00，有更早/更晚的日程时自动扩展
+  let HH0=6, HH1=23;
+  timed.forEach(p=>{ const h=+p.st.split(':')[0]; if(h<HH0) HH0=h;
+    if(p.et){ const eh=+p.et.split(':')[0]; if(eh>HH1) HH1=eh; } else if(h>HH1) HH1=h; });
+  const nowD=new Date(); if(ds===fmtDate(nowD)){ const nh=nowD.getHours(); if(nh<HH0) HH0=nh; if(nh>HH1) HH1=nh; }
+  HH0=Math.max(0,HH0); HH1=Math.min(23,HH1);
+  let flags='';
+  if(hol) flags += `<span class="cal-flag hol">休·${escapeHtml(hol)}</span>`;
+  else if(wk) flags += `<span class="cal-flag wk">调班·上班</span>`;
+  flags += mkts.map(n=>`<span class="cal-flag mkt">🎯 ${escapeHtml(n.name)}</span>`).join('');
+  const subs = subItemsOn(ds);
+  const adItems=[...untimed.map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done})),
+                 ...tasks.map(t=>({kind:'task', id:t.id, text:t.title, done:isDone(t)})),
+                 ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, text:s.text, done:s.done}))];
+  const adHtml = adItems.length? `<div class="dy-allday">${adItems.map(it=>{
+    let bg, fg, icon='';
+    if(it.kind==='plan'){ const c=tagCfg(it.tag); bg=c.bg; fg=c.color; }
+    else if(it.kind==='sub'){ const c=priStyle(it.pri); bg=c.bg; fg=c.fg; icon='↳ '; }
+    else { bg=DDL_STYLE.bg; fg=DDL_STYLE.fg; icon='📋 '; }
+    return `<span class="dy-ad ${it.done?'txt-done':''}" data-kind="${it.kind}" data-id="${it.id}" data-text="${escapeHtml(it.text)}" title="点击修改内容" style="background:${bg};color:${fg}">${icon}${escapeHtml(it.text)}</span>`;
+  }).join('')}</div>` : '';
+  let rows='';
+  for(let h=HH0; h<=HH1; h++){ rows += `<div class="dy-row"><span class="dy-h">${String(h).padStart(2,'0')}:00</span><div class="dy-slot" data-hour="${h}"></div></div>`; }
+  const evs = timed.map(p=>{
+    const sp=p.st.split(':').map(Number); let dur=60;
+    if(p.et){ const ep=p.et.split(':').map(Number); dur=Math.max(30,(ep[0]*60+ep[1])-(sp[0]*60+sp[1])); }
+    const top=((sp[0]-HH0)*60+sp[1])/60*HOUR;
+    const hgt=Math.max(24, dur/60*HOUR-4);
+    const c=tagCfg(p.tag);
+    return `<div class="dy-ev ${p.done?'done':''}" data-kind="plan" data-id="${p.id}" data-text="${escapeHtml(p.text)}" title="点击修改内容" style="top:${top}px;height:${hgt}px;background:${c.bg};border-left:3px solid ${c.color}">
+      <div class="dy-ev-t">${escapeHtml(p.text)}</div>
+      <div class="dy-ev-g">${p.st}${p.et? '-'+p.et:''} · ${escapeHtml(p.tag)}</div>
+    </div>`;
+  }).join('');
+  let nowHtml='';
+  if(isToday){ const n=new Date(); const mins=n.getHours()*60+n.getMinutes();
+    if(mins>=HH0*60 && mins<=HH1*60){
+      const lbl=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+      nowHtml=`<div class="dy-now" style="top:${(mins-HH0*60)/60*HOUR}px"><span class="dy-now-t">${lbl}</span></div>`; } }
+  $('#calDay').innerHTML = `
+    <div class="dy-head">
+      <span class="dy-date">${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 星期${names[d.getDay()]}</span>
+      ${isToday? '<span class="dy-sub">今天</span>':''}
+      ${flags}
+    </div>
+    ${adHtml}
+    <div class="dy-grid" style="height:${(HH1-HH0+1)*HOUR}px">
+      ${rows}
+      <div class="dy-events">${evs}</div>
+      ${nowHtml}
+    </div>`;
+}
 function renderCalModeToggle(){
   $$('.cal-modes .cal-tag').forEach(b=>b.classList.toggle('active', b.dataset.mode===calMode));
+}
+function scrollDayToNow(){
+  const el = document.querySelector('#calDay .dy-now') || document.querySelector('#calDay .dy-ev');
+  if(el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'});
 }
 function renderMonthGrid(){
   const y=+calYM.slice(0,4), m=+calYM.slice(5,7);
@@ -2204,10 +2310,10 @@ function renderMonthGrid(){
     const ps=visiblePlans(ds); const ts=taskInRange(ds,ds);
     const today=ds===todayStr; const sel = planStart && ds>=planStart && ds<=planEnd;
     const subs=subItemsOn(ds);
-    const items=[...ps.slice(0,3).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done})), ...ts.map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
+    const items=[...ps.slice(0,3).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, tm:(p.st? (p.et&&p.et!==p.st? p.st+'-'+p.et : p.st):'')})), ...ts.map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
     const show=items.slice(0,3); const overflow=items.length-show.length;
     const chips = show.map(it=>{
-      if(it.kind==='plan') return `<span class="cmemo ${it.done?'done':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${tagBg(it.tag)};color:${tagColor(it.tag)}">${escapeHtml(it.text)}</span>`;
+      if(it.kind==='plan') return `<span class="cmemo ${it.done?'done':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${tagBg(it.tag)};color:${tagColor(it.tag)}">${it.tm? escapeHtml(it.tm)+' ':''}${escapeHtml(it.text)}</span>`;
       if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cmemo ${it.done?'done':''}" data-kind="sub" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
       const st=DDL_STYLE;
       return `<span class="cmemo ${it.done?'done':''}" data-kind="task" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
@@ -2232,12 +2338,12 @@ function renderWeek(){
     const hol=HOLIDAYS_2026.holidays[ds]; const wk=HOLIDAYS_2026.workdays[ds];
     const today=ds===todayStr;
     const subs=subItemsOn(ds);
-    const items=[...visiblePlans(ds).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done})), ...taskInRange(ds,ds).map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
+    const items=[...visiblePlans(ds).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, tm:(p.st? (p.et&&p.et!==p.st? p.st+'-'+p.et : p.st):'')})), ...taskInRange(ds,ds).map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
     const mkts=mktOn(ds);
     let flag = hol? `<span class="cal-flag hol">休·${hol}</span>` : wk? `<span class="cal-flag wk">调班·上班</span>` : '';
     if(mkts.length) flag += mkts.map(n=>`<span class="cal-flag mkt">🎯 ${escapeHtml(n.name)}</span>`).join('');
     const itemHtml = items.length? items.map(it=>{
-      if(it.kind==='plan'){ const st=tagCfg(it.tag); return `<span class="cw-item ${it.done?'done':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.color}">${escapeHtml(it.text)}</span>`; }
+      if(it.kind==='plan'){ const st=tagCfg(it.tag); return `<span class="cw-item ${it.done?'done':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.color}">${it.tm? escapeHtml(it.tm)+' ':''}${escapeHtml(it.text)}</span>`; }
       if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cw-item ${it.done?'done':''}" data-kind="sub" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
       const st=DDL_STYLE;
       return `<span class="cw-item ${it.done?'done':''}" data-kind="task" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
@@ -2309,9 +2415,18 @@ function quickRange(q){
 }
 function editCalItem(kind,id,chipEl){
   if(!chipEl) return;
-  const cur=chipEl.textContent.replace(/^\s*↳\s*/,'').replace(/^\s*📋\s*/,'');
+  const cur = (chipEl.dataset.text!=null ? chipEl.dataset.text
+              : chipEl.textContent.replace(/^\s*↳\s*/,'').replace(/^\s*📋\s*/,'')).trim();
   const inp=document.createElement('input');
   inp.type='text'; inp.className='chip-edit'; inp.value=cur;
+  // 日视图时间轴里的事件块是绝对定位的，就地编辑时保持同一位置
+  const layer=chipEl.closest('.dy-events');
+  if(layer){
+    const r=chipEl.getBoundingClientRect(), lr=layer.getBoundingClientRect();
+    inp.style.position='absolute'; inp.style.left='0px'; inp.style.right='0px';
+    inp.style.top=(r.top-lr.top)+'px'; inp.style.height=Math.max(26,r.height)+'px';
+    inp.style.pointerEvents='auto'; inp.style.zIndex='9';
+  }
   chipEl.replaceWith(inp); inp.focus(); inp.select();
   let done=false;
   const commit=()=>{
@@ -2331,6 +2446,7 @@ function editCalItem(kind,id,chipEl){
 function openPlanEditor(start){
   planStart = start || fmtDate(new Date()); planEnd = planStart;
   $('#planStart').value=planStart; $('#planEnd').value=planEnd;
+  $('#planSt').value=''; $('#planEt').value='';
   renderCalendar();
   $('#memoEditorTitle').textContent = '增加计划 · '+planStart;
   renderPlanTagPicker(); renderPlanList();
@@ -2345,7 +2461,7 @@ function closePlanEditor(){
 }
 function renderPlanList(){
   const day = planStart;
-  const pl = day ? visiblePlans(day) : [];
+  const pl = day ? visiblePlans(day).slice().sort((a,b)=>(a.st||'99:99').localeCompare(b.st||'99:99')) : [];
   const tk = day ? taskInRange(day, day) : [];
   const hol = day ? HOLIDAYS_2026.holidays[day] : null;
   const wk = day ? HOLIDAYS_2026.workdays[day] : null;
@@ -2355,7 +2471,7 @@ function renderPlanList(){
   else if(wk){ html += `<div class="memo-note wk">🟠 调休上班日：今天上班</div>`; }
   if(pl.length){
     html += `<h4>这一天已有 ${pl.length} 个计划：</h4>` + pl.map(x=>{
-      const d = x.start===x.end ? x.start : `${x.start} ~ ${x.end}`;
+      const d = (x.start===x.end ? x.start : `${x.start} ~ ${x.end}`) + (x.st? '  '+x.st+(x.et? '~'+x.et : ''):'');
       return `<div class="memo-item ${x.done?'done':''}"><span class="plan-chk" data-act="pchk" data-id="${x.id}" title="${x.done?'取消完成':'标记完成'}">${CHECK_SVG}</span><span class="memo-tag" style="background:${tagBg(x.tag)};color:${tagColor(x.tag)}">${x.tag}</span><span class="plan-tx ${x.done?'txt-done':''}">${escapeHtml(x.text)}</span><span class="memo-date">${d}</span><button data-id="${x.id}" title="删除">✕</button></div>`;
     }).join('');
   }
@@ -2381,15 +2497,17 @@ function addPlan(){
   let s=$('#planStart').value, e=$('#planEnd').value;
   if(!v || !s || !e){ $('#planText').focus(); toast('请填写内容与起止日期'); return; }
   if(s>e){ const t=s; s=e; e=t; }
-  plans.push({id:uid(), start:s, end:e, text:v, tag:memoNewTag, done:false});
+  let st=$('#planSt').value||'', et=$('#planEt').value||'';
+  if(st && et && et<st){ const t=st; st=et; et=t; }
+  plans.push({id:uid(), start:s, end:e, text:v, tag:memoNewTag, done:false, st, et});
   savePlans(); renderCalendar(); renderPlanList();
   $('#planText').value=''; $('#planText').focus(); toast('已添加计划 ✓');
 }
 function bindCal(){
-  $('#calPrev').onclick=()=>{ if(calMode==='week'){ const d=new Date(weekStart+'T00:00:00'); d.setDate(d.getDate()-7); weekStart=fmtDate(d); } else { calYM=shiftYM(calYM,-1); } renderCalendar(); };
-  $('#calNext').onclick=()=>{ if(calMode==='week'){ const d=new Date(weekStart+'T00:00:00'); d.setDate(d.getDate()+7); weekStart=fmtDate(d); } else { calYM=shiftYM(calYM,1); } renderCalendar(); };
-  $('#calToday').onclick=()=>{ if(calMode==='week'){ weekStart=getMonday(new Date()); } else { calYM=new Date().toISOString().slice(0,7); } renderCalendar(); };
-  $$('.cal-modes .cal-tag').forEach(b=>b.onclick=()=>{ calMode=b.dataset.mode; if(calMode==='week') weekStart=getMonday(new Date()); renderCalendar(); });
+  $('#calPrev').onclick=()=>{ if(calMode==='day'){ const d=new Date(dayDate+'T00:00:00'); d.setDate(d.getDate()-1); dayDate=fmtDate(d); } else if(calMode==='week'){ const d=new Date(weekStart+'T00:00:00'); d.setDate(d.getDate()-7); weekStart=fmtDate(d); } else { calYM=shiftYM(calYM,-1); } renderCalendar(); };
+  $('#calNext').onclick=()=>{ if(calMode==='day'){ const d=new Date(dayDate+'T00:00:00'); d.setDate(d.getDate()+1); dayDate=fmtDate(d); } else if(calMode==='week'){ const d=new Date(weekStart+'T00:00:00'); d.setDate(d.getDate()+7); weekStart=fmtDate(d); } else { calYM=shiftYM(calYM,1); } renderCalendar(); };
+  $('#calToday').onclick=()=>{ if(calMode==='day'){ dayDate=fmtDate(new Date()); } else if(calMode==='week'){ weekStart=getMonday(new Date()); } else { calYM=new Date().toISOString().slice(0,7); } renderCalendar(); };
+  $$('.cal-modes .cal-tag').forEach(b=>b.onclick=()=>{ calMode=b.dataset.mode; if(calMode==='week') weekStart=getMonday(new Date()); if(calMode==='day') dayDate=fmtDate(new Date()); renderCalendar(); if(calMode==='day') scrollDayToNow(); });
   $('#addPlanBtn').onclick=()=>openPlanEditor(fmtDate(new Date()));
   $('#calGrid').addEventListener('click',e=>{
     const chip=e.target.closest('[data-kind]'); if(chip){ e.stopPropagation(); editCalItem(chip.dataset.kind, chip.dataset.id, chip); return; }
@@ -2398,6 +2516,10 @@ function bindCal(){
   $('#calWeek').addEventListener('click',e=>{
     const chip=e.target.closest('[data-kind]'); if(chip){ e.stopPropagation(); editCalItem(chip.dataset.kind, chip.dataset.id, chip); return; }
     const day=e.target.closest('.cal-wday'); if(day) openPlanEditor(day.dataset.date);
+  });
+  $('#calDay').addEventListener('click',e=>{
+    const item=e.target.closest('[data-kind]'); if(item){ e.stopPropagation(); editCalItem(item.dataset.kind, item.dataset.id, item); return; }
+    const slot=e.target.closest('.dy-slot'); if(slot){ openPlanEditor(dayDate); const hh=String(slot.dataset.hour||'').padStart(2,'0'); const st=$('#planSt'); if(st && hh) st.value=hh+':00'; }
   });
   $('#calFilter').addEventListener('click',e=>{ const c=e.target.closest('.cal-tag'); if(c){ memoTagFilter=c.dataset.tag; renderCalendar(); renderRangeSummary(); } });
   $('#meTags').addEventListener('click',e=>{ const c=e.target.closest('.cal-tag'); if(c){ memoNewTag=c.dataset.mt; renderPlanTagPicker(); } });
