@@ -344,6 +344,8 @@
     cursor:pointer; color:var(--muted); transition:.15s}
   .tpl-tag:hover{border-color:var(--accent); color:var(--accent)}
   .tpl-tag.active{background:var(--accent); color:#fff; border-color:var(--accent)}
+  .kb-catpick{display:flex; gap:7px; flex-wrap:wrap; margin-bottom:8px}
+  .kb-catpick .tpl-tag{font-size:12px; padding:4px 12px}
   .tpl-hint{font-size:12px; color:var(--muted); margin-bottom:14px}
   .tpl-list{display:grid; grid-template-columns:1fr 1fr; gap:14px}
   @media(max-width:860px){.tpl-list{grid-template-columns:1fr}}
@@ -1077,6 +1079,8 @@ let tplFilter = '全部'; let tplSearch=''; let tplEditId=null;
 let tplGroup = 'develop';                          // 模板板块：develop=开发 / activate=激活
 let kbData = loadKb();                              // 知识库
 let kbFilter = '全部'; let kbSearch=''; let kbEditId=null;
+// 知识库预设分类（点一下即可选用，也仍可自己填）
+const KB_CATS = ['联盟客分析','联盟平台','竞品分析','社媒','红人','流程','公司'];
 let kbSelId = null;                                 // 知识库当前选中的词条
 let kbSideW = parseInt(localStorage.getItem('kb_side_w'),10) || 330;   // 知识库左栏宽度
 let currentView = 'tasks';                          // 当前视图：tasks / tpl
@@ -2016,7 +2020,7 @@ function renderKb(){
   const q=kbSearch.toLowerCase();
   let list = kbData.filter(k=> kbFilter==='全部' || (k.cat||'未分类')===kbFilter);
   if(q) list = list.filter(k=> ((k.title||'')+' '+(k.cat||'')+' '+(k.content||'')).toLowerCase().includes(q));
-  const cats=['全部', ...new Set(kbData.map(k=>k.cat||'未分类'))];
+  const cats=['全部', ...new Set([...KB_CATS, ...kbData.map(k=>k.cat||'未分类')])];
   $('#kbFilter').innerHTML = cats.map(c=>`<span class="tpl-tag ${kbFilter===c?'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join('');
   if(!kbSelId || !kbData.some(k=>k.id===kbSelId)) kbSelId = list.length? list[0].id : null;
   $('#kbList').innerHTML = list.length? list.map(k=>{
@@ -2047,7 +2051,10 @@ function openKbEditor(id){
   const ed=$('#kbEditor');
   ed.innerHTML = `
     <div class="me-head"><h3>${id?'编辑词条':'新增词条'}</h3><button class="btn" id="kbCancel">取消</button></div>
-    <div class="field"><label>分类</label><input id="kbCat" type="text" placeholder="如：联盟客 / 红人 / 平台 / 流程" value="${k?escapeHtml(k.cat||''):''}" /></div>
+    <div class="field"><label>分类</label>
+      <div class="kb-catpick" id="kbCatPick">${KB_CATS.map(c=>`<span class="tpl-tag ${k&&k.cat===c?'active':''}" data-kcat="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join('')}</div>
+      <input id="kbCat" type="text" placeholder="上面点一个，或自己填（如：联盟客分析）" value="${k?escapeHtml(k.cat||''):''}" />
+    </div>
     <div class="field"><label>标题</label><input id="kbTitle" type="text" placeholder="标题" value="${k?escapeHtml(k.title||''):''}" /></div>
     <div class="field"><label>内容</label><textarea id="kbContent" rows="6" placeholder="在这里记录内容…">${k?escapeHtml(k.content||''):''}</textarea></div>
     <button class="btn primary" id="kbSave" style="width:100%">保存</button>`;
@@ -2055,6 +2062,12 @@ function openKbEditor(id){
   ed.scrollIntoView({behavior:'smooth',block:'nearest'});
   $('#kbSave').onclick=saveKbEntry;
   $('#kbCancel').onclick=closeKbEditor;
+  const pick=$('#kbCatPick');
+  const syncChk=()=>{ const v=$('#kbCat').value.trim();
+    pick.querySelectorAll('[data-kcat]').forEach(s=>s.classList.toggle('active', s.dataset.kcat===v)); };
+  pick.onclick=e=>{ const s=e.target.closest('[data-kcat]'); if(!s) return;
+    $('#kbCat').value = ($('#kbCat').value.trim()===s.dataset.kcat)? '' : s.dataset.kcat; syncChk(); };
+  $('#kbCat').addEventListener('input', syncChk);
   setTimeout(()=>{ const t=$('#kbTitle'); if(t) t.focus(); },60);
 }
 function closeKbEditor(){ kbEditId=null; $('#kbEditor').style.display='none'; $('#kbEditor').innerHTML=''; }
