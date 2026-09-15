@@ -56,6 +56,8 @@
   body.readonly #tplAdd, body.readonly #addPlanBtn, body.readonly .me-input, body.readonly .me-tags,
   body.readonly .me-dates, body.readonly #memoAdd, body.readonly #memoClose, body.readonly #rangeApply,
   body.readonly .memo-item button, body.readonly #memoList button { pointer-events:none !important; opacity:.55 }
+  body.readonly .dy-chk, body.readonly .dy-subrow, body.readonly .dy-tk-title,
+  body.readonly #calDay .dy-slot, body.readonly #memoList .memo-item button { pointer-events:none !important; opacity:.55 }
   .sidebar{width:232px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--border);
     position:sticky; top:0; height:100vh; display:flex; flex-direction:column;
     padding:24px 16px 18px; gap:20px}
@@ -439,6 +441,40 @@
     border-radius:50%; background:#f45d74}
   .dy-now-t{position:absolute; left:-58px; top:-8px; width:52px; text-align:right; font-size:11px;
     font-weight:700; color:#f45d74; font-variant-numeric:tabular-nums}
+  .dy-sec{margin-bottom:14px}
+  .dy-sec-h{font-size:12.5px; font-weight:700; color:var(--muted); margin-bottom:7px;
+    display:flex; align-items:center; gap:7px}
+  .dy-cnt{background:var(--surface2); color:var(--fg); border-radius:20px; padding:1px 8px; font-size:11.5px}
+  .dy-tasks{display:flex; flex-direction:column; gap:8px}
+  .dy-task{display:flex; align-items:flex-start; gap:10px; background:var(--surface);
+    border:1px solid var(--border); border-radius:11px; padding:9px 12px 9px 9px; position:relative}
+  .dy-taskbar{position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:11px 0 0 11px}
+  .dy-task.done{opacity:.65}
+  .dy-task.done .dy-tk-title{text-decoration:line-through}
+  .dy-chk{width:18px; height:18px; flex:0 0 auto; margin-top:2px; border:1.5px solid var(--border);
+    border-radius:50%; cursor:pointer; display:grid; place-items:center; font-size:11px; color:#fff;
+    background:var(--surface); transition:.15s}
+  .dy-chk:hover{border-color:var(--accent)}
+  .dy-chk.on{background:var(--accent); border-color:var(--accent)}
+  .dy-tk-body{flex:1; min-width:0}
+  .dy-tk-top{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .dy-tk-title{font-size:13.5px; font-weight:600; cursor:text; border-bottom:1px dashed transparent}
+  .dy-tk-title:hover{border-bottom-color:var(--accent)}
+  .dy-pri{font-size:11px; font-weight:700; border-radius:20px; padding:2px 8px}
+  .dy-st{font-size:11px; padding:1px 6px; max-width:84px}
+  .dy-ddl{font-size:11.5px; font-weight:700; color:#c0392b; background:rgba(214,60,60,.14);
+    border-radius:6px; padding:2px 7px}
+  .dy-ddl.over{background:#c0392b; color:#fff}
+  .dy-subrow{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--fg);
+    margin-top:5px; padding-left:2px; cursor:pointer}
+  .dy-subrow.done{opacity:.55}
+  .dy-subrow.done .dy-subrow-t{text-decoration:line-through}
+  .dy-subrow-chk{width:14px; height:14px; flex:0 0 auto; border:1.5px solid var(--border); border-radius:4px;
+    display:grid; place-items:center; font-size:9px; color:var(--accent); background:var(--surface)}
+  .dy-subrow.done .dy-subrow-chk{background:var(--accent); border-color:var(--accent); color:#fff}
+  .dy-subrow-d{font-size:11px; color:#c0392b; font-weight:600}
+  .dy-more{font-size:11.5px; color:var(--muted); margin-top:5px}
+  .dy-allday{display:flex; gap:8px; flex-wrap:wrap}
   .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px}
   .cal-day{min-height:92px; background:var(--surface2); border:1px solid var(--border); border-radius:11px;
     padding:8px; cursor:pointer; transition:.15s; display:flex; flex-direction:column; gap:4px; overflow:hidden}
@@ -1205,16 +1241,16 @@ function stats(){
 function catStats(id){const list=data.filter(t=>t.cat===id); const d=list.filter(t=>t.done).length;
   return {list, d, total:list.length, pct:list.length?Math.round(d/list.length*100):0};}
 function isDone(t){ return !!t.done || t.status==='已完成'; }
+const ST_RANK={推进中:0, 未开始:1, 暂不进行:2, 被封:3};
+const PR_RANK={high:0, mid:1, low:2};
+function taskOrderKey(t){
+  const done=isDone(t)? 100 : 0;
+  const st=(ST_RANK[t.status||'未开始']!==undefined)? ST_RANK[t.status||'未开始'] : 3;
+  const pr=(PR_RANK[t.priority]!==undefined)? PR_RANK[t.priority] : 1;
+  return done + st*10 + pr;
+}
 function sortTasks(){
-  const stR={推进中:0, 未开始:1, 暂不进行:2, 被封:3};
-  const prR={high:0, mid:1, low:2};
-  const key=function(t){
-    const done=isDone(t)? 100 : 0;
-    const st=(stR[t.status||'未开始']!==undefined)? stR[t.status||'未开始'] : 3;
-    const pr=(prR[t.priority]!==undefined)? prR[t.priority] : 1;
-    return done + st*10 + pr;
-  };
-  data.sort((a,b)=> key(a)-key(b));
+  data.sort((a,b)=> taskOrderKey(a)-taskOrderKey(b));
 }
 function dueAlertCount(){
   const today=new Date(); today.setHours(0,0,0,0);
@@ -2234,7 +2270,7 @@ function renderDay(){
   const pl = visiblePlans(ds);
   const timed = pl.filter(p=>p.st).slice().sort((a,b)=>a.st.localeCompare(b.st));
   const untimed = pl.filter(p=>!p.st);
-  const tasks = taskInRange(ds,ds);
+  const tasks = dayTasks(ds);
   // 时间轴范围：默认 06:00~23:00，有更早/更晚的日程时自动扩展
   let HH0=6, HH1=23;
   timed.forEach(p=>{ const h=+p.st.split(':')[0]; if(h<HH0) HH0=h;
@@ -2245,17 +2281,18 @@ function renderDay(){
   if(hol) flags += `<span class="cal-flag hol">休·${escapeHtml(hol)}</span>`;
   else if(wk) flags += `<span class="cal-flag wk">调班·上班</span>`;
   flags += mkts.map(n=>`<span class="cal-flag mkt">🎯 ${escapeHtml(n.name)}</span>`).join('');
-  const subs = subItemsOn(ds);
-  const adItems=[...untimed.map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done})),
-                 ...tasks.map(t=>({kind:'task', id:t.id, text:t.title, done:isDone(t)})),
-                 ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, text:s.text, done:s.done}))];
-  const adHtml = adItems.length? `<div class="dy-allday">${adItems.map(it=>{
-    let bg, fg, icon='';
-    if(it.kind==='plan'){ const c=tagCfg(it.tag); bg=c.bg; fg=c.color; }
-    else if(it.kind==='sub'){ const c=priStyle(it.pri); bg=c.bg; fg=c.fg; icon='↳ '; }
-    else { bg=DDL_STYLE.bg; fg=DDL_STYLE.fg; icon='📋 '; }
-    return `<span class="dy-ad ${it.done?'txt-done':''}" data-kind="${it.kind}" data-id="${it.id}" data-text="${escapeHtml(it.text)}" title="点击修改内容" style="background:${bg};color:${fg}">${icon}${escapeHtml(it.text)}</span>`;
-  }).join('')}</div>` : '';
+  const adItems = untimed.map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done}));
+  const adHtml = adItems.length? `<div class="dy-sec">
+      <div class="dy-sec-h">当天计划 <span class="dy-cnt">${adItems.length}</span></div>
+      <div class="dy-allday">${adItems.map(it=>{
+        const c=tagCfg(it.tag);
+        return `<span class="dy-ad ${it.done?'txt-done':''}" data-kind="${it.kind}" data-id="${it.id}" data-text="${escapeHtml(it.text)}" title="点击修改内容" style="background:${c.bg};color:${c.color}">${escapeHtml(it.text)}</span>`;
+      }).join('')}</div>
+    </div>` : '';
+  const taskHtml = tasks.length? `<div class="dy-sec">
+      <div class="dy-sec-h">当天任务条 <span class="dy-cnt">${tasks.length}</span></div>
+      <div class="dy-tasks">${tasks.map(t=>dayTaskBar(t,ds)).join('')}</div>
+    </div>` : '';
   let rows='';
   for(let h=HH0; h<=HH1; h++){ rows += `<div class="dy-row"><span class="dy-h">${String(h).padStart(2,'0')}:00</span><div class="dy-slot" data-hour="${h}"></div></div>`; }
   const evs = timed.map(p=>{
@@ -2280,6 +2317,7 @@ function renderDay(){
       ${isToday? '<span class="dy-sub">今天</span>':''}
       ${flags}
     </div>
+    ${taskHtml}
     ${adHtml}
     <div class="dy-grid" style="height:${(HH1-HH0+1)*HOUR}px">
       ${rows}
@@ -2290,9 +2328,47 @@ function renderDay(){
 function renderCalModeToggle(){
   $$('.cal-modes .cal-tag').forEach(b=>b.classList.toggle('active', b.dataset.mode===calMode));
 }
+// 当天需要露脸的任务：自身 DDL 在这天，或有子任务 DDL 在这天
+function dayTasks(ds){
+  return data.filter(t=> t.due===ds || (t.subtasks||[]).some(s=> s.due===ds))
+             .sort((a,b)=> taskOrderKey(a)-taskOrderKey(b));
+}
+// 日视图里的任务条（样式对齐任务看板：优先级色条 + 勾选 + 状态 + 子任务）
+function dayTaskBar(t, ds){
+  const done=isDone(t);
+  const pri=t.priority==='high'?'高':t.priority==='mid'?'中':'低';
+  const pc=priStyle(t.priority);
+  const stC=statusColor(t.status||'未开始');
+  const subs=t.subtasks||[];
+  const todaySubs=subs.filter(s=>s.due===ds);
+  const others=subs.length-todaySubs.length;
+  const subHtml = todaySubs.map(s=>`<div class="dy-subrow ${s.done?'done':''}" data-act="subdone" data-sid="${s.id}" title="点击切换子任务完成状态">
+      <span class="dy-subrow-chk">${s.done?'✓':''}</span>
+      <span class="dy-subrow-t">${escapeHtml(s.text)}</span>
+      <span class="dy-subrow-d">子任务 DDL ${s.due.slice(5)}</span>
+    </div>`).join('');
+  const over = t.due && !done && t.due < fmtDate(new Date());
+  return `<div class="dy-task ${done?'done':''}" data-id="${t.id}">
+    <span class="dy-taskbar" style="background:${pc.fg}"></span>
+    <div class="dy-chk ${done?'on':''}" data-act="taskdone" title="${done?'标记未完成':'标记完成'}">${done?'✓':''}</div>
+    <div class="dy-tk-body">
+      <div class="dy-tk-top">
+        <span class="dy-tk-title" data-kind="task" data-id="${t.id}" data-text="${escapeHtml(t.title)}" title="点击修改标题">${escapeHtml(t.title)}</span>
+        <span class="dy-pri" style="background:${pc.bg};color:${pc.fg}">${pri}</span>
+        <select class="status-select dy-st" data-act="taskstatus" data-id="${t.id}" style="background:${stC.bg};color:${stC.fg};border-color:${stC.bg}" title="任务状态">
+          ${STATUSES.map(s=>`<option value="${s}" ${(t.status||'未开始')===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+        ${t.due? `<span class="dy-ddl ${over?'over':''}">📅 DDL ${t.due.slice(5)}</span>`:''}
+      </div>
+      ${subHtml}
+      ${others>0? `<div class="dy-more">另有 ${others} 个子任务（DDL 不在今天）</div>`:''}
+    </div>
+  </div>`;
+}
 function scrollDayToNow(){
-  const el = document.querySelector('#calDay .dy-now') || document.querySelector('#calDay .dy-ev');
-  if(el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'});
+  // 落到日视图时先让「当天任务条 / 计划」露出来，而不是直接跳到时间轴中段
+  const el = document.querySelector('#calDay .dy-head') || document.getElementById('calDay');
+  if(el && el.scrollIntoView) el.scrollIntoView({block:'start', behavior:'smooth'});
 }
 function renderMonthGrid(){
   const y=+calYM.slice(0,4), m=+calYM.slice(5,7);
@@ -2518,8 +2594,22 @@ function bindCal(){
     const day=e.target.closest('.cal-wday'); if(day) openPlanEditor(day.dataset.date);
   });
   $('#calDay').addEventListener('click',e=>{
+    const act=e.target.closest('[data-act]');
+    if(act){
+      const row=act.closest('.dy-task'); const tid=row&&row.dataset.id;
+      if(act.dataset.act==='taskdone'){ e.stopPropagation(); toggle(tid); renderCalendar(); return; }
+      if(act.dataset.act==='subdone'){ e.stopPropagation(); toggleSub(tid, act.dataset.sid); renderCalendar(); return; }
+      if(act.dataset.act==='taskstatus') return;   // 交给下面的 change 事件
+    }
     const item=e.target.closest('[data-kind]'); if(item){ e.stopPropagation(); editCalItem(item.dataset.kind, item.dataset.id, item); return; }
     const slot=e.target.closest('.dy-slot'); if(slot){ openPlanEditor(dayDate); const hh=String(slot.dataset.hour||'').padStart(2,'0'); const st=$('#planSt'); if(st && hh) st.value=hh+':00'; }
+  });
+  $('#calDay').addEventListener('change',e=>{
+    const sel=e.target.closest('[data-act="taskstatus"]'); if(!sel) return;
+    const row=sel.closest('.dy-task'); const t=row && data.find(x=>x.id===row.dataset.id); if(!t) return;
+    pushHistory(); t.status=sel.value;
+    if(sel.value==='已完成') t.done=true; else if(t.done) t.done=false;
+    save(); render(); renderCalendar(); toast('状态已更新 ✓');
   });
   $('#calFilter').addEventListener('click',e=>{ const c=e.target.closest('.cal-tag'); if(c){ memoTagFilter=c.dataset.tag; renderCalendar(); renderRangeSummary(); } });
   $('#meTags').addEventListener('click',e=>{ const c=e.target.closest('.cal-tag'); if(c){ memoNewTag=c.dataset.mt; renderPlanTagPicker(); } });
