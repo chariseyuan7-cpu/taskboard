@@ -396,8 +396,9 @@
   .kb-main .kb-content{white-space:pre-wrap; word-break:break-word; line-height:1.9; font-size:14.5px; max-width:74ch}
   .kb-main .kb-content.rich{white-space:normal; max-width:none}
   /* ---- 富文本编辑器（知识库） ---- */
-  .rt{border:1px solid var(--border); border-radius:11px; overflow:hidden; background:var(--surface); position:relative}
+  .rt{border:1px solid var(--border); border-radius:11px; overflow:visible; background:var(--surface); position:relative}
   .rt-bar{display:flex; gap:4px; flex-wrap:wrap; align-items:center; padding:6px 8px;
+    border-radius:10px 10px 0 0;
     border-bottom:1px solid var(--border); background:var(--surface2)}
   .rt-bar button{min-width:30px; height:28px; padding:0 8px; font-size:12.5px; font-weight:600; color:var(--muted);
     background:var(--surface); border:1px solid var(--border); border-radius:7px; cursor:pointer;
@@ -2145,7 +2146,7 @@ function kbCopy(k){
   }
   copyText(text,'内容已复制');
 }
-function openRtPop(kind){
+function openRtPop(kind,btn){
   const pop=$('#rtPop'); if(!pop) return;
   rtSaveSel();
   if(kind==='color' || kind==='bg'){
@@ -2188,6 +2189,13 @@ function openRtPop(kind){
       const u=(inp.value||'').trim(); if(!u) return;
       rtRestoreSel(); document.execCommand('createLink',false,u); rtSaveSel(); pop.style.display='none';
     };
+  }
+  // 弹层统一定位到按钮下方，避免被编辑器容器裁掉
+  if(btn){
+    const host=pop.offsetParent||$('#rt');
+    const maxLeft=Math.max(6, (host? host.clientWidth:600) - pop.offsetWidth - 8);
+    pop.style.top=(btn.offsetTop+btn.offsetHeight+6)+'px';
+    pop.style.left=Math.max(6, Math.min(btn.offsetLeft, maxLeft))+'px';
   }
   const cl=pop.querySelector('[data-rtclose]'); if(cl) cl.onclick=()=>{ pop.style.display='none'; };
 }
@@ -2289,7 +2297,7 @@ function bindRtEditor(k){
   bar.addEventListener('mousedown',e=>{ if(e.target.closest('button')) e.preventDefault(); });
   bar.addEventListener('click',e=>{
     const btn=e.target.closest('button'); if(!btn) return;
-    if(btn.dataset.pop){ openRtPop(btn.dataset.pop); return; }
+    if(btn.dataset.pop){ openRtPop(btn.dataset.pop, btn); return; }
     const cmd=btn.dataset.rt;
     if(cmd==='h2'||cmd==='h3'||cmd==='p') rtExec('formatBlock','<'+cmd+'>');
     else if(cmd==='quote') rtExec('formatBlock','<blockquote>');
