@@ -447,6 +447,27 @@
   .t24{width:86px; text-align:center; font-variant-numeric:tabular-nums; font-size:13px;
     padding:7px 8px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--fg)}
   .t24:focus{outline:none; border-color:var(--accent)}
+  /* 24 小时滑动选择器 */
+  .tp{position:fixed; z-index:60; background:var(--surface); border:1px solid var(--border);
+    border-radius:13px; box-shadow:0 18px 44px rgba(15,23,42,.24); padding:10px 12px 12px;
+    display:flex; flex-direction:column; gap:8px; width:214px; box-sizing:border-box}
+  .tp-h{display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--muted)}
+  .tp-h .tp-cur{font-size:14px; font-weight:700; color:var(--accent);
+    font-variant-numeric:tabular-nums}
+  .tp-cols{position:relative; display:flex; gap:6px; align-items:stretch}
+  .tp-band{position:absolute; left:0; right:0; top:70px; height:30px; border-radius:8px;
+    background:rgba(255,122,89,.12); border:1px solid rgba(255,122,89,.34); pointer-events:none; z-index:0}
+  .tp-col{position:relative; z-index:1; flex:1; height:170px; overflow-y:auto; overflow-x:hidden;
+    scroll-snap-type:y mandatory; border-radius:9px; background:transparent; scrollbar-width:none}
+  .tp-col::-webkit-scrollbar{width:0; height:0}
+  .tp-item{height:30px; line-height:30px; text-align:center; font-size:14px;
+    font-variant-numeric:tabular-nums; scroll-snap-align:center; cursor:pointer; color:var(--muted);
+    border-radius:8px}
+  .tp-item:hover{background:rgba(255,122,89,.14)}
+  .tp-item.on{color:var(--accent); font-weight:700}
+  .tp-pad{height:70px}
+  .tp-ops{display:flex; gap:6px; justify-content:flex-end}
+  .tp-ops .btn{padding:6px 12px; font-size:12.5px}
   .cal-count{color:var(--muted); font-size:13px}
   .cal-week{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px}
   .cal-week span{text-align:center; font-size:12.5px; color:var(--muted); font-weight:600}
@@ -853,9 +874,9 @@
         </div>
         <div class="me-dates">
           <label>时间</label>
-          <input class="t24" type="text" id="planSt" inputmode="numeric" list="t24list" placeholder="HH:MM" title="24 小时制，例如 09:30；可留空" />
+          <input class="t24" type="text" id="planSt" inputmode="numeric" placeholder="HH:MM" title="24 小时制，例如 09:30；可留空" />
           <span>~</span>
-          <input class="t24" type="text" id="planEt" inputmode="numeric" list="t24list" placeholder="HH:MM" title="24 小时制，例如 18:00；可留空" />
+          <input class="t24" type="text" id="planEt" inputmode="numeric" placeholder="HH:MM" title="24 小时制，例如 18:00；可留空" />
           <span style="color:var(--muted);font-size:12px">（24 小时制，可留空）</span>
         </div>
         <div class="me-input">
@@ -1675,8 +1696,8 @@ function planEditPanelHtml(p){
       <label>结束</label><input data-pl="end" type="date" value="${p.end}" />
     </div>
     <div class="tk-edit-row">
-      <label>时间</label><input class="t24" data-pl="st" type="text" inputmode="numeric" list="t24list" placeholder="HH:MM" title="24 小时制，例如 09:30" value="${p.st||''}" />
-      <span>~</span><input class="t24" data-pl="et" type="text" inputmode="numeric" list="t24list" placeholder="HH:MM" title="24 小时制，例如 18:00" value="${p.et||''}" />
+      <label>时间</label><input class="t24" data-pl="st" type="text" inputmode="numeric" placeholder="HH:MM" title="24 小时制，例如 09:30" value="${p.st||''}" />
+      <span>~</span><input class="t24" data-pl="et" type="text" inputmode="numeric" placeholder="HH:MM" title="24 小时制，例如 18:00" value="${p.et||''}" />
       <span class="tk-edit-tip">（24 小时制，可留空）</span>
     </div>
     <div class="tk-edit-ops">
@@ -2099,16 +2120,140 @@ function t24Ok(v,label){
   toast((label||'')+'时间请填 24 小时制，例如 09:30');
   return false;
 }
+/* ---------- 24 小时滑动选择器（小时 0-23 / 分钟 0-59） ---------- */
+let tpTarget=null, tpH=9, tpM=0, tpTouched=false;
+function tpColHtml(n){
+  let s='';
+  for(let i=0;i<n;i++) s+=`<div class="tp-item" data-v="${i}">${String(i).padStart(2,'0')}</div>`;
+  return s;
+}
+function ensureTpPop(){
+  let pop=document.getElementById('t24pop');
+  if(pop) return pop;
+  pop=document.createElement('div');
+  pop.id='t24pop'; pop.className='tp'; pop.style.display='none';
+  pop.innerHTML=`
+    <div class="tp-h"><span>小时</span><span class="tp-cur">--:--</span><span>分钟</span></div>
+    <div class="tp-cols">
+      <div class="tp-band"></div>
+      <div class="tp-col" data-col="h"><div class="tp-pad"></div>${tpColHtml(24)}<div class="tp-pad"></div></div>
+      <div class="tp-col" data-col="m"><div class="tp-pad"></div>${tpColHtml(60)}<div class="tp-pad"></div></div>
+    </div>
+    <div class="tp-ops">
+      <button class="btn" data-tp="clear">清除</button>
+      <button class="btn" data-tp="cancel">取消</button>
+      <button class="btn primary" data-tp="ok">确定</button>
+    </div>`;
+  document.body.appendChild(pop);
+  pop.addEventListener('click',e=>{
+    const it=e.target.closest('.tp-item');
+    if(it){
+      const col=it.closest('.tp-col'); const v=+it.dataset.v;
+      if(col.dataset.col==='h') tpH=v; else tpM=v;
+      tpTouched=true;
+      it.scrollIntoView({block:'center', behavior:'smooth'});
+      tpPaint(pop); return;
+    }
+    const b=e.target.closest('[data-tp]'); if(!b) return;
+    const a=b.dataset.tp;
+    if(a==='ok'){
+      const cols=pop.querySelectorAll('.tp-col');
+      const ih=tpCentered(cols[0]), im=tpCentered(cols[1]);
+      // 优先用手动输入的值；如果用户滚动过转轮，则以转轮为准
+      const typed = tpTarget? t24Norm(tpTarget.value) : '';
+      if(!tpTouched && /^\d{2}:\d{2}$/.test(typed)){ tpH=+typed.slice(0,2); tpM=+typed.slice(3,5); }
+      else { if(ih!=null) tpH=ih; if(im!=null) tpM=im; }
+      if(tpTarget){ tpTarget.value=String(tpH).padStart(2,'0')+':'+String(tpM).padStart(2,'0');
+        tpTarget.dispatchEvent(new Event('change',{bubbles:true})); }
+      tpClose();
+    } else if(a==='clear'){
+      if(tpTarget){ tpTarget.value=''; tpTarget.dispatchEvent(new Event('change',{bubbles:true})); }
+      tpClose();
+    } else tpClose();
+  });
+  pop.querySelectorAll('.tp-col').forEach(col=>{
+    let tm=null;
+    col.addEventListener('scroll',()=>{ clearTimeout(tm); tm=setTimeout(()=>{
+      const idx=tpCentered(col); if(idx==null) return;
+      if(col.dataset.col==='h') tpH=idx; else tpM=idx; tpTouched=true; tpPaint(pop);
+    },90); });
+  });
+  document.addEventListener('mousedown',e=>{
+    const p=document.getElementById('t24pop'); if(!p || p.style.display==='none') return;
+    if(p.contains(e.target)) return;
+    if(tpTarget && tpTarget===e.target) return;
+    tpClose();
+  }, true);
+  return pop;
+}
+function tpCentered(col){
+  const items=col.querySelectorAll('.tp-item'); if(!items.length) return null;
+  const mid=col.getBoundingClientRect().top + col.clientHeight/2;
+  let best=null, bd=1e9;
+  items.forEach((it,i)=>{ const r=it.getBoundingClientRect(); const d=Math.abs((r.top+r.height/2)-mid);
+    if(d<bd){ bd=d; best=i; } });
+  return best;
+}
+function tpPaint(pop){
+  pop.querySelectorAll('.tp-col').forEach(col=>{
+    const v=col.dataset.col==='h'? tpH : tpM;
+    col.querySelectorAll('.tp-item').forEach(it=>it.classList.toggle('on', +it.dataset.v===v));
+  });
+  const lbl=pop.querySelector('.tp-cur');
+  if(lbl) lbl.textContent=String(tpH).padStart(2,'0')+':'+String(tpM).padStart(2,'0');
+}
+function tpClose(){ const p=document.getElementById('t24pop'); if(p) p.style.display='none'; tpTarget=null; }
+function t24OpenAt(inputEl){
+  const pop=ensureTpPop();
+  tpTarget=inputEl;
+  tpTouched=false;
+  const cur=t24Norm(inputEl.value)||'';
+  const now=new Date();
+  const okT=/^\d{2}:\d{2}$/.test(cur);
+  tpH = okT? +cur.slice(0,2) : now.getHours();
+  tpM = okT? +cur.slice(3,5) : Math.round(now.getMinutes()/5)*5 % 60;
+  tpPaint(pop);
+  pop.style.display='flex';
+  const r=inputEl.getBoundingClientRect();
+  const W=pop.offsetWidth||214, H=pop.offsetHeight||252;
+  const left=Math.min(Math.max(8, r.left), Math.max(8, window.innerWidth-W-8));
+  let top=r.bottom+6;
+  if(top+H>window.innerHeight-8) top=Math.max(8, r.top-H-6);
+  pop.style.left=left+'px'; pop.style.top=top+'px';
+  pop.querySelectorAll('.tp-col').forEach(col=>{
+    const v=col.dataset.col==='h'? tpH : tpM;
+    const it=col.querySelector('.tp-item[data-v="'+v+'"]');
+    if(it) col.scrollTop = it.offsetTop - col.offsetTop - (col.clientHeight - it.offsetHeight)/2;
+  });
+}
 function t24Bind(){
-  if(!document.getElementById('t24list')){
-    const dl=document.createElement('datalist');
-    dl.id='t24list'; dl.innerHTML=t24Options();
-    document.body.appendChild(dl);
-  }
   document.addEventListener('change',e=>{
     const el=e.target;
     if(el && el.classList && el.classList.contains('t24')) el.value=t24Norm(el.value);
   }, true);
+  // 点一下时间框 → 弹出「0-23 小时 / 0-59 分钟」滑动自选
+  document.addEventListener('click',e=>{
+    const el=e.target.closest && e.target.closest('.t24'); if(!el) return;
+    const pop=document.getElementById('t24pop');
+    if(pop && pop.style.display!=='none' && tpTarget===el){ tpClose(); return; }
+    t24OpenAt(el);
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.target && e.target.classList && e.target.classList.contains('t24')){
+      if(e.key==='Enter'){ e.target.value=t24Norm(e.target.value); tpClose(); }
+      else if(e.key==='Escape'){ tpClose(); }
+    }
+  });
+  // 手动输入时同步转轮上的数字（不滚动，避免打断打字）
+  document.addEventListener('input',e=>{
+    const el=e.target; if(!el.classList || !el.classList.contains('t24')) return;
+    if(tpTarget!==el) return;
+    const v=t24Norm(el.value);
+    if(/^\d{2}:\d{2}$/.test(v)){
+      tpH=+v.slice(0,2); tpM=+v.slice(3,5); tpTouched=false;
+      const pop=document.getElementById('t24pop'); if(pop) tpPaint(pop);
+    }
+  });
 }
 function kbIsHtml(s){ return /<\/?[a-z][\s\S]*?>/i.test(String(s||'')); }
 function kbSanitize(html){
