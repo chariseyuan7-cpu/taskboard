@@ -441,6 +441,12 @@
     background:var(--surface); color:var(--fg); font-size:17px; cursor:pointer; transition:.15s; display:grid; place-items:center}
   .cal-top .arrow:hover{border-color:var(--accent); color:var(--accent)}
   .cal-title{font-size:18px; font-weight:700; min-width:132px; text-align:center}
+  .cal-jump{font-size:13px; font-weight:600; padding:7px 10px; border:1px solid var(--border);
+    border-radius:9px; background:var(--surface); color:var(--fg); cursor:pointer; transition:.15s}
+  .cal-jump:hover{border-color:var(--accent); color:var(--accent)}
+  .t24{width:86px; text-align:center; font-variant-numeric:tabular-nums; font-size:13px;
+    padding:7px 8px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--fg)}
+  .t24:focus{outline:none; border-color:var(--accent)}
   .cal-count{color:var(--muted); font-size:13px}
   .cal-week{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px}
   .cal-week span{text-align:center; font-size:12.5px; color:var(--muted); font-weight:600}
@@ -818,6 +824,7 @@
         <button class="arrow" id="calPrev" title="上个月">◀</button>
         <span class="cal-title" id="calTitle"></span>
         <button class="arrow" id="calNext" title="下个月">▶</button>
+        <input type="date" class="cal-jump" id="calJump" title="点这里直接选择日期（月/周/日视图都会跟着跳）" />
         <button class="btn" id="calToday">回到今天</button>
         <div class="cal-modes">
           <button class="cal-tag" data-mode="month" title="月视图">月</button>
@@ -845,9 +852,11 @@
           <label>结束</label><input type="date" id="planEnd" />
         </div>
         <div class="me-dates">
-          <label>时间</label><input type="time" id="planSt" />
-          <span>~</span><input type="time" id="planEt" />
-          <span style="color:var(--muted);font-size:12px">（可留空）</span>
+          <label>时间</label>
+          <input class="t24" type="text" id="planSt" inputmode="numeric" list="t24list" placeholder="HH:MM" title="24 小时制，例如 09:30；可留空" />
+          <span>~</span>
+          <input class="t24" type="text" id="planEt" inputmode="numeric" list="t24list" placeholder="HH:MM" title="24 小时制，例如 18:00；可留空" />
+          <span style="color:var(--muted);font-size:12px">（24 小时制，可留空）</span>
         </div>
         <div class="me-input">
           <textarea id="planText" rows="3" placeholder="写点什么…（Enter 添加计划）"></textarea>
@@ -1127,6 +1136,7 @@ let calYM = new Date().toISOString().slice(0,7);    // 日历当前显示的月�
 let calMode = 'month';                               // 日历视图：month / week
 let weekStart = getMonday(new Date());               // 周视图当前周（周一）
 let dayDate = fmtDate(new Date());                   // 日视图当前日期
+let calAnchor = fmtDate(new Date());                 // 日历定位日期（日期选择器用）
 let mktNodes = loadMkt();                            // 营销节点：{ 'YYYY-MM-DD': '名称' }
 let planStart = ''; let planEnd = '';               // 正在编辑的计划起止
 let memoTagFilter = '全部';                          // 备忘标签筛选
@@ -1665,9 +1675,9 @@ function planEditPanelHtml(p){
       <label>结束</label><input data-pl="end" type="date" value="${p.end}" />
     </div>
     <div class="tk-edit-row">
-      <label>时间</label><input data-pl="st" type="time" value="${p.st||''}" />
-      <span>~</span><input data-pl="et" type="time" value="${p.et||''}" />
-      <span class="tk-edit-tip">（可留空）</span>
+      <label>时间</label><input class="t24" data-pl="st" type="text" inputmode="numeric" list="t24list" placeholder="HH:MM" title="24 小时制，例如 09:30" value="${p.st||''}" />
+      <span>~</span><input class="t24" data-pl="et" type="text" inputmode="numeric" list="t24list" placeholder="HH:MM" title="24 小时制，例如 18:00" value="${p.et||''}" />
+      <span class="tk-edit-tip">（24 小时制，可留空）</span>
     </div>
     <div class="tk-edit-ops">
       <button class="btn primary" data-pl="save">保存</button>
@@ -1685,6 +1695,8 @@ function applyPlanEdit(){
   if(!text || !s || !e){ toast('内容和起止日期不能为空'); return; }
   if(s>e){ const t=s; s=e; e=t; }
   let st=g('st').value||'', et=g('et').value||'';
+  st=t24Norm(st); et=t24Norm(et); g('st').value=st; g('et').value=et;
+  if(!t24Ok(st,'开始') || !t24Ok(et,'结束')) return;
   if(st && et && et<st){ const t=st; st=et; et=t; }
   p.text=text; p.tag=g('tag').value; p.start=s; p.end=e; p.st=st; p.et=et;
   editPlanId=null;
@@ -2058,6 +2070,46 @@ function saveKb(){ localStorage.setItem('kb_lib', JSON.stringify(kbData)); sched
 const RT_TEXT_COLORS=['#1f2937','#c0392b','#e2603c','#b57b0c','#12a97a','#2f83d6','#7c3aed','#db2777'];
 const RT_BG_COLORS=['#fff3bf','#d3f9d8','#d0ebff','#ffd6e0','#ede9fe','#ffe8cc'];
 let rtSavedRange=null;
+/* ---------- 24 小时制时间输入（HH:MM） ---------- */
+function t24Options(){
+  let s='';
+  for(let h=0;h<24;h++) for(let m=0;m<60;m+=15)
+    s+=`<option value="${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}"></option>`;
+  return s;
+}
+function t24Make(h,m){ const H=+h, M=+m;
+  if(isNaN(H)||isNaN(M)||H<0||H>23||M<0||M>59) return '';
+  return String(H).padStart(2,'0')+':'+String(M).padStart(2,'0');
+}
+// 容错：9:5 / 9.30 / 930 / 9 都能识别；认不出来就原样保留给用户改
+function t24Norm(v){
+  const s=String(v||'').trim();
+  if(!s) return '';
+  let m=s.match(/^(\d{1,2})\s*[:：.．,，]\s*(\d{1,2})$/);
+  if(m) return t24Make(m[1],m[2]);
+  m=s.match(/^(\d{3,4})$/);
+  if(m){ const t=m[1].padStart(4,'0'); return t24Make(t.slice(0,2),t.slice(2)); }
+  m=s.match(/^(\d{1,2})\s*[点时]?\s*$/);
+  if(m) return t24Make(m[1],'0');
+  return s;
+}
+function t24Ok(v,label){
+  if(!v) return true;
+  if(/^\d{2}:\d{2}$/.test(v)) return true;
+  toast((label||'')+'时间请填 24 小时制，例如 09:30');
+  return false;
+}
+function t24Bind(){
+  if(!document.getElementById('t24list')){
+    const dl=document.createElement('datalist');
+    dl.id='t24list'; dl.innerHTML=t24Options();
+    document.body.appendChild(dl);
+  }
+  document.addEventListener('change',e=>{
+    const el=e.target;
+    if(el && el.classList && el.classList.contains('t24')) el.value=t24Norm(el.value);
+  }, true);
+}
 function kbIsHtml(s){ return /<\/?[a-z][\s\S]*?>/i.test(String(s||'')); }
 function kbSanitize(html){
   let h=String(html||'');
@@ -2725,6 +2777,7 @@ function renderCalendar(){
     renderDay();
   }
   renderCalEditHost();
+  const cj=$('#calJump'); if(cj) cj.value = calAnchor;
 }
 function renderCalEditHost(){
   const host=document.getElementById('calEditHost'); if(!host) return;
@@ -3061,17 +3114,27 @@ function addPlan(){
   let s=$('#planStart').value, e=$('#planEnd').value;
   if(!v || !s || !e){ $('#planText').focus(); toast('请填写内容与起止日期'); return; }
   if(s>e){ const t=s; s=e; e=t; }
-  let st=$('#planSt').value||'', et=$('#planEt').value||'';
+  let st=t24Norm($('#planSt').value), et=t24Norm($('#planEt').value);
+  $('#planSt').value=st; $('#planEt').value=et;
+  if(!t24Ok(st,'开始') || !t24Ok(et,'结束')) return;
   if(st && et && et<st){ const t=st; st=et; et=t; }
   plans.push({id:uid(), start:s, end:e, text:v, tag:memoNewTag, done:false, st, et});
   savePlans(); renderCalendar(); renderPlanList();
   $('#planText').value=''; $('#planText').focus(); toast('已添加计划 ✓');
 }
 function bindCal(){
-  $('#calPrev').onclick=()=>{ if(calMode==='day'){ const d=new Date(dayDate+'T00:00:00'); d.setDate(d.getDate()-1); dayDate=fmtDate(d); } else if(calMode==='week'){ const d=new Date(weekStart+'T00:00:00'); d.setDate(d.getDate()-7); weekStart=fmtDate(d); } else { calYM=shiftYM(calYM,-1); } renderCalendar(); };
-  $('#calNext').onclick=()=>{ if(calMode==='day'){ const d=new Date(dayDate+'T00:00:00'); d.setDate(d.getDate()+1); dayDate=fmtDate(d); } else if(calMode==='week'){ const d=new Date(weekStart+'T00:00:00'); d.setDate(d.getDate()+7); weekStart=fmtDate(d); } else { calYM=shiftYM(calYM,1); } renderCalendar(); };
-  $('#calToday').onclick=()=>{ if(calMode==='day'){ dayDate=fmtDate(new Date()); } else if(calMode==='week'){ weekStart=getMonday(new Date()); } else { calYM=new Date().toISOString().slice(0,7); } renderCalendar(); };
-  $$('.cal-modes .cal-tag').forEach(b=>b.onclick=()=>{ calMode=b.dataset.mode; if(calMode==='week') weekStart=getMonday(new Date()); if(calMode==='day') dayDate=fmtDate(new Date()); renderCalendar(); if(calMode==='day') scrollDayToNow(); });
+  $('#calPrev').onclick=()=>{ if(calMode==='day'){ const d=new Date(dayDate+'T00:00:00'); d.setDate(d.getDate()-1); dayDate=fmtDate(d); calAnchor=dayDate; } else if(calMode==='week'){ const d=new Date(weekStart+'T00:00:00'); d.setDate(d.getDate()-7); weekStart=fmtDate(d); calAnchor=weekStart; } else { calYM=shiftYM(calYM,-1); calAnchor=calYM+'-01'; } renderCalendar(); };
+  $('#calNext').onclick=()=>{ if(calMode==='day'){ const d=new Date(dayDate+'T00:00:00'); d.setDate(d.getDate()+1); dayDate=fmtDate(d); calAnchor=dayDate; } else if(calMode==='week'){ const d=new Date(weekStart+'T00:00:00'); d.setDate(d.getDate()+7); weekStart=fmtDate(d); calAnchor=weekStart; } else { calYM=shiftYM(calYM,1); calAnchor=calYM+'-01'; } renderCalendar(); };
+  $('#calToday').onclick=()=>{ calAnchor=fmtDate(new Date()); if(calMode==='day'){ dayDate=calAnchor; } else if(calMode==='week'){ weekStart=getMonday(new Date()); } else { calYM=calAnchor.slice(0,7); } renderCalendar(); };
+  $('#calJump').onchange=e=>{
+    const v=e.target.value; if(!v) return;
+    calAnchor=v; dayDate=v; weekStart=getMonday(new Date(v+'T00:00:00')); calYM=v.slice(0,7);
+    renderCalendar(); toast('已跳到 '+v+' ✓');
+  };
+  $$('.cal-modes .cal-tag').forEach(b=>b.onclick=()=>{ calMode=b.dataset.mode;
+    if(calMode==='week') weekStart=getMonday(new Date(calAnchor+'T00:00:00'));
+    if(calMode==='day') dayDate=calAnchor;
+    renderCalendar(); if(calMode==='day') scrollDayToNow(); });
   $('#addPlanBtn').onclick=()=>openPlanEditor(fmtDate(new Date()));
   $('#calGrid').addEventListener('click',e=>{
     const chip=e.target.closest('[data-kind]'); if(chip){ e.stopPropagation();
@@ -3173,6 +3236,7 @@ function bootApp(){
   document.body.classList.toggle('readonly', readOnly);
   const rb=$('#roBanner'); if(rb) rb.style.display = readOnly? 'block' : 'none';
   renderTpl(); bindTpl(); bindKb(); renderKb(); bindHunt(); renderHunt();
+  t24Bind();
   bindView(); bindSidebar(); bindCal();
   renderCalendar(); quickRange('month'); applySidebar();
   renderMkt(); bindMkt();
