@@ -643,6 +643,8 @@
     border-radius:8px; padding:8px 11px; flex-wrap:wrap}
   .rs-date{font-size:12px; color:var(--muted); white-space:nowrap}
   .rs-text{flex:1; font-size:13px; word-break:break-word}
+  .rs-item.key{background:rgba(226,96,60,.09); box-shadow:inset 3px 0 0 #e2603c}
+  .rs-item.key .rs-text{font-weight:700}
   .rs-text.txt-done{text-decoration:line-through; opacity:.6}
   .memo-list{margin-top:16px; display:flex; flex-direction:column; gap:8px; max-height:240px; overflow:auto}
   .memo-list.editing{max-height:none}
@@ -653,6 +655,19 @@
   .memo-item button{border:none; background:none; color:var(--muted); cursor:pointer; font-size:14px}
   .memo-item button:hover{color:var(--bad)}
   .memo-item .memo-editbtn:hover, .memo-item .memo-editbtn.open{color:var(--accent)}
+  .me-keyrow{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px}
+  .key-toggle{font-size:12.5px; font-weight:700; padding:6px 14px; border-radius:20px; cursor:pointer;
+    border:1px solid rgba(226,96,60,.5); background:transparent; color:#e2603c; transition:.15s}
+  .key-toggle:hover{background:rgba(226,96,60,.12)}
+  .key-toggle.on{background:#e2603c; border-color:#e2603c; color:#fff}
+  .me-keytip{font-size:11.5px; color:var(--muted)}
+  .pk-star{color:#e2603c; font-weight:700; margin-right:3px}
+  .memo-item.key{background:rgba(226,96,60,.10); box-shadow:inset 3px 0 0 #e2603c}
+  .memo-item.key .plan-tx{font-weight:700}
+  .cmemo.key, .cw-item.key{font-weight:700; box-shadow:inset 0 0 0 1.5px rgba(226,96,60,.5)}
+  .dy-ad.key{font-weight:700; box-shadow:inset 0 0 0 1.5px rgba(226,96,60,.5)}
+  .dy-ev.key{border-left-width:5px}
+  .dy-ev.key .dy-ev-t{font-weight:700}
   #memoList .plan-edit{margin:6px 0 12px; background:var(--surface); border-color:var(--accent)}
   .schema-fix{background:rgba(255,176,32,.14); border:1px solid rgba(255,176,32,.5); border-radius:11px;
     padding:12px 14px; display:flex; flex-direction:column; gap:8px}
@@ -868,6 +883,10 @@
           <button class="btn" id="memoClose">收起</button>
         </div>
         <div class="me-tags" id="meTags"></div>
+        <div class="me-keyrow">
+          <button class="key-toggle" id="planKeyBtn" title="标记为重点：在看板和日历里都会突出显示">★ 标记为重点</button>
+          <span class="me-keytip">重点事项会在日历里带 ★ 并加粗，方便和日常任务区分</span>
+        </div>
         <div class="me-dates">
           <label>开始</label><input type="date" id="planStart" />
           <label>结束</label><input type="date" id="planEnd" />
@@ -1162,6 +1181,7 @@ let mktNodes = loadMkt();                            // 营销节点：{ 'YYYY-M
 let planStart = ''; let planEnd = '';               // 正在编辑的计划起止
 let memoTagFilter = '全部';                          // 备忘标签筛选
 let memoNewTag = '日常';                             // 当前添加备忘选中的标签
+let memoNewKey = false;                              // 当前添加的计划是否为重点
 let rangeStart = ''; let rangeEnd = '';             // 时间范围查询
 const MEMO_TAGS = [
   {name:'日常',   color:'#4ea1f5', bg:'rgba(78,161,245,.16)'},
@@ -1285,10 +1305,10 @@ async function syncPlans(){
   if(!sb) return false;
   try{
     const rows=[];
-    plans.forEach(x=>rows.push({id:String(x.id), start:x.start, end:x.end, text:x.text, tag:x.tag||'日常', done:!!x.done, st:x.st||'', et:x.et||'', updated_at:new Date().toISOString()}));
+    plans.forEach(x=>rows.push({id:String(x.id), start:x.start, end:x.end, text:x.text, tag:x.tag||'日常', done:!!x.done, st:x.st||'', et:x.et||'', key:!!x.key, updated_at:new Date().toISOString()}));
     const res = await sb.from('plans').upsert(rows, {onConflict:'id'});
     if(res && res.error){
-      const r2=await sb.from('plans').upsert(rows.map(r=>{const {done,st,et,...rest}=r; return rest;}), {onConflict:'id'});
+      const r2=await sb.from('plans').upsert(rows.map(r=>{const {done,st,et,key,...rest}=r; return rest;}), {onConflict:'id'});
       if(r2 && r2.error) return false;
       planSchemaLimited=true;            // 云端表缺 done/st/et 字段：打勾先只存本机
     } else planSchemaLimited=false;
@@ -1321,7 +1341,7 @@ async function initCloud(){
     let pls=[];
     try{ const pp=await sb.from('plans').select('*'); pls=pp.data||[]; }catch(e){}
     // 云端 plans 表若还没有 done 字段，就在日历里提示怎么补（补完会自动消失）
-    if(pls.length && !('done' in pls[0])) planSchemaLimited=true;
+    if(pls.length && (!('done' in pls[0]) || !('key' in pls[0]))) planSchemaLimited=true;
     let kbs=[];
     try{ const kk=await sb.from('kb').select('*'); kbs=kk.data||[]; }catch(e){}
     const localById={}; data.forEach(t=>{ localById[t.id]=t; });
@@ -1345,7 +1365,8 @@ async function initCloud(){
       return {id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:x.tag||'日常',
         done: ('done' in x)? !!x.done : !!loc.done,
         st:   ('st'   in x)? (x.st||'') : (loc.st||''),
-        et:   ('et'   in x)? (x.et||'') : (loc.et||'')};
+        et:   ('et'   in x)? (x.et||'') : (loc.et||''),
+        key:  ('key'  in x)? !!x.key  : !!loc.key};
     });
     if(plist.length){ plans=plist; localStorage.setItem('plans', JSON.stringify(plans)); renderCalendar(); }
     if(kbs.length){ kbData=kbs.map(k=>({id:k.id, cat:k.cat||'', title:k.title||'', content:k.content||''}));
@@ -1673,10 +1694,11 @@ function closeTaskEdit(id){
 const PLAN_FIX_SQL = `alter table plans add column if not exists done boolean default false;
 alter table plans add column if not exists st text;
 alter table plans add column if not exists et text;
+alter table plans add column if not exists key boolean default false;
 alter table plans add column if not exists "updated_at" timestamptz default now();`;
 function schemaFixNotice(){
   return `<div class="schema-fix">
-    <div class="sf-head">⚠️ 云端「计划」表还缺「完成 / 时间」字段，打勾目前只保存在本机</div>
+    <div class="sf-head">⚠️ 云端「计划」表还缺字段（完成 / 时间 / 重点），这些目前只保存在本机</div>
     <div class="sf-body">去 Supabase 左侧 <b>SQL Editor</b> → 粘贴下面这段 → 点 <b>Run</b>，之后打勾和多设备同步就正常了：</div>
     <pre class="sf-sql" id="sfSql">${PLAN_FIX_SQL}</pre>
     <div class="sf-ops">
@@ -1687,7 +1709,7 @@ function schemaFixNotice(){
 }
 function planEditPanelHtml(p){
   const opts = MEMO_TAGS.map(t=>`<option ${p.tag===t.name?'selected':''}>${escapeHtml(t.name)}</option>`).join('');
-  return `<div class="tk-edit plan-edit" data-planid="${p.id}">
+  return `<div class="tk-edit plan-edit" data-planid="${p.id}" data-key="${p.key?'1':'0'}">
     <div class="tk-edit-h"><b>修改这条计划</b><span class="tk-edit-tip">内容 / 时间 / 标签都能改，改完点「保存」</span></div>
     <input class="tk-edit-title" data-pl="text" type="text" value="${escapeHtml(p.text)}" placeholder="计划内容…" />
     <div class="tk-edit-row">
@@ -1701,6 +1723,7 @@ function planEditPanelHtml(p){
       <span class="tk-edit-tip">（24 小时制，可留空）</span>
     </div>
     <div class="tk-edit-ops">
+      <button class="key-toggle ${p.key?'on':''}" data-pl="key" title="标记为重点">★ ${p.key?'已是重点':'标记为重点'}</button>
       <button class="btn primary" data-pl="save">保存</button>
       <button class="btn" data-pl="cancel">取消</button>
       <button class="btn" data-pl="cleartime">清空时间</button>
@@ -1720,6 +1743,7 @@ function applyPlanEdit(){
   if(!t24Ok(st,'开始') || !t24Ok(et,'结束')) return;
   if(st && et && et<st){ const t=st; st=et; et=t; }
   p.text=text; p.tag=g('tag').value; p.start=s; p.end=e; p.st=st; p.et=et;
+  p.key = panel.dataset.key==='1';
   editPlanId=null;
   savePlans(); renderCalendar(); renderPlanList(); renderRangeSummary();
   toast('计划已更新 ✓');
@@ -2866,7 +2890,7 @@ function loadPlans(){
     const raw2=localStorage.getItem('memos');
     if(raw2){ try{ const obj=JSON.parse(raw2); Object.keys(obj).forEach(d=>(obj[d]||[]).forEach(m=>arr.push({id:m.id, start:d, end:d, text:m.text, tag:m.tag||'日常'}))); }catch(e){} }
   }
-  return arr.map(p=>({id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text, tag:p.tag||'日常', done:!!p.done, st:p.st||'', et:p.et||''}));
+  return arr.map(p=>({id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text, tag:p.tag||'日常', done:!!p.done, st:p.st||'', et:p.et||'', key:!!p.key}));
 }
 function savePlans(){ localStorage.setItem('plans', JSON.stringify(plans)); scheduleSync('plans'); }
 function loadMkt(){
@@ -2961,12 +2985,12 @@ function renderDay(){
   if(hol) flags += `<span class="cal-flag hol">休·${escapeHtml(hol)}</span>`;
   else if(wk) flags += `<span class="cal-flag wk">调班·上班</span>`;
   flags += mkts.map(n=>`<span class="cal-flag mkt">🎯 ${escapeHtml(n.name)}</span>`).join('');
-  const adItems = untimed.map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done}));
+  const adItems = untimed.map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, key:!!p.key}));
   const adHtml = adItems.length? `<div class="dy-sec">
       <div class="dy-sec-h">当天计划 <span class="dy-cnt">${adItems.length}</span></div>
       <div class="dy-allday">${adItems.map(it=>{
         const c=tagCfg(it.tag);
-        return `<span class="dy-ad ${it.done?'txt-done':''}" data-kind="${it.kind}" data-id="${it.id}" data-text="${escapeHtml(it.text)}" title="点击修改内容" style="background:${c.bg};color:${c.color}">${escapeHtml(it.text)}</span>`;
+        return `<span class="dy-ad ${it.done?'txt-done':''} ${it.key?'key':''}" data-kind="${it.kind}" data-id="${it.id}" data-text="${escapeHtml(it.text)}" title="点击修改内容" style="background:${c.bg};color:${c.color}">${it.key?'★ ':''}${escapeHtml(it.text)}</span>`;
       }).join('')}</div>
     </div>` : '';
   const taskHtml = tasks.length? `<div class="dy-sec">
@@ -2981,8 +3005,8 @@ function renderDay(){
     const top=((sp[0]-HH0)*60+sp[1])/60*HOUR;
     const hgt=Math.max(24, dur/60*HOUR-4);
     const c=tagCfg(p.tag);
-    return `<div class="dy-ev ${p.done?'done':''}" data-kind="plan" data-id="${p.id}" data-text="${escapeHtml(p.text)}" title="点击修改内容" style="top:${top}px;height:${hgt}px;background:${c.bg};border-left:3px solid ${c.color}">
-      <div class="dy-ev-t">${escapeHtml(p.text)}</div>
+    return `<div class="dy-ev ${p.done?'done':''} ${p.key?'key':''}" data-kind="plan" data-id="${p.id}" data-text="${escapeHtml(p.text)}" title="点击修改内容" style="top:${top}px;height:${hgt}px;background:${c.bg};border-left:3px solid ${c.color}">
+      <div class="dy-ev-t">${p.key?'★ ':''}${escapeHtml(p.text)}</div>
       <div class="dy-ev-g">${p.st}${p.et? '-'+p.et:''} · ${escapeHtml(p.tag)}</div>
     </div>`;
   }).join('');
@@ -3067,10 +3091,10 @@ function renderMonthGrid(){
     const ps=visiblePlans(ds); const ts=taskInRange(ds,ds);
     const today=ds===todayStr; const sel = planStart && ds>=planStart && ds<=planEnd;
     const subs=subItemsOn(ds);
-    const items=[...ps.slice(0,3).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, tm:(p.st? (p.et&&p.et!==p.st? p.st+'-'+p.et : p.st):'')})), ...ts.map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
+    const items=[...ps.slice(0,3).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, key:!!p.key, tm:(p.st? (p.et&&p.et!==p.st? p.st+'-'+p.et : p.st):'')})), ...ts.map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
     const show=items.slice(0,3); const overflow=items.length-show.length;
     const chips = show.map(it=>{
-      if(it.kind==='plan') return `<span class="cmemo ${it.done?'done':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${tagBg(it.tag)};color:${tagColor(it.tag)}">${it.tm? escapeHtml(it.tm)+' ':''}${escapeHtml(it.text)}</span>`;
+      if(it.kind==='plan') return `<span class="cmemo ${it.done?'done':''} ${it.key?'key':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${tagBg(it.tag)};color:${tagColor(it.tag)}">${it.key?'★ ':''}${it.tm? escapeHtml(it.tm)+' ':''}${escapeHtml(it.text)}</span>`;
       if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cmemo ${it.done?'done':''}" data-kind="sub" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
       const st=DDL_STYLE;
       return `<span class="cmemo ${it.done?'done':''}" data-kind="task" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
@@ -3095,12 +3119,12 @@ function renderWeek(){
     const hol=HOLIDAYS_2026.holidays[ds]; const wk=HOLIDAYS_2026.workdays[ds];
     const today=ds===todayStr;
     const subs=subItemsOn(ds);
-    const items=[...visiblePlans(ds).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, tm:(p.st? (p.et&&p.et!==p.st? p.st+'-'+p.et : p.st):'')})), ...taskInRange(ds,ds).map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
+    const items=[...visiblePlans(ds).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, key:!!p.key, tm:(p.st? (p.et&&p.et!==p.st? p.st+'-'+p.et : p.st):'')})), ...taskInRange(ds,ds).map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
     const mkts=mktOn(ds);
     let flag = hol? `<span class="cal-flag hol">休·${hol}</span>` : wk? `<span class="cal-flag wk">调班·上班</span>` : '';
     if(mkts.length) flag += mkts.map(n=>`<span class="cal-flag mkt">🎯 ${escapeHtml(n.name)}</span>`).join('');
     const itemHtml = items.length? items.map(it=>{
-      if(it.kind==='plan'){ const st=tagCfg(it.tag); return `<span class="cw-item ${it.done?'done':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.color}">${it.tm? escapeHtml(it.tm)+' ':''}${escapeHtml(it.text)}</span>`; }
+      if(it.kind==='plan'){ const st=tagCfg(it.tag); return `<span class="cw-item ${it.done?'done':''} ${it.key?'key':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.color}">${it.key?'★ ':''}${it.tm? escapeHtml(it.tm)+' ':''}${escapeHtml(it.text)}</span>`; }
       if(it.kind==='sub'){ const st=priStyle(it.pri); return `<span class="cw-item ${it.done?'done':''}" data-kind="sub" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg}">↳ ${escapeHtml(it.text)}</span>`; }
       const st=DDL_STYLE;
       return `<span class="cw-item ${it.done?'done':''}" data-kind="task" data-id="${it.id}" title="点击修改内容" style="background:${st.bg};color:${st.fg};font-weight:700">📋 ${escapeHtml(it.text)}</span>`;
@@ -3121,6 +3145,7 @@ function renderPlanTagPicker(){
     const sel=memoNewTag===t.name;
     return `<span class="cal-tag ${sel?'sel':''}" data-mt="${t.name}" style="color:${t.color};border-color:${t.color};${sel?`background:${t.bg}`:''}">${t.name}</span>`;
   }).join('');
+  const kb=$('#planKeyBtn'); if(kb) kb.classList.toggle('on', !!memoNewKey);
 }
 function plansInRange(s,e){
   return plans
@@ -3143,7 +3168,7 @@ function renderRangeSummary(){
     if(slist.length) tags += `<span class="memo-tag" style="background:rgba(142,123,240,.16);color:#6f5fe0">子任务 ${slist.length}</span>`;
     const rows = list.map(p=>{
       const d = p.start===p.end ? `<span class="rs-date">${p.start}</span>` : `<span class="rs-date">${p.start} ~ ${p.end}</span>`;
-      return `<div class="rs-item">${d}<span class="memo-tag" style="background:${tagBg(p.tag)};color:${tagColor(p.tag)}">${p.tag}</span><span class="rs-text">${escapeHtml(p.text)}</span></div>`;
+      return `<div class="rs-item ${p.key?'key':''}">${d}<span class="memo-tag" style="background:${tagBg(p.tag)};color:${tagColor(p.tag)}">${p.tag}</span><span class="rs-text">${p.key?'<span class="pk-star">★</span>':''}${escapeHtml(p.text)}</span></div>`;
     }).concat(
       tlist.map(t=>{
         const st=DDL_STYLE;
@@ -3230,7 +3255,7 @@ function renderPlanList(){
   if(pl.length){
     html += `<h4>这一天已有 ${pl.length} 个计划：</h4>` + pl.map(x=>{
       const d = (x.start===x.end ? x.start : `${x.start} ~ ${x.end}`) + (x.st? '  '+x.st+(x.et? '~'+x.et : ''):'');
-      const row = `<div class="memo-item ${x.done?'done':''}"><span class="plan-chk" data-act="pchk" data-id="${x.id}" title="${x.done?'取消完成':'标记完成'}">${CHECK_SVG}</span><span class="memo-tag" style="background:${tagBg(x.tag)};color:${tagColor(x.tag)}">${x.tag}</span><span class="plan-tx ${x.done?'txt-done':''}">${escapeHtml(x.text)}</span><span class="memo-date">${d}</span><button class="memo-editbtn ${editPlanId===x.id?'open':''}" data-edit="${x.id}" title="修改内容 / 时间 / 标签">✎</button><button data-id="${x.id}" title="删除">✕</button></div>`;
+      const row = `<div class="memo-item ${x.done?'done':''} ${x.key?'key':''}"><span class="plan-chk" data-act="pchk" data-id="${x.id}" title="${x.done?'取消完成':'标记完成'}">${CHECK_SVG}</span><span class="memo-tag" style="background:${tagBg(x.tag)};color:${tagColor(x.tag)}">${x.tag}</span><span class="plan-tx ${x.done?'txt-done':''}">${x.key?'<span class="pk-star">★</span>':''}${escapeHtml(x.text)}</span><span class="memo-date">${d}</span><button class="memo-editbtn ${editPlanId===x.id?'open':''}" data-edit="${x.id}" title="修改内容 / 时间 / 标签">✎</button><button data-id="${x.id}" title="删除">✕</button></div>`;
       return row + (editPlanId===x.id? planEditPanelHtml(x) : '');
     }).join('');
   }
@@ -3263,8 +3288,10 @@ function addPlan(){
   $('#planSt').value=st; $('#planEt').value=et;
   if(!t24Ok(st,'开始') || !t24Ok(et,'结束')) return;
   if(st && et && et<st){ const t=st; st=et; et=t; }
-  plans.push({id:uid(), start:s, end:e, text:v, tag:memoNewTag, done:false, st, et});
+  plans.push({id:uid(), start:s, end:e, text:v, tag:memoNewTag, done:false, st, et, key:!!memoNewKey});
+  memoNewKey=false;
   savePlans(); renderCalendar(); renderPlanList();
+  renderPlanTagPicker();
   $('#planText').value=''; $('#planText').focus(); toast('已添加计划 ✓');
 }
 function bindCal(){
@@ -3319,6 +3346,7 @@ function bindCal(){
   });
   $('#calFilter').addEventListener('click',e=>{ const c=e.target.closest('.cal-tag'); if(c){ memoTagFilter=c.dataset.tag; renderCalendar(); renderRangeSummary(); } });
   $('#meTags').addEventListener('click',e=>{ const c=e.target.closest('.cal-tag'); if(c){ memoNewTag=c.dataset.mt; renderPlanTagPicker(); } });
+  $('#planKeyBtn').onclick=()=>{ memoNewKey=!memoNewKey; renderPlanTagPicker(); };
   $$('.range-quick .cal-tag').forEach(b=>b.onclick=()=>{ quickRange(b.dataset.q); });
   $('#rangeApply').onclick=()=>{ rangeStart=$('#rangeStart').value; rangeEnd=$('#rangeEnd').value; renderRangeSummary(); };
   $('#planStart').addEventListener('input',()=>{ const s=$('#planStart').value; if(s && (!$('#planEnd').value || $('#planEnd').value<s)) $('#planEnd').value=s; });
@@ -3336,6 +3364,11 @@ function bindCal(){
     if(plCancel){ editPlanId=null; renderPlanList(); return; }
     const plClear=e.target.closest('[data-pl="cleartime"]');
     if(plClear){ const panel=$('#memoList .plan-edit'); if(panel){ panel.querySelector('[data-pl="st"]').value=''; panel.querySelector('[data-pl="et"]').value=''; } return; }
+    const plKey=e.target.closest('[data-pl="key"]');
+    if(plKey){ const panel=$('#memoList .plan-edit'); if(panel){
+        const on=panel.dataset.key!=='1'; panel.dataset.key=on?'1':'0';
+        plKey.classList.toggle('on', on);
+        plKey.textContent = on? '★ 已是重点' : '★ 标记为重点'; } return; }
     const eb=e.target.closest('[data-edit]');
     if(eb){ editPlanId = (editPlanId===eb.dataset.edit)? null : eb.dataset.edit; renderPlanList();
       const p=$('#memoList .plan-edit'); if(p) p.scrollIntoView({behavior:'smooth',block:'nearest'});
