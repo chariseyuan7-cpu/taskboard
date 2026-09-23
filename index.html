@@ -59,6 +59,7 @@
   body.readonly .dy-chk, body.readonly .dy-subrow, body.readonly .dy-tk-title,
   body.readonly #calDay .dy-slot, body.readonly #memoList .memo-item button { pointer-events:none !important; opacity:.55 }
   body.readonly .tk-edit { pointer-events:none !important; opacity:.6 }
+  body.readonly .nx-add, body.readonly .nx-item button { pointer-events:none !important; opacity:.55 }
   .sidebar{width:232px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--border);
     position:sticky; top:0; height:100vh; display:flex; flex-direction:column;
     padding:24px 16px 18px; gap:20px}
@@ -434,6 +435,36 @@
   .rt-area h3, .kb-main .kb-content h3{font-size:15.5px; margin:10px 0 5px; font-weight:700}
   .kb-main .kb-actions{display:flex; gap:8px; margin-top:22px; flex-wrap:wrap}
   .kb-main .kb-empty{color:var(--muted); font-size:14px}
+  /* ---- 下月待办收集箱 ---- */
+  .nx-wrap{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px;
+    box-shadow:0 2px 10px rgba(47,61,85,.04); max-width:1000px}
+  .nx-add{display:flex; gap:10px}
+  .nx-add input{flex:1; font-size:14px; padding:11px 14px; border:1px solid var(--border);
+    border-radius:11px; background:var(--surface); color:var(--fg)}
+  .nx-add input:focus{outline:none; border-color:var(--accent)}
+  .nx-bar{display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin:12px 0 10px; flex-wrap:wrap}
+  .nx-count{font-size:12.5px; color:var(--muted); font-weight:600}
+  .nx-hint{font-size:11.5px; color:var(--muted)}
+  .nx-list{display:flex; flex-direction:column; gap:8px}
+  .nx-item{display:flex; align-items:center; gap:10px; background:var(--surface2);
+    border-radius:10px; padding:10px 12px}
+  .nx-dot{width:7px; height:7px; border-radius:50%; background:var(--accent); flex:0 0 auto}
+  .nx-text{flex:1; font-size:13.5px; word-break:break-word; line-height:1.6}
+  .nx-time{font-size:11.5px; color:var(--muted); white-space:nowrap}
+  .nx-item button{border:1px solid var(--border); background:var(--surface); color:var(--muted);
+    border-radius:8px; padding:4px 10px; font-size:12px; cursor:pointer; white-space:nowrap}
+  .nx-item button:hover{color:var(--accent); border-color:var(--accent)}
+  .nx-item button.primary{border-color:var(--accent); color:var(--accent); font-weight:600}
+  .nx-empty{color:var(--muted); font-size:13.5px; padding:14px 4px; line-height:1.8}
+  .nx-conv{display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--surface);
+    border:1px dashed var(--accent); border-radius:10px; padding:10px 12px}
+  .nx-conv label{font-size:12px; color:var(--muted)}
+  .nx-conv select, .nx-conv input{font-size:12.5px; padding:6px 8px; border:1px solid var(--border);
+    border-radius:8px; background:var(--surface); color:var(--fg)}
+  .nx-edit{flex:1; font-size:13.5px; padding:6px 9px; border:1px solid var(--accent);
+    border-radius:8px; background:var(--surface); color:var(--fg)}
+  .nx-edit:focus{outline:none}
   .cal-wrap{background:var(--surface); border:1px solid var(--border); border-radius:16px;
     padding:20px; box-shadow:0 2px 10px rgba(47,61,85,.04)}
   .cal-top{display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap}
@@ -762,6 +793,7 @@
     </div>
     <nav class="nav">
       <button class="nav-item active" data-view="tasks" title="查看任务看板"><span class="nav-ic">📋</span><span class="nav-tx">任务看板</span><span class="nav-badge" id="tasksBadge"></span></button>
+      <button class="nav-item" data-view="next" title="随手记下个月要做的事"><span class="nav-ic">📥</span><span class="nav-tx">下月待办</span><span class="nav-badge" id="nextBadge"></span></button>
       <button class="nav-item" data-view="tpl" title="查看邮件模板"><span class="nav-ic">✉️</span><span class="nav-tx">邮件模板</span></button>
       <button class="nav-item" data-view="cal" title="查看全年日历"><span class="nav-ic">📅</span><span class="nav-tx">全年日历</span></button>
       <button class="nav-item" data-view="kb" title="查看知识库"><span class="nav-ic">📚</span><span class="nav-tx">知识库</span></button>
@@ -815,6 +847,29 @@
 
   <div id="detail"></div>
   </section><!-- /view-tasks -->
+
+  <section class="view" id="view-next">
+    <header>
+      <div class="kicker">Next-month Inbox</div>
+      <h1>下月待办</h1>
+      <p>工作中突然想到、但更适合下个月处理的事，先扔进这里。不用先想分类，写一句就行。</p>
+      <div class="meta">
+        <span>数据保存在：<b>本机 + 云端同步</b></span>
+        <span>下一步：<b>随时「→ 排进下月任务」变成正式任务</b></span>
+      </div>
+    </header>
+    <section class="nx-wrap">
+      <div class="nx-add">
+        <input id="nextInput" type="text" placeholder="想到什么先记下来…（Enter 直接记下）" />
+        <button class="btn primary" id="nextAdd">＋ 记下来</button>
+      </div>
+      <div class="nx-bar">
+        <span class="nx-count" id="nextCount"></span>
+        <span class="nx-hint">想到就记，之后有空再决定分类和优先级</span>
+      </div>
+      <div class="nx-list" id="nextList"></div>
+    </section>
+  </section><!-- /view-next -->
 
   <section class="view" id="view-tpl">
     <header>
@@ -1267,7 +1322,7 @@ async function retrySync(){
 }
 function scheduleSync(kind){
   if(!cloudReady || !sb || cloudOff || readOnly) return;
-  const map={tasks:syncTasks, plans:syncPlans, templates:syncTemplates, kb:syncKb};
+  const map={tasks:syncTasks, plans:syncPlans, templates:syncTemplates, kb:syncKb, next:syncNext};
   const fn=map[kind]; if(!fn) return;
   clearTimeout(cloudTimer);
   cloudTimer = setTimeout(async ()=>{ markSyncStart(); let ok=false; try{ ok=await fn(); }catch(e){ ok=false; } markSyncEnd(ok); }, 600);
@@ -1371,6 +1426,15 @@ async function initCloud(){
     if(plist.length){ plans=plist; localStorage.setItem('plans', JSON.stringify(plans)); renderCalendar(); }
     if(kbs.length){ kbData=kbs.map(k=>({id:k.id, cat:k.cat||'', title:k.title||'', content:k.content||''}));
       localStorage.setItem('kb_lib', JSON.stringify(kbData)); renderKb(); }
+    // 下月待办收集箱：同样存在 tasks 表，用特殊 month 区分，永不混进看板
+    const inboxRows=tasks.filter(t=>t.month===INBOX_MONTH);
+    if(inboxRows.length){
+      const byId={}; nextTodos.forEach(x=>{ byId[x.id]=x; });
+      inboxRows.forEach(t=>{ byId[String(t.id)]={id:String(t.id), text:t.title||'', at:t.updated_at||''}; });
+      nextTodos=Object.values(byId).filter(x=>x.text);
+      localStorage.setItem('next_todos', JSON.stringify(nextTodos));
+      renderNext();
+    }
     cloudReady=true;
     if(!readOnly){
       if(!(byMonth[ym] && byMonth[ym].length)) syncTasks();   // 云端暂无本月 → 把本地推上去
@@ -2860,6 +2924,7 @@ function setView(v){
   if(v==='cal') renderCalendar();
   if(v==='kb') renderKb();
   if(v==='hunt') renderHunt();
+  if(v==='next') renderNext();
 }
 function bindView(){
   $$('.nav-item').forEach(b=>b.onclick=()=>setView(b.dataset.view));
@@ -2893,6 +2958,143 @@ function loadPlans(){
   return arr.map(p=>({id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text, tag:p.tag||'日常', done:!!p.done, st:p.st||'', et:p.et||'', key:!!p.key}));
 }
 function savePlans(){ localStorage.setItem('plans', JSON.stringify(plans)); scheduleSync('plans'); }
+/* ---------- 下月待办收集箱 ---------- */
+const INBOX_MONTH='__inbox__';                       // 云端仍存在 tasks 表，但用特殊 month 值，永不混进看板
+let nextTodos=[];                                    // [{id, text, at}]
+function loadNext(){
+  const raw=localStorage.getItem('next_todos'); let arr=[];
+  if(raw){ try{ arr=JSON.parse(raw); }catch(e){} }
+  return (Array.isArray(arr)? arr:[]).map(x=>({id:String(x.id), text:String(x.text||''), at:x.at||''}))
+    .filter(x=>x.text);
+}
+function saveNext(){ localStorage.setItem('next_todos', JSON.stringify(nextTodos)); scheduleSync('next'); }
+function nextMonthYM(){
+  const d=new Date(); const nd=new Date(d.getFullYear(), d.getMonth()+1, 1);
+  return `${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,'0')}`;
+}
+function nextStamp(at){
+  const d=at? new Date(at) : new Date();
+  if(isNaN(d.getTime())) return '';
+  return `${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} `
+       + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function renderNext(){
+  const list=$('#nextList'); if(!list) return;
+  const sorted=[...nextTodos].sort((a,b)=> String(b.at||'').localeCompare(String(a.at||'')));
+  $('#nextCount').textContent = sorted.length? `收集箱里有 ${sorted.length} 条` : '收集箱是空的';
+  list.innerHTML = sorted.length? sorted.map(x=>`
+    <div class="nx-item" data-id="${x.id}">
+      <span class="nx-dot"></span>
+      <span class="nx-text">${escapeHtml(x.text)}</span>
+      <span class="nx-time">${nextStamp(x.at)}</span>
+      <button class="primary" data-nx="conv" title="变成下个月任务看板里的正式任务">→ 排进下月任务</button>
+      <button data-nx="edit" title="修改内容">✎</button>
+      <button data-nx="del" title="删除">✕</button>
+    </div>`).join('')
+    : `<div class="nx-empty">还没有记东西。<br>工作中一冒出「这个下个月得做」，就在这里敲一句、回车，先记下来。</div>`;
+  const badge=$('#nextBadge');
+  if(badge){ badge.textContent = nextTodos.length>99? '99+' : nextTodos.length;
+    badge.style.display = nextTodos.length>0? 'grid' : 'none'; }
+}
+function renderNextConv(id){
+  const list=$('#nextList'); if(!list) return;
+  const row=list.querySelector('.nx-item[data-id="'+id+'"]'); if(!row) return;
+  const old=list.querySelector('.nx-conv'); if(old) old.remove();
+  const ym2=nextMonthYM();
+  const cats=CATS.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  row.insertAdjacentHTML('afterend', `<div class="nx-conv" data-id="${id}">
+    <label>分类</label><select data-nxc="cat">${cats}</select>
+    <label>优先级</label><select data-nxc="pri">
+      <option value="high">高</option><option value="mid" selected>中</option><option value="low">低</option>
+    </select>
+    <label>截止</label><input type="date" data-nxc="due" value="${ym2}-01" />
+    <button class="btn primary" data-nxc="ok">确定排进 ${ym2.slice(5)} 月</button>
+    <button class="btn" data-nxc="cancel">取消</button>
+  </div>`);
+}
+function nextAddTask(id, cat, pri, due){
+  const item=nextTodos.find(x=>x.id===id); if(!item) return;
+  const ym2=nextMonthYM();
+  let arr=[]; try{ arr=JSON.parse(localStorage.getItem(storeKey(ym2))||'[]'); }catch(e){}
+  const t={id:uid(), cat:cat||CATS[0].id, title:item.text, priority:pri||'mid',
+           due:due||'', done:false, status:'未开始', subtasks:[]};
+  arr.push(t);
+  localStorage.setItem(storeKey(ym2), JSON.stringify(arr));
+  pushTaskToCloud(t, ym2);
+  nextTodos=nextTodos.filter(x=>x.id!==id);
+  saveNext(); renderNext();
+  if(ym2===ym){ data.push(t); render(); }
+  toast(`已排进 ${ym2.slice(5)} 月任务看板 ✓`);
+}
+async function pushTaskToCloud(t, month){
+  if(!sb || cloudOff || readOnly) return;
+  try{
+    await sb.from('tasks').upsert([{id:String(t.id), month, cat:t.cat, title:t.title,
+      priority:t.priority, due:t.due||'', done:!!t.done, status:t.status||'未开始',
+      subtasks:t.subtasks||[], updated_at:new Date().toISOString()}], {onConflict:'id'});
+  }catch(e){}
+}
+async function syncNext(){
+  if(!sb) return false;
+  try{
+    const rows=nextTodos.map(x=>({id:String(x.id), month:INBOX_MONTH, cat:'', title:x.text,
+      priority:'mid', due:'', done:false, status:'未开始', subtasks:[],
+      updated_at:x.at||new Date().toISOString()}));
+    if(rows.length){ const r=await sb.from('tasks').upsert(rows, {onConflict:'id'}); if(r && r.error) return false; }
+    const {data:ex}=await sb.from('tasks').select('id').eq('month', INBOX_MONTH);
+    const local=new Set(rows.map(r=>r.id));
+    const del=(ex||[]).map(r=>r.id).filter(id=>!local.has(id));
+    if(del.length) await sb.from('tasks').delete().in('id', del);
+    return true;
+  }catch(e){ return false; }
+}
+function bindNext(){
+  const add=()=>{
+    const inp=$('#nextInput'); const v=(inp.value||'').trim(); if(!v) return;
+    nextTodos.push({id:uid(), text:v, at:new Date().toISOString()});
+    saveNext(); renderNext(); inp.value=''; inp.focus(); toast('已记下 ✓');
+  };
+  $('#nextAdd').onclick=add;
+  $('#nextInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); add(); } });
+  $('#nextList').addEventListener('click',e=>{
+    const conv=e.target.closest('[data-nxc]');
+    if(conv){
+      const box=conv.closest('.nx-conv'); const id=box.dataset.id;
+      const a=conv.dataset.nxc;
+      if(a==='cancel'){ box.remove(); return; }
+      if(a==='ok'){
+        nextAddTask(id, box.querySelector('[data-nxc="cat"]').value,
+                        box.querySelector('[data-nxc="pri"]').value,
+                        box.querySelector('[data-nxc="due"]').value);
+      }
+      return;
+    }
+    const b=e.target.closest('[data-nx]'); if(!b) return;
+    const row=b.closest('.nx-item'); const id=row.dataset.id;
+    const act=b.dataset.nx;
+    if(act==='conv'){ renderNextConv(id); return; }
+    if(act==='del'){
+      if(confirm('删除这条记录？')){ nextTodos=nextTodos.filter(x=>x.id!==id); saveNext(); renderNext(); toast('已删除'); }
+      return;
+    }
+    if(act==='edit'){
+      const span=row.querySelector('.nx-text');
+      const inp=document.createElement('input');
+      inp.type='text'; inp.className='nx-edit'; inp.value=span.textContent;
+      span.replaceWith(inp); inp.focus(); inp.select();
+      let done=false;
+      const commit=()=>{ if(done) return; done=true;
+        const v=inp.value.trim();
+        if(v){ const it=nextTodos.find(x=>x.id===id); if(it){ it.text=v; saveNext(); } }
+        else { nextTodos=nextTodos.filter(x=>x.id!==id); saveNext(); }
+        renderNext(); };
+      const cancel=()=>{ if(done) return; done=true; renderNext(); };
+      inp.addEventListener('keydown',ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); commit(); }
+        else if(ev.key==='Escape'){ ev.preventDefault(); cancel(); } });
+      inp.addEventListener('blur',commit);
+    }
+  });
+}
 function loadMkt(){
   const raw=localStorage.getItem('mkt_nodes'); let arr=[];
   if(raw){ try{ const o=JSON.parse(raw); if(Array.isArray(o)) arr=o; else Object.keys(o).forEach(d=>arr.push({start:d, end:d, name:o[d]})); }catch(e){} }
@@ -3414,6 +3616,7 @@ function bootApp(){
   document.body.classList.toggle('readonly', readOnly);
   const rb=$('#roBanner'); if(rb) rb.style.display = readOnly? 'block' : 'none';
   renderTpl(); bindTpl(); bindKb(); renderKb(); bindHunt(); renderHunt();
+  nextTodos=loadNext(); bindNext(); renderNext();
   t24Bind();
   bindView(); bindSidebar(); bindCal();
   renderCalendar(); quickRange('month'); applySidebar();
