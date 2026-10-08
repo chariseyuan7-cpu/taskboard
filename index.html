@@ -257,6 +257,16 @@
   .edit-toggle{border:none; background:rgba(255,122,89,.14); color:#e2603c; font-size:11.5px; font-weight:700;
     padding:2px 10px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:4px}
   .edit-toggle:hover{background:rgba(255,122,89,.28)}
+  .carry-note{display:flex; align-items:center; gap:10px; background:rgba(78,161,245,.10);
+    border:1px solid rgba(78,161,245,.35); border-radius:11px; padding:9px 13px; margin-bottom:12px;
+    font-size:12.5px; color:var(--fg); line-height:1.6}
+  .carry-note .cn-ic{flex:0 0 auto}
+  .carry-note .cn-tx{flex:1}
+  .carry-note .cn-x{border:none; background:none; color:var(--muted); cursor:pointer; font-size:14px;
+    padding:0 4px}
+  .carry-note .cn-x:hover{color:var(--accent)}
+  .carry-tag{font-size:11px; font-weight:600; color:#2f83d6; background:rgba(78,161,245,.14);
+    border-radius:20px; padding:2px 9px; white-space:nowrap}
   .subtask{margin-top:9px; padding:10px; background:rgba(47,61,85,.05); border-radius:9px;
     display:flex; flex-direction:column; gap:8px}
   .sub-head{display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--muted)}
@@ -845,6 +855,7 @@
 
   <div class="cat-strip" id="catStrip"></div>
 
+  <div id="carryNote" style="display:none"></div>
   <div id="detail"></div>
   </section><!-- /view-tasks -->
 
@@ -1293,6 +1304,75 @@ function undo(){
 }
 function resetMonth(){ pushHistory(); data = DEFAULT_TASKS.map(t=>({ id:uid(), ...t, done:false, status:'未开始', subtasks:[] })); save(); render(); toast('已重置为本月默认模板');}
 
+/* ---------- 月度归属 & 跨月 DDL 结转 ----------
+   规则：任务归属创建它的那个月；只有「未完成 + DDL（含子任务 DDL）落到本月」的任务
+   才会自动结转一份到本月，其余留在原月份，不会跟过来。 */
+function tbMonthKeys(){
+  const out=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k && k.indexOf('taskboard_')===0){ const m=k.slice(10); if(/^\d{4}-\d{2}$/.test(m)) out.push(m); }
+  }
+  return out.sort();
+}
+function tbReadMonth(m){ try{ return JSON.parse(localStorage.getItem(storeKey(m))||'[]'); }catch(e){ return []; } }
+function tbWriteMonth(m,arr){ try{ localStorage.setItem(storeKey(m), JSON.stringify(arr)); }catch(e){} }
+function dueInMonth(t,y){
+  if(t.due && t.due.slice(0,7)===y) return true;
+  return (t.subtasks||[]).some(s=> s.due && !s.done && s.due.slice(0,7)===y);
+}
+let carryInfo={added:0, leftBehind:0, months:[], leftByMonth:{}};
+function carryOverInto(y){
+  const earlier=tbMonthKeys().filter(m=>m<y);
+  const have=new Set(data.map(t=>t.fromId || t.id));
+  let added=0, left=0; const froms=new Set(); const leftByMonth={};
+  earlier.forEach(m=>{
+    tbReadMonth(m).forEach(t=>{
+      if(isDone(t)) return;
+      if(!dueInMonth(t,y)){ left++; leftByMonth[m]=(leftByMonth[m]||0)+1; return; }
+      if(have.has(t.id)) return;
+      const copy={ ...t, id:uid(), fromId:t.id, fromMonth:m,
+        subtasks:(t.subtasks||[]).map(s=>({...s})) };
+      data.push(copy); have.add(t.id); added++; froms.add(m);
+    });
+  });
+  carryInfo={ added, leftBehind:left, months:[...froms].sort(), leftByMonth };
+  return added;
+}
+// 勾选完成时，源任务和结转出去的副本一起更新，避免两头对不上
+function propagateDone(t, done){
+  const stamp=()=> new Date().toISOString();
+  if(t.fromId && t.fromMonth){
+    const arr=tbReadMonth(t.fromMonth); const s=arr.find(x=>x.id===t.fromId);
+    if(s){ s.done=done; s.status= done? '已完成' : (s.status==='已完成'? '未开始' : s.status);
+      tbWriteMonth(t.fromMonth, arr); pushTaskToCloud(s, t.fromMonth); }
+  }
+  tbMonthKeys().forEach(m=>{
+    if(m===ym) return;
+    const arr=tbReadMonth(m); let ch=false;
+    arr.forEach(x=>{ if(x.fromId===t.id){ x.done=done;
+      x.status= done? '已完成' : (x.status==='已完成'? '未开始' : x.status); ch=true; } });
+    if(ch){ tbWriteMonth(m, arr); arr.filter(x=>x.fromId===t.id).forEach(x=>pushTaskToCloud(x, m)); }
+  });
+}
+function carryNoteHtml(){
+  if(!carryInfo.added && !carryInfo.leftBehind) return '';
+  const lb=carryInfo.leftByMonth||{};
+  const mn=(carryInfo.months||[]).map(m=>Number(m.slice(5))+' 月').join('、');
+  let parts=[];
+  if(carryInfo.added) parts.push(`已从 ${mn}结转 <b>${carryInfo.added}</b> 项（DDL 落在本月）`);
+  if(carryInfo.leftBehind){
+    const detail=Object.keys(lb).sort().map(m=>`${Number(m.slice(5))} 月 <b>${lb[m]}</b> 项`).join('、');
+    parts.push(`${detail}未完成、DDL 不在本月，按规则留在原月份`);
+  }
+  return `<div class="carry-note" id="carryNote">
+    <span class="cn-ic">📥</span>
+    <span class="cn-tx">${parts.join('；')}</span>
+    <button class="cn-x" id="carryNoteX" title="知道了">✕</button>
+  </div>`;
+}
+let carryNoteHidden=false;
+
 // ---------- Supabase 云端同步 ----------
 let connState='off', syncInFlight=0, syncFail=false, lastSyncOk=null;
 function setBadge(state){ connState=state; renderSyncBadge(); }
@@ -1436,6 +1516,8 @@ async function initCloud(){
       renderNext();
     }
     cloudReady=true;
+    // 云端数据到手后再跑一次结转，避免结转结果被云端覆盖；此时才能同步上云
+    if(carryOverInto(ym)){ localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); syncTasks(); }
     if(!readOnly){
       if(!(byMonth[ym] && byMonth[ym].length)) syncTasks();   // 云端暂无本月 → 把本地推上去
       if(!tpls.length) syncTemplates();
@@ -1573,6 +1655,13 @@ function render(){
   } else {
     $('#detail').innerHTML = `<div class="hint">👆 点击上方任一分类，展开查看该分类的任务明细</div>`;
   }
+  const cn=$('#carryNote');
+  if(cn){
+    const html=carryNoteHidden? '' : carryNoteHtml();
+    cn.outerHTML = html || '<div id="carryNote" style="display:none"></div>';
+    const x=document.getElementById('carryNoteX');
+    if(x) x.onclick=()=>{ carryNoteHidden=true; render(); };
+  }
 
   // 多选模式
   const mb=$('#multiBtn');
@@ -1673,6 +1762,7 @@ function taskHtml(t){
         </select>
         <span class="pill ${t.priority}">${priLabel}</span>
         ${t.due? `<span class="due ${over?'over':''}">📅 ${t.due}</span>`:''}
+        ${t.fromId? `<span class="carry-tag" title="这条是从 ${t.fromMonth} 结转过来的，勾选完成会同步回原月份">承自 ${Number(String(t.fromMonth||'').slice(5))||''} 月</span>`:''}
         ${subBtn}
         ${multiMode? '' : `<button class="edit-toggle" data-act="editpanel" title="修改任务内容（标题 / 分类 / 优先级 / 状态 / 截止）">✎ 修改</button>`}
       </div>
@@ -1851,8 +1941,8 @@ function subtaskEditor(t){
 function bind(){
   $('#prevMonth').onclick=()=>{shiftMonth(-1);};
   $('#nextMonth').onclick=()=>{shiftMonth(1);};
-  $('#goToday').onclick=()=>{ym=new Date().toISOString().slice(0,7); history=[]; data=load(ym); render();};
-  $('#monthPick').onchange=e=>{ym=e.target.value; history=[]; data=load(ym); render();};
+  $('#goToday').onclick=()=>{ym=new Date().toISOString().slice(0,7); history=[]; data=load(ym); carryNoteHidden=false; if(carryOverInto(ym)) save(); render();};
+  $('#monthPick').onchange=e=>{ym=e.target.value; history=[]; data=load(ym); carryNoteHidden=false; if(carryOverInto(ym)) save(); render();};
   $('#hideDone').onchange=e=>{hideDone=e.target.checked; render();};
   $('#undoBtn').onclick=undo;
   $('#taskSearch').oninput=e=>{ taskSearch=e.target.value; render(); };
@@ -2000,6 +2090,7 @@ function toggle(id){
   pushHistory();
   t.done=!t.done;
   if(t.done) t.status='已完成'; else if(t.status==='已完成') t.status='未开始';
+  propagateDone(t, t.done);
   save(); render();
   if(t.done){const cs=catStats(t.cat); if(cs.total && cs.d===cs.total) toast('恭喜！「'+catById(t.cat).name+'」全部完成 🎉');}
 }
@@ -3621,6 +3712,7 @@ function bootApp(){
   bindView(); bindSidebar(); bindCal();
   renderCalendar(); quickRange('month'); applySidebar();
   renderMkt(); bindMkt();
+  if(carryOverInto(ym)) save();
   initAddModal(); render(); initCloud();
   const so=$('#signOutLink');
   if(so){ so.style.display = (sb && !cloudOff)? 'inline' : 'none';
