@@ -3597,8 +3597,10 @@ function bindCal(){
     renderCalendar(); toast('已跳到 '+v+' ✓');
   };
   $$('.cal-modes .cal-tag').forEach(b=>b.onclick=()=>{ calMode=b.dataset.mode;
-    if(calMode==='week') weekStart=getMonday(new Date(calAnchor+'T00:00:00'));
-    if(calMode==='day') dayDate=calAnchor;
+    // 点「周」「日」= 看本周 / 今天；点「月」保持当前正在看的月份
+    if(calMode==='week'){ calAnchor=fmtDate(new Date()); weekStart=getMonday(new Date()); }
+    if(calMode==='day'){ calAnchor=fmtDate(new Date()); dayDate=calAnchor; }
+    if(calMode==='month'){ calYM=calAnchor.slice(0,7); }
     renderCalendar(); if(calMode==='day') scrollDayToNow(); });
   $('#addPlanBtn').onclick=()=>openPlanEditor(fmtDate(new Date()));
   $('#calGrid').addEventListener('click',e=>{
