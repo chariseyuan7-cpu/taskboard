@@ -444,6 +444,28 @@
   .rt-area h2, .kb-main .kb-content h2{font-size:18px; margin:12px 0 6px; font-weight:700}
   .rt-area h3, .kb-main .kb-content h3{font-size:15.5px; margin:10px 0 5px; font-weight:700}
   .kb-main .kb-actions{display:flex; gap:8px; margin-top:22px; flex-wrap:wrap}
+  /* ---- 联盟客档案 ---- */
+  .pt-stage{display:inline-block; padding:1px 8px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid var(--border); white-space:nowrap}
+  .pt-stage.s-hot{background:rgba(214,60,60,.12); color:#c0392b; border-color:rgba(214,60,60,.3)}
+  .pt-stage.s-mid{background:rgba(255,176,32,.16); color:#b57b0c; border-color:rgba(255,176,32,.35)}
+  .pt-stage.s-live{background:rgba(18,169,122,.14); color:#12a97a; border-color:rgba(18,169,122,.3)}
+  .pt-stage.s-off{background:var(--surface2); color:var(--muted)}
+  .pt-top{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+  .pt-title{font-size:20px; font-weight:700}
+  .pt-kv{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:9px}
+  .pt-kv div{border:1px solid var(--border); border-radius:10px; padding:8px 10px; background:var(--surface)}
+  .pt-kv .k{font-size:11px; color:var(--muted); margin-bottom:3px}
+  .pt-kv .v{font-size:13px; word-break:break-word; white-space:pre-wrap}
+  .pt-sec{margin:16px 0}
+  .pt-sec h3{font-size:13.5px; margin:0 0 6px; color:var(--accent); font-weight:700}
+  .pt-sec .bd{font-size:13.5px; line-height:1.85; white-space:pre-wrap; word-break:break-word}
+  .pt-tools{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .pt-form{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px}
+  .pt-form .full{grid-column:1/-1}
+  .pt-form label{font-size:11.5px; color:var(--muted); display:block; margin-bottom:4px}
+  .pt-form input,.pt-form select,.pt-form textarea{width:100%; font:inherit; font-size:13px; padding:7px 9px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--fg)}
+  .pt-form textarea{min-height:72px; resize:vertical; line-height:1.7}
+  .pt-flex{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
   .kb-main .kb-empty{color:var(--muted); font-size:14px}
   /* ---- 下月待办收集箱 ---- */
   .nx-wrap{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px;
@@ -807,6 +829,7 @@
       <button class="nav-item" data-view="tpl" title="查看邮件模板"><span class="nav-ic">✉️</span><span class="nav-tx">邮件模板</span></button>
       <button class="nav-item" data-view="cal" title="查看全年日历"><span class="nav-ic">📅</span><span class="nav-tx">全年日历</span></button>
       <button class="nav-item" data-view="kb" title="查看知识库"><span class="nav-ic">📚</span><span class="nav-tx">知识库</span></button>
+      <button class="nav-item" data-view="partners" title="查看联盟客档案"><span class="nav-ic">🤝</span><span class="nav-tx">联盟客档案</span></button>
       <button class="nav-item" data-view="hunt" title="采集网页线索"><span class="nav-ic">🔎</span><span class="nav-tx">线索采集</span></button>
     </nav>
     <div class="side-foot">进度保存在本机浏览器<br>离线可用 · 数据不联网<br>Ctrl+F 搜索 · Esc 关闭<br><a id="signOutLink" style="display:none; text-decoration:underline; cursor:pointer">退出登录</a></div>
@@ -1026,6 +1049,35 @@
       <section class="kb-main" id="kbMain"></section>
     </div>
   </section><!-- /view-kb -->
+
+  <section class="view" id="view-partners">
+    <header>
+      <div class="kicker">Affiliate Profiles</div>
+      <h1>联盟客档案</h1>
+      <p>每个联盟客一张档案卡：身份、阶段、商业条款、受众口径、我方立场与未决事项。数据保存在本机浏览器，可用右上角按钮导出 JSON 备份。</p>
+      <div class="meta">
+        <span>主键：<b>Impact Partner ID</b></span>
+        <span>支持：<b>新增 / 编辑 / 筛选 / 搜索 / 导入导出</b></span>
+      </div>
+    </header>
+    <div class="kb-toolbar">
+      <input id="ptSearch" type="text" placeholder="搜索名称 / Partner ID / 联系人 / 国家…" />
+      <div class="pt-tools">
+        <button class="btn" id="ptExport">⬇ 导出 JSON</button>
+        <button class="btn" id="ptImportBtn">⬆ 导入 JSON</button>
+        <input type="file" id="ptImportFile" accept=".json,application/json" style="display:none" />
+        <button class="btn primary" id="ptAddBtn">＋ 新增联盟客</button>
+      </div>
+    </div>
+    <div class="kb-editor" id="ptEditor" style="display:none"></div>
+    <div class="kb-layout">
+      <aside class="kb-side" id="ptSide">
+        <div class="kb-filter" id="ptFilter"></div>
+        <div class="kb-list" id="ptList"></div>
+      </aside>
+      <section class="kb-main" id="ptMain"></section>
+    </div>
+  </section><!-- /view-partners -->
 
   <section class="view" id="view-hunt">
     <header>
@@ -3022,9 +3074,176 @@ function setView(v){
   if(v==='tpl') renderTpl();
   if(v==='cal') renderCalendar();
   if(v==='kb') renderKb();
+  if(v==='partners') renderPt();
   if(v==='hunt') renderHunt();
   if(v==='next') renderNext();
 }
+// ---------- 联盟客档案（本地存储 aff_lib） ----------
+const PT_STAGES=['候选','已建联','已回复','已会议','已提案','谈判中','已签约','已上线','已出单','暂停','淘汰'];
+const PT_HOT=['已建联','已回复','已会议','已提案','谈判中'];
+const PT_LIVE=['已签约','已上线','已出单'];
+const PT_NETS=['Impact','Tradedoubler','Partnerize','CAKE','自有','其他'];
+const PT_TYPES=['内容媒体','Deals','Coupon','返利','比价','创作者','APP','Sub Network','会员俱乐部','其他'];
+const PT_MODELS=['待定','纯 CPS','固定费','混合','Barter'];
+const PT_PRIOS=['P0','P1','P2','P3'];
+const PT_GRADES=['未评','S','A','B','C','D'];
+const PT_FIELDS=[
+  ['positioning','一句话定位'],
+  ['business','业务与收入结构'],
+  ['settlement','结算与追踪体系'],
+  ['deliverables','交付物与价格'],
+  ['audience','受众规模与数据口径'],
+  ['assessment','我方评估'],
+  ['risks','风险与红线'],
+  ['meetings','会议索引（每行：YYYY-MM-DD 主题）']
+];
+let ptData=[], ptFilter='全部', ptSelId=null, ptEditId=null;
+
+function loadPt(){ const raw=localStorage.getItem('aff_lib'); if(raw){ try{ const a=JSON.parse(raw); if(Array.isArray(a)) return a; }catch(e){} } return []; }
+function savePt(){ try{ localStorage.setItem('aff_lib', JSON.stringify(ptData)); }catch(e){} }
+function ptStageClass(s){ if(PT_LIVE.indexOf(s)>=0) return 's-live'; if(PT_HOT.indexOf(s)>=0) return 's-hot'; if(s==='暂停'||s==='淘汰') return 's-off'; return 's-mid'; }
+function ptStageBadge(s){ return '<span class="pt-stage '+ptStageClass(s)+'">'+escapeHtml(s||'未定级')+'</span>'; }
+function ptById(id){ return ptData.find(p=>p.id===id)||null; }
+function ptLabel(v){ return (v===undefined||v===null||String(v).trim()==='')? '—' : String(v); }
+function ptFiltered(){
+  const q=(($('#ptSearch')&&$('#ptSearch').value)||'').trim().toLowerCase();
+  let arr=ptData.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'zh'));
+  if(ptFilter!=='全部') arr=arr.filter(p=>(p.stage||'')===ptFilter);
+  if(q) arr=arr.filter(p=>[p.name,p.partnerId,p.contact,p.type,p.countries,p.pending,p.owner].join(' ').toLowerCase().indexOf(q)>=0);
+  return arr;
+}
+function renderPt(){
+  const f=$('#ptFilter'); if(f){
+    const cats=['全部',...PT_STAGES];
+    f.innerHTML=cats.map(c=>`<span class="tpl-tag ${ptFilter===c?'active':''}" data-ptcat="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join('');
+    f.querySelectorAll('[data-ptcat]').forEach(el=>el.onclick=()=>{ ptFilter=el.dataset.ptcat; renderPt(); });
+  }
+  const list=$('#ptList');
+  if(list){
+    const arr=ptFiltered();
+    if(!arr.length){ list.innerHTML='<div class="hint">'+(ptData.length? '没有匹配的联盟客':'还没有档案，点右上角「＋ 新增联盟客」开始')+'</div>'; }
+    else list.innerHTML=arr.map(p=>`<div class="kb-item ${p.id===ptSelId?'active':''}" data-ptid="${p.id}">
+        <div class="kb-t">${ptStageBadge(p.stage)}${escapeHtml(p.name||'(未命名)')}</div>
+        <div class="kb-c">${escapeHtml([p.partnerId?('ID '+p.partnerId):'', p.type||'', p.priority||''].filter(Boolean).join(' · ')||'（无更多信息）')}</div>
+      </div>`).join('');
+    list.querySelectorAll('[data-ptid]').forEach(el=>el.onclick=()=>{ ptSelId=el.dataset.ptid; closePtEditor(); renderPt(); });
+  }
+  if(ptSelId && !ptById(ptSelId)) ptSelId=null;
+  if(!ptSelId && ptFiltered().length) ptSelId=ptFiltered()[0].id;
+  renderPtMain();
+}
+function renderPtMain(){
+  const el=$('#ptMain'); if(!el) return;
+  const p=ptById(ptSelId);
+  if(!p){ el.innerHTML='<div class="kb-empty">从左侧选择一位联盟客查看档案；或点右上角「＋ 新增联盟客」新建。</div>'; return; }
+  const kv=[['Impact Partner ID',p.partnerId],['所属网络',p.network],['类型',p.type],['覆盖国家',p.countries],
+    ['联系人',p.contact],['阶段',p.stage],['优先级 / 评分',[p.priority,p.score].filter(Boolean).join(' / ')],
+    ['分级',p.grade],['可触达量',p.reach],['商业模型',p.model],['负责人',p.owner],['下次动作日期',p.nextDate]];
+  let html='<div class="pt-top"><span class="pt-title">'+escapeHtml(p.name||'(未命名)')+'</span>'+ptStageBadge(p.stage);
+  if(p.priority) html+='<span class="pt-stage s-mid">'+escapeHtml(p.priority)+'</span>';
+  html+='</div>';
+  html+='<div class="pt-kv">'+kv.map(([k,v])=>'<div><div class="k">'+escapeHtml(k)+'</div><div class="v">'+escapeHtml(ptLabel(v))+'</div></div>').join('')+'</div>';
+  if(p.terms) html+='<div class="pt-sec"><h3>关键条款摘要</h3><div class="bd">'+escapeHtml(p.terms)+'</div></div>';
+  PT_FIELDS.forEach(([key,label])=>{ const v=p[key]; if(v) html+='<div class="pt-sec"><h3>'+escapeHtml(label)+'</h3><div class="bd">'+escapeHtml(v)+'</div></div>'; });
+  html+='<div class="kb-actions"><button class="btn primary" id="ptEdit">✎ 编辑档案</button><button class="btn" id="ptCopy">⧉ 复制档案文本</button><button class="btn" id="ptDel">✕ 删除</button></div>';
+  el.innerHTML=html;
+  const e=$('#ptEdit'); if(e) e.onclick=()=>openPtEditor(p.id);
+  const c=$('#ptCopy'); if(c) c.onclick=()=>{ copyText(ptPlainText(p),'档案已复制'); };
+  const d=$('#ptDel'); if(d) d.onclick=()=>{ if(confirm('确认删除「'+(p.name||'未命名')+'」的档案？')){ ptData=ptData.filter(x=>x.id!==p.id); savePt(); ptSelId=null; renderPt(); } };
+}
+function ptPlainText(p){
+  const lines=['【'+(p.name||'')+'】'];
+  [['Impact Partner ID',p.partnerId],['网络',p.network],['类型',p.type],['覆盖国家',p.countries],['联系人',p.contact],
+   ['阶段',p.stage],['优先级',p.priority],['评分',p.score],['分级',p.grade],['可触达量',p.reach],['商业模型',p.model],
+   ['负责人',p.owner],['下次动作',p.nextDate]].forEach(([k,v])=>{ if(v) lines.push(k+'：'+v); });
+  if(p.terms) lines.push('关键条款摘要：'+p.terms);
+  PT_FIELDS.forEach(([key,label])=>{ if(p[key]) lines.push('【'+label+'】'+p[key]); });
+  return lines.join('\n');
+}
+function ptSelOptions(list,val){
+  return list.map(o=>`<option value="${escapeHtml(o)}" ${o===val?'selected':''}>${escapeHtml(o)}</option>`).join('');
+}
+function openPtEditor(id){
+  ptEditId=id||null;
+  const p=id?ptById(id):null;
+  const ed=$('#ptEditor'); if(!ed) return;
+  const v=k=>p&&p[k]!==undefined&&p[k]!==null? String(p[k]) : '';
+  ed.innerHTML=`
+    <div class="me-head"><h3>${id?'编辑联盟客档案':'新增联盟客档案'}</h3><button class="btn" id="ptCancel">取消</button></div>
+    <div class="pt-form">
+      <div><label>名称 *</label><input id="ptF_name" value="${escapeHtml(v('name'))}" placeholder="如 College Life" /></div>
+      <div><label>Impact Partner ID</label><input id="ptF_partnerId" value="${escapeHtml(v('partnerId'))}" placeholder="如 2751581" /></div>
+      <div><label>所属网络</label><select id="ptF_network"><option value=""></option>${ptSelOptions(PT_NETS,v('network'))}</select></div>
+      <div><label>类型</label><select id="ptF_type"><option value=""></option>${ptSelOptions(PT_TYPES,v('type'))}</select></div>
+      <div><label>覆盖国家</label><input id="ptF_countries" value="${escapeHtml(v('countries'))}" placeholder="如 DE / ES / 8 国" /></div>
+      <div><label>联系人</label><input id="ptF_contact" value="${escapeHtml(v('contact'))}" placeholder="姓名 / 职位 / 邮箱" /></div>
+      <div><label>阶段</label><select id="ptF_stage"><option value=""></option>${ptSelOptions(PT_STAGES,v('stage'))}</select></div>
+      <div><label>优先级</label><select id="ptF_priority"><option value=""></option>${ptSelOptions(PT_PRIOS,v('priority'))}</select></div>
+      <div><label>五维评分</label><input id="ptF_score" value="${escapeHtml(v('score'))}" placeholder="如 3.5" /></div>
+      <div><label>分级</label><select id="ptF_grade">${ptSelOptions(PT_GRADES,v('grade')||'未评')}</select></div>
+      <div><label>可触达量</label><input id="ptF_reach" value="${escapeHtml(v('reach'))}" placeholder="分渠道填：邮件 / WhatsApp / 站内" /></div>
+      <div><label>商业模型</label><select id="ptF_model">${ptSelOptions(PT_MODELS,v('model')||'待定')}</select></div>
+      <div><label>负责人</label><input id="ptF_owner" value="${escapeHtml(v('owner'))}" /></div>
+      <div><label>下次动作日期</label><input id="ptF_nextDate" type="date" value="${escapeHtml(v('nextDate'))}" /></div>
+      <div class="full"><label>关键条款摘要</label><textarea id="ptF_terms">${escapeHtml(v('terms'))}</textarea></div>
+      ${PT_FIELDS.map(([key,label])=>`<div class="full"><label>${escapeHtml(label)}</label><textarea id="ptF_${key}">${escapeHtml(v(key))}</textarea></div>`).join('')}
+    </div>
+    <button class="btn primary" id="ptSave" style="width:100%; margin-top:10px">保存</button>`;
+  ed.style.display='flex';
+  ed.scrollIntoView({behavior:'smooth',block:'nearest'});
+  $('#ptCancel').onclick=closePtEditor;
+  $('#ptSave').onclick=savePtEntry;
+}
+function closePtEditor(){ ptEditId=null; const ed=$('#ptEditor'); if(ed){ ed.style.display='none'; ed.innerHTML=''; } }
+function savePtEntry(){
+  const g=id=>{ const el=$('#'+id); return el? String(el.value||'').trim() : ''; };
+  const name=g('ptF_name');
+  if(!name){ (typeof toast==='function')&&toast('请填写名称'); return; }
+  const rec={ name, partnerId:g('ptF_partnerId'), network:g('ptF_network'), type:g('ptF_type'), countries:g('ptF_countries'),
+    contact:g('ptF_contact'), stage:g('ptF_stage'), priority:g('ptF_priority'), score:g('ptF_score'), grade:g('ptF_grade'),
+    reach:g('ptF_reach'), model:g('ptF_model'), owner:g('ptF_owner'), nextDate:g('ptF_nextDate'), terms:g('ptF_terms'),
+    updatedAt:new Date().toISOString().slice(0,10) };
+  PT_FIELDS.forEach(([key])=>{ rec[key]=g('ptF_'+key); });
+  if(ptEditId){ const p=ptById(ptEditId); if(p) Object.assign(p,rec); }
+  else { rec.id='pt'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); ptData.push(rec); ptSelId=rec.id; }
+  savePt(); closePtEditor(); renderPt();
+  (typeof toast==='function')&&toast(ptEditId? '档案已更新' : '档案已新增');
+}
+function exportPt(){
+  const blob=new Blob([JSON.stringify(ptData,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='affiliate_profiles_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  (typeof toast==='function')&&toast('已导出 JSON');
+}
+function importPtFile(file){
+  const fr=new FileReader();
+  fr.onload=()=>{
+    try{
+      const arr=JSON.parse(fr.result);
+      if(!Array.isArray(arr)) throw new Error('JSON 顶层需要是数组');
+      let added=0, upd=0;
+      arr.forEach(raw=>{
+        const key=String(raw.partnerId||'')+'|'+String(raw.name||'');
+        const ex=ptData.find(x=>String(x.partnerId||'')+'|'+String(x.name||'')===key);
+        if(ex){ Object.assign(ex,raw,{id:ex.id}); upd++; }
+        else { raw.id=raw.id||('pt'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)); ptData.push(raw); added++; }
+      });
+      savePt(); renderPt();
+      (typeof toast==='function')&&toast('导入完成：新增 '+added+' 条，更新 '+upd+' 条');
+    }catch(e){ alert('导入失败：'+e.message); }
+  };
+  fr.readAsText(file);
+}
+function bindPt(){
+  const add=$('#ptAddBtn'); if(add) add.onclick=()=>{ ptSelId=null; openPtEditor(null); };
+  const s=$('#ptSearch'); if(s) s.oninput=()=>renderPt();
+  const ex=$('#ptExport'); if(ex) ex.onclick=exportPt;
+  const ib=$('#ptImportBtn'); const iff=$('#ptImportFile');
+  if(ib&&iff){ ib.onclick=()=>iff.click(); iff.onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(f) importPtFile(f); e.target.value=''; }; }
+}
+
 function bindView(){
   $$('.nav-item').forEach(b=>b.onclick=()=>setView(b.dataset.view));
 }
@@ -3715,6 +3934,7 @@ function globalKeys(e){
     if(ovs.length){ ovs[ovs.length-1].classList.remove('show'); return; }
     const me=$('#memoEditor'); if(me && me.style.display!=='none'){ closePlanEditor(); return; }
     const ke=$('#kbEditor'); if(ke && ke.style.display!=='none'){ closeKbEditor(); return; }
+    const pe=$('#ptEditor'); if(pe && pe.style.display!=='none'){ closePtEditor(); return; }
     const de=$('.due-editor'); if(de){ de.remove(); return; }
     if(multiMode){ multiMode=false; selected.clear(); render(); return; }
   }
@@ -3725,6 +3945,7 @@ function bootApp(){
   document.body.classList.toggle('readonly', readOnly);
   const rb=$('#roBanner'); if(rb) rb.style.display = readOnly? 'block' : 'none';
   renderTpl(); bindTpl(); bindKb(); renderKb(); bindHunt(); renderHunt();
+  ptData=loadPt(); bindPt(); renderPt();
   nextTodos=loadNext(); bindNext(); renderNext();
   t24Bind();
   bindView(); bindSidebar(); bindCal();
