@@ -1157,6 +1157,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// 计划标签改过名：旧数据自动跟着迁到新名字（必须在 loadPlans() 之前声明）
+const MEMO_TAG_ALIAS = {'被封':'会议'};
+function memoTagName(t){ return MEMO_TAG_ALIAS[t] || t; }
+
 // ---------- 月度默认任务模板（可按需改） ----------
 const CATS = [
   {id:'creator',  name:'红人开发',       color:'#ff7a59'},
@@ -1248,6 +1252,7 @@ let planStart = ''; let planEnd = '';               // 正在编辑的计划起�
 let memoTagFilter = '全部';                          // 备忘标签筛选
 let memoNewTag = '日常';                             // 当前添加备忘选中的标签
 let memoNewKey = false;                              // 当前添加的计划是否为重点
+let plansRenamed = false;                            // 标签改名后需要回写云端
 let rangeStart = ''; let rangeEnd = '';             // 时间范围查询
 const MEMO_TAGS = [
   {name:'日常',   color:'#4ea1f5', bg:'rgba(78,161,245,.16)'},
@@ -1258,7 +1263,7 @@ const MEMO_TAGS = [
   {name:'社媒',     color:'#06b6d4', bg:'rgba(6,182,212,.16)'},
   {name:'营销曝光', color:'#f97316', bg:'rgba(249,115,22,.16)'},
   {name:'联盟平台', color:'#0d9488', bg:'rgba(13,148,136,.16)'},
-  {name:'被封',     color:'#6b6b6b', bg:'rgba(107,107,107,.16)'},
+  {name:'会议',     color:'#64748b', bg:'rgba(100,116,139,.18)'},
 ];
 // 2026 年国务院公布的节假日 + 调休上班日
 const HOLIDAYS_2026 = {
@@ -1440,7 +1445,7 @@ async function syncPlans(){
   if(!sb) return false;
   try{
     const rows=[];
-    plans.forEach(x=>rows.push({id:String(x.id), start:x.start, end:x.end, text:x.text, tag:x.tag||'日常', done:!!x.done, st:x.st||'', et:x.et||'', key:!!x.key, updated_at:new Date().toISOString()}));
+    plans.forEach(x=>rows.push({id:String(x.id), start:x.start, end:x.end, text:x.text, tag:memoTagName(x.tag||'日常'), done:!!x.done, st:x.st||'', et:x.et||'', key:!!x.key, updated_at:new Date().toISOString()}));
     const res = await sb.from('plans').upsert(rows, {onConflict:'id'});
     if(res && res.error){
       const r2=await sb.from('plans').upsert(rows.map(r=>{const {done,st,et,key,...rest}=r; return rest;}), {onConflict:'id'});
@@ -1497,7 +1502,9 @@ async function initCloud(){
     const planLocal={}; plans.forEach(p=>{ planLocal[p.id]=p; });
     const plist = pls.map(x=>{
       const loc=planLocal[x.id]||{};
-      return {id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:x.tag||'日常',
+      const tagName=memoTagName(x.tag||'日常');
+      if((x.tag||'日常')!==tagName) plansRenamed=true;
+      return {id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:tagName,
         done: ('done' in x)? !!x.done : !!loc.done,
         st:   ('st'   in x)? (x.st||'') : (loc.st||''),
         et:   ('et'   in x)? (x.et||'') : (loc.et||''),
@@ -1516,6 +1523,7 @@ async function initCloud(){
       renderNext();
     }
     cloudReady=true;
+    if(plansRenamed){ plansRenamed=false; savePlans(); }   // 标签改名后把云端也更新成新名字
     // 云端数据到手后再跑一次结转，避免结转结果被云端覆盖；此时才能同步上云
     if(carryOverInto(ym)){ localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); syncTasks(); }
     if(!readOnly){
@@ -3046,7 +3054,15 @@ function loadPlans(){
     const raw2=localStorage.getItem('memos');
     if(raw2){ try{ const obj=JSON.parse(raw2); Object.keys(obj).forEach(d=>(obj[d]||[]).forEach(m=>arr.push({id:m.id, start:d, end:d, text:m.text, tag:m.tag||'日常'}))); }catch(e){} }
   }
-  return arr.map(p=>({id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text, tag:p.tag||'日常', done:!!p.done, st:p.st||'', et:p.et||'', key:!!p.key}));
+  let renamed=false;
+  const mapped=arr.map(p=>{
+    const tag=memoTagName(p.tag||'日常');
+    if((p.tag||'日常')!==tag) renamed=true;
+    return {id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text,
+      tag, done:!!p.done, st:p.st||'', et:p.et||'', key:!!p.key};
+  });
+  if(renamed){ try{ localStorage.setItem('plans', JSON.stringify(mapped)); }catch(e){} }
+  return mapped;
 }
 function savePlans(){ localStorage.setItem('plans', JSON.stringify(plans)); scheduleSync('plans'); }
 /* ---------- 下月待办收集箱 ---------- */
