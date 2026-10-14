@@ -466,6 +466,17 @@
   .pt-form input,.pt-form select,.pt-form textarea{width:100%; font:inherit; font-size:13px; padding:7px 9px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--fg)}
   .pt-form textarea{min-height:72px; resize:vertical; line-height:1.7}
   .pt-flex{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .pt-rich{font-size:13.5px; line-height:1.85; word-break:break-word}
+  .pt-rich p{margin:6px 0}
+  .pt-rich img{max-width:100%; border-radius:8px; margin:8px 0; display:block}
+  .pt-rich table{border-collapse:collapse; width:100%; margin:10px 0; font-size:13px}
+  .pt-rich td,.pt-rich th{border:1px solid var(--border); padding:7px 10px; vertical-align:top}
+  .pt-rich th{background:var(--surface2); font-weight:700}
+  .pt-rich blockquote{border-left:3px solid var(--accent); margin:10px 0; padding:2px 12px; color:var(--muted)}
+  .pt-rich h2{font-size:17px; margin:12px 0 6px; font-weight:700}
+  .pt-rich h3{font-size:15px; margin:10px 0 5px; font-weight:700}
+  .pt-rich ul,.pt-rich ol{margin:8px 0 8px 22px}
+  .pt-form .rt-pt .rt{width:100%}
   .kb-main .kb-empty{color:var(--muted); font-size:14px}
   /* ---- 下月待办收集箱 ---- */
   .nx-wrap{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px;
@@ -2665,18 +2676,8 @@ function renderKbMain(){
       <button class="btn" data-kbm="del">✕ 删除</button>
     </div>`;
 }
-function openKbEditor(id){
-  kbEditId = id||null;
-  const k = id? kbData.find(x=>x.id===id) : null;
-  const ed=$('#kbEditor');
-  ed.innerHTML = `
-    <div class="me-head"><h3>${id?'编辑词条':'新增词条'}</h3><button class="btn" id="kbCancel">取消</button></div>
-    <div class="field"><label>分类</label>
-      <div class="kb-catpick" id="kbCatPick">${KB_CATS.map(c=>`<span class="tpl-tag ${k&&k.cat===c?'active':''}" data-kcat="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join('')}</div>
-      <input id="kbCat" type="text" placeholder="上面点一个，或自己填（如：联盟客分析）" value="${k?escapeHtml(k.cat||''):''}" />
-    </div>
-    <div class="field"><label>标题</label><input id="kbTitle" type="text" placeholder="标题" value="${k?escapeHtml(k.title||''):''}" /></div>
-    <div class="field"><label>内容</label>
+// 可复用的富文本编辑器骨架（知识库与联盟客档案共用；同一时间只允许打开一个）
+const RT_EDITOR_HTML = `
       <div class="rt" id="rt">
         <div class="rt-bar" id="rtBar">
           <button type="button" data-rt="bold" title="加粗"><b>B</b></button>
@@ -2707,8 +2708,21 @@ function openKbEditor(id){
         <div class="rt-pop" id="rtPop" style="display:none"></div>
       </div>
       <input type="file" id="rtFile" accept="image/*" style="display:none" />
-      <div class="rt-hint">支持加粗 / 颜色 / 高亮 / 标题 / 列表 / 引用 / 表格 / 图片；图片可以直接从截图粘贴或拖进来。</div>
+      <div class="rt-hint">支持加粗 / 颜色 / 高亮 / 标题 / 列表 / 引用 / 表格 / 图片与链接；图片可以直接从截图粘贴或拖进来。</div>`;
+
+function openKbEditor(id){
+  closePtEditor();
+  kbEditId = id||null;
+  const k = id? kbData.find(x=>x.id===id) : null;
+  const ed=$('#kbEditor');
+  ed.innerHTML = `
+    <div class="me-head"><h3>${id?'编辑词条':'新增词条'}</h3><button class="btn" id="kbCancel">取消</button></div>
+    <div class="field"><label>分类</label>
+      <div class="kb-catpick" id="kbCatPick">${KB_CATS.map(c=>`<span class="tpl-tag ${k&&k.cat===c?'active':''}" data-kcat="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join('')}</div>
+      <input id="kbCat" type="text" placeholder="上面点一个，或自己填（如：联盟客分析）" value="${k?escapeHtml(k.cat||''):''}" />
     </div>
+    <div class="field"><label>标题</label><input id="kbTitle" type="text" placeholder="标题" value="${k?escapeHtml(k.title||''):''}" /></div>
+    <div class="field"><label>内容</label>${RT_EDITOR_HTML}</div>
     <button class="btn primary" id="kbSave" style="width:100%">保存</button>`;
   ed.style.display='flex';
   ed.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -3143,8 +3157,12 @@ function renderPtMain(){
   if(p.priority) html+='<span class="pt-stage s-mid">'+escapeHtml(p.priority)+'</span>';
   html+='</div>';
   html+='<div class="pt-kv">'+kv.map(([k,v])=>'<div><div class="k">'+escapeHtml(k)+'</div><div class="v">'+escapeHtml(ptLabel(v))+'</div></div>').join('')+'</div>';
-  if(p.terms) html+='<div class="pt-sec"><h3>关键条款摘要</h3><div class="bd">'+escapeHtml(p.terms)+'</div></div>';
-  PT_FIELDS.forEach(([key,label])=>{ const v=p[key]; if(v) html+='<div class="pt-sec"><h3>'+escapeHtml(label)+'</h3><div class="bd">'+escapeHtml(v)+'</div></div>'; });
+  if(p.rt){
+    html+='<div class="pt-sec"><h3>详细档案</h3><div class="pt-rich">'+kbSanitize(p.rt)+'</div></div>';
+  } else {
+    if(p.terms) html+='<div class="pt-sec"><h3>关键条款摘要</h3><div class="bd">'+escapeHtml(p.terms)+'</div></div>';
+    PT_FIELDS.forEach(([key,label])=>{ const v=p[key]; if(v) html+='<div class="pt-sec"><h3>'+escapeHtml(label)+'</h3><div class="bd">'+escapeHtml(v)+'</div></div>'; });
+  }
   html+='<div class="kb-actions"><button class="btn primary" id="ptEdit">✎ 编辑档案</button><button class="btn" id="ptCopy">⧉ 复制档案文本</button><button class="btn" id="ptDel">✕ 删除</button></div>';
   el.innerHTML=html;
   const e=$('#ptEdit'); if(e) e.onclick=()=>openPtEditor(p.id);
@@ -3157,16 +3175,27 @@ function ptPlainText(p){
    ['阶段',p.stage],['优先级',p.priority],['评分',p.score],['分级',p.grade],['可触达量',p.reach],['商业模型',p.model],
    ['负责人',p.owner],['下次动作',p.nextDate]].forEach(([k,v])=>{ if(v) lines.push(k+'：'+v); });
   if(p.terms) lines.push('关键条款摘要：'+p.terms);
-  PT_FIELDS.forEach(([key,label])=>{ if(p[key]) lines.push('【'+label+'】'+p[key]); });
+  if(p.rt) lines.push('【详细档案】'+kbPlain(p.rt));
+  else PT_FIELDS.forEach(([key,label])=>{ if(p[key]) lines.push('【'+label+'】'+p[key]); });
   return lines.join('\n');
 }
 function ptSelOptions(list,val){
   return list.map(o=>`<option value="${escapeHtml(o)}" ${o===val?'selected':''}>${escapeHtml(o)}</option>`).join('');
 }
+function ptInitialHtml(p){
+  if(!p) return '';
+  if(p.rt) return p.rt;
+  const parts=[];
+  const block=(t,v)=>parts.push('<h3>'+escapeHtml(t)+'</h3><p>'+escapeHtml(String(v)).replace(/\n/g,'<br>')+'</p>');
+  if(p.terms) block('关键条款摘要', p.terms);
+  PT_FIELDS.forEach(([key,label])=>{ if(p[key]) block(label, p[key]); });
+  return parts.join('');
+}
 function openPtEditor(id){
   ptEditId=id||null;
   const p=id?ptById(id):null;
   const ed=$('#ptEditor'); if(!ed) return;
+  closeKbEditor();
   const v=k=>p&&p[k]!==undefined&&p[k]!==null? String(p[k]) : '';
   ed.innerHTML=`
     <div class="me-head"><h3>${id?'编辑联盟客档案':'新增联盟客档案'}</h3><button class="btn" id="ptCancel">取消</button></div>
@@ -3185,12 +3214,12 @@ function openPtEditor(id){
       <div><label>商业模型</label><select id="ptF_model">${ptSelOptions(PT_MODELS,v('model')||'待定')}</select></div>
       <div><label>负责人</label><input id="ptF_owner" value="${escapeHtml(v('owner'))}" /></div>
       <div><label>下次动作日期</label><input id="ptF_nextDate" type="date" value="${escapeHtml(v('nextDate'))}" /></div>
-      <div class="full"><label>关键条款摘要</label><textarea id="ptF_terms">${escapeHtml(v('terms'))}</textarea></div>
-      ${PT_FIELDS.map(([key,label])=>`<div class="full"><label>${escapeHtml(label)}</label><textarea id="ptF_${key}">${escapeHtml(v(key))}</textarea></div>`).join('')}
+      <div class="full rt-pt"><label>详细档案（富文本，可自由排版：标题 / 加粗 / 列表 / 引用 / 表格 / 图片 / 链接）</label>${RT_EDITOR_HTML}</div>
     </div>
     <button class="btn primary" id="ptSave" style="width:100%; margin-top:10px">保存</button>`;
   ed.style.display='flex';
   ed.scrollIntoView({behavior:'smooth',block:'nearest'});
+  bindRtEditor({content: ptInitialHtml(p)});
   $('#ptCancel').onclick=closePtEditor;
   $('#ptSave').onclick=savePtEntry;
 }
@@ -3201,9 +3230,9 @@ function savePtEntry(){
   if(!name){ (typeof toast==='function')&&toast('请填写名称'); return; }
   const rec={ name, partnerId:g('ptF_partnerId'), network:g('ptF_network'), type:g('ptF_type'), countries:g('ptF_countries'),
     contact:g('ptF_contact'), stage:g('ptF_stage'), priority:g('ptF_priority'), score:g('ptF_score'), grade:g('ptF_grade'),
-    reach:g('ptF_reach'), model:g('ptF_model'), owner:g('ptF_owner'), nextDate:g('ptF_nextDate'), terms:g('ptF_terms'),
+    reach:g('ptF_reach'), model:g('ptF_model'), owner:g('ptF_owner'), nextDate:g('ptF_nextDate'),
+    rt:kbSanitize((($('#kbContent')&&$('#kbContent').innerHTML)||'').replace(/(?:<br\s*\/?>\s*)+$/i,'').trim()),
     updatedAt:new Date().toISOString().slice(0,10) };
-  PT_FIELDS.forEach(([key])=>{ rec[key]=g('ptF_'+key); });
   if(ptEditId){ const p=ptById(ptEditId); if(p) Object.assign(p,rec); }
   else { rec.id='pt'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); ptData.push(rec); ptSelId=rec.id; }
   savePt(); closePtEditor(); renderPt();
