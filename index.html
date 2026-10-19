@@ -49,6 +49,7 @@
   .nav-badge{cursor:pointer}
   body.readonly .chk, body.readonly .selchk, body.readonly .status-select, body.readonly .sub-toggle,
   body.readonly .sub-chk, body.readonly .sub-del, body.readonly .sub-add, body.readonly .due-editor,
+  body.readonly .sub-edit, body.readonly .sub-tx,
   body.readonly .sub-due, body.readonly .sub-duebtn, body.readonly .ops, body.readonly .add-toggle,
   body.readonly .add-row, body.readonly .title, body.readonly #addTaskBtn, body.readonly #multiBtn,
   body.readonly #undoBtn, body.readonly #resetBtn, body.readonly #importReviewBtn,
@@ -293,6 +294,12 @@
   .sub-dueedit input:focus{outline:2px solid var(--accent)}
   .sub-del{border:none; background:none; color:var(--muted); cursor:pointer; font-size:13px}
   .sub-del:hover{color:var(--bad)}
+  .sub-edit{border:none; background:none; color:var(--muted); cursor:pointer; font-size:13px}
+  .sub-edit:hover{color:var(--accent)}
+  .sub-item .sub-tx{cursor:text}
+  .sub-tx-edit{flex:1; font:inherit; font-size:13px; padding:3px 8px; border:1px solid var(--accent);
+    border-radius:7px; background:var(--surface); color:var(--fg); min-width:0}
+  .sub-tx-edit:focus{outline:none}
   .sub-empty{font-size:12px; color:var(--muted)}
   .sub-add{display:flex; gap:8px}
   .sub-add input{flex:1; font:inherit; border:1px solid var(--border); border-radius:8px; padding:7px 10px; background:#fff}
@@ -1995,8 +2002,9 @@ function subtaskEditor(t){
           : `<button class="sub-duebtn" data-act="sdue" data-sid="${s.id}" title="设置截止日期">📅</button>`;
         return `<div class="sub-item ${s.done?'done':''}">
           <span class="sub-chk" data-act="chk" data-sid="${s.id}" title="${s.done?'取消完成':'完成'}">${CHECK_SVG}</span>
-          <span class="sub-tx">${escapeHtml(s.text)}</span>
+          <span class="sub-tx" data-act="stx" data-sid="${s.id}" title="双击可修改">${escapeHtml(s.text)}</span>
           ${dueHtml}
+          <button class="sub-edit" data-act="sedit" data-sid="${s.id}" title="修改子任务内容">✎</button>
           <button class="sub-del" data-act="sdel" data-sid="${s.id}" title="删除">✕</button>
         </div>`;
       }).join('') : `<div class="sub-empty">还没有子任务，可在下方添加。</div>`}
@@ -2070,6 +2078,8 @@ function bind(){
     if(subBtn) subBtn.onclick=()=>{ if(openSubtasks.has(id)) openSubtasks.delete(id); else openSubtasks.add(id); render(); };
     row.querySelectorAll('[data-act=chk]').forEach(c=>c.onclick=()=>toggleSub(id, c.dataset.sid));
     row.querySelectorAll('[data-act=sdel]').forEach(c=>c.onclick=()=>{ if(confirm('删除该子任务？')) delSub(id, c.dataset.sid); });
+    row.querySelectorAll('[data-act=sedit]').forEach(b=>b.onclick=()=>editSubInline(b.closest('.sub-item'), id, b.dataset.sid));
+    row.querySelectorAll('[data-act=stx]').forEach(s=>s.ondblclick=()=>editSubInline(s.closest('.sub-item'), id, s.dataset.sid));
     const subAdd=row.querySelector('[data-act=subadd]');
     if(subAdd) subAdd.onclick=()=>addSub(id, row);
     const subInp=row.querySelector('[data-act=subinp]');
@@ -2119,6 +2129,29 @@ function delSub(id, sid){
   t.subtasks = t.subtasks || [];
   if(!t.subtasks.some(x=>x.id===sid)) return;
   pushHistory(); t.subtasks=t.subtasks.filter(x=>x.id!==sid); save(); render(); toast('子任务已删除');
+}
+// 子任务内容就地修改（回车保存 / Esc 取消 / 失焦保存）
+function editSubInline(itemEl, tid, sid){
+  const t=data.find(x=>x.id===tid); if(!t) return;
+  const s=(t.subtasks||[]).find(x=>x.id===sid); if(!s) return;
+  const span=itemEl && itemEl.querySelector('.sub-tx'); if(!span) return;
+  if(itemEl.querySelector('.sub-tx-edit')) return;
+  const inp=document.createElement('input');
+  inp.type='text'; inp.className='sub-tx-edit'; inp.value=s.text;
+  span.replaceWith(inp); inp.focus(); inp.select();
+  let done=false;
+  const commit=()=>{
+    if(done) return; done=true;
+    const v=inp.value.trim();
+    if(v && v!==s.text){ pushHistory(); s.text=v; save(); toast('子任务已更新 ✓'); }
+    render();
+  };
+  const cancel=()=>{ if(done) return; done=true; render(); };
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){ e.preventDefault(); commit(); }
+    else if(e.key==='Escape'){ e.preventDefault(); cancel(); }
+  });
+  inp.addEventListener('blur',commit);
 }
 function addSub(id, row){
   const t=data.find(x=>x.id===id); if(!t) return;
