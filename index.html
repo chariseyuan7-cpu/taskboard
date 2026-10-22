@@ -70,7 +70,7 @@
   .brand-tx b{font-size:15px; display:block}
   .brand-tx span{font-size:11px; color:var(--muted)}
   .nav{display:flex; flex-direction:column; gap:6px; margin-top:4px}
-  .nav-item{position:relative; display:flex; align-items:center; gap:10px; text-align:left; border:none; background:transparent;
+  .nav-item{position:relative; display:flex; align-items:center; gap:10px; text-align:left; border:none; background:transparent; text-decoration:none;
     color:var(--muted); font:inherit; font-size:14px; font-weight:600; padding:12px 13px;
     border-radius:11px; cursor:pointer; transition:.15s}
   .nav-item:hover{background:var(--surface2); color:var(--fg)}
@@ -101,7 +101,9 @@
     .sidebar{width:100%; height:auto; position:sticky; top:0; flex-direction:row; align-items:center;
       padding:10px 14px; border-right:none; border-bottom:1px solid var(--border); gap:12px}
     .brand-tx span{display:none}
-    .nav{flex-direction:row; margin-left:auto}
+    .nav{flex-direction:row; margin-left:auto; overflow-x:auto; scrollbar-width:none}
+    .nav::-webkit-scrollbar{display:none}
+    .nav-item{flex:0 0 auto}
     .side-foot{display:none}
     #multibar{left:0}
   }
@@ -846,6 +848,7 @@
     </div>
     <nav class="nav">
       <button class="nav-item active" data-view="tasks" title="查看任务看板"><span class="nav-ic">📋</span><span class="nav-tx">任务看板</span><span class="nav-badge" id="tasksBadge"></span></button>
+      <a class="nav-item" href="pinterest.html" title="查看 Pinterest 首月运营分析"><span class="nav-ic">📌</span><span class="nav-tx">Pinterest运营分析</span></a>
       <button class="nav-item" data-view="next" title="随手记下个月要做的事"><span class="nav-ic">📥</span><span class="nav-tx">下月待办</span><span class="nav-badge" id="nextBadge"></span></button>
       <button class="nav-item" data-view="tpl" title="查看邮件模板"><span class="nav-ic">✉️</span><span class="nav-tx">邮件模板</span></button>
       <button class="nav-item" data-view="cal" title="查看全年日历"><span class="nav-ic">📅</span><span class="nav-tx">全年日历</span></button>
@@ -3120,7 +3123,7 @@ function bindHunt(){
 function setView(v){
   currentView=v;
   $$('.view').forEach(el=>el.classList.toggle('active', el.id==='view-'+v));
-  $$('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  $$('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
   if(v==='tpl') renderTpl();
   if(v==='cal') renderCalendar();
   if(v==='kb') renderKb();
@@ -3310,7 +3313,7 @@ function bindPt(){
 }
 
 function bindView(){
-  $$('.nav-item').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+  $$('.nav-item[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
 }
 
 // ---------- 侧边栏收起 / 展开 ----------
