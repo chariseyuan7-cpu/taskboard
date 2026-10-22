@@ -462,6 +462,11 @@
   .pt-stage.s-alert{background:#dc2626; color:#fff; border-color:#dc2626; font-weight:700}
   .pt-alert-chip{color:#dc2626 !important; border-color:rgba(220,38,38,.5) !important; font-weight:700}
   .pt-alert-chip.active{background:#dc2626 !important; border-color:#dc2626 !important; color:#fff !important}
+  /* ---- Pinterest 运营分析（内嵌看板） ---- */
+  #view-pin{padding-top:18px}
+  .pin-embed{border:1px solid var(--border); border-radius:16px; overflow:hidden; background:var(--surface);
+    box-shadow:0 2px 10px rgba(47,61,85,.04)}
+  .pin-embed iframe{display:block; width:100%; height:calc(100vh - 128px); min-height:620px; border:0; background:#fff}
   .pt-top{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
   .pt-title{font-size:20px; font-weight:700}
   .pt-kv{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:9px}
@@ -848,7 +853,7 @@
     </div>
     <nav class="nav">
       <button class="nav-item active" data-view="tasks" title="查看任务看板"><span class="nav-ic">📋</span><span class="nav-tx">任务看板</span><span class="nav-badge" id="tasksBadge"></span></button>
-      <a class="nav-item" href="pinterest.html" title="查看 Pinterest 首月运营分析"><span class="nav-ic">📌</span><span class="nav-tx">Pinterest运营分析</span></a>
+      <button class="nav-item" data-view="pin" title="查看 Pinterest 运营分析"><span class="nav-ic">📌</span><span class="nav-tx">Pinterest运营分析</span></button>
       <button class="nav-item" data-view="next" title="随手记下个月要做的事"><span class="nav-ic">📥</span><span class="nav-tx">下月待办</span><span class="nav-badge" id="nextBadge"></span></button>
       <button class="nav-item" data-view="tpl" title="查看邮件模板"><span class="nav-ic">✉️</span><span class="nav-tx">邮件模板</span></button>
       <button class="nav-item" data-view="cal" title="查看全年日历"><span class="nav-ic">📅</span><span class="nav-tx">全年日历</span></button>
@@ -1102,6 +1107,12 @@
       <section class="kb-main" id="ptMain"></section>
     </div>
   </section><!-- /view-partners -->
+
+  <section class="view" id="view-pin">
+    <div class="pin-embed">
+      <iframe id="pinFrame" title="Pinterest 运营分析" loading="lazy"></iframe>
+    </div>
+  </section><!-- /view-pin -->
 
   <section class="view" id="view-hunt">
     <header>
@@ -3130,6 +3141,7 @@ function setView(v){
   if(v==='partners') renderPt();
   if(v==='hunt') renderHunt();
   if(v==='next') renderNext();
+  if(v==='pin'){ const f=$('#pinFrame'); if(f && !f.getAttribute('src')) f.setAttribute('src','pinterest.html?embed=1'); }
 }
 // ---------- 联盟客档案（本地存储 aff_lib） ----------
 const PT_STAGES=['候选','已建联','已回复','已会议','已提案','谈判中','已签约','已上线','已出单','需排查','暂停','淘汰'];

@@ -147,6 +147,56 @@
       align-items: end;
     }
 
+    /* —— 看板形态：紧凑页头，不再是大标题式的汇报 —— */
+    .hero {
+      padding: 22px 0 16px;
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
+      gap: 24px;
+      align-items: center;
+    }
+
+    .hero h1 {
+      max-width: none;
+      margin-bottom: 8px;
+      font-family: inherit;
+      font-size: clamp(22px, 2.4vw, 30px);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      font-weight: 700;
+    }
+
+    .hero .eyebrow { margin-bottom: 6px; }
+
+    .hero-copy {
+      max-width: none;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+
+    .hero-copy b { color: var(--ink); }
+
+    .hero-note {
+      padding: 10px 14px;
+      border-left: 3px solid var(--accent);
+      background: var(--surface);
+      border-radius: 0 10px 10px 0;
+      font-size: 12.5px;
+      line-height: 1.7;
+    }
+
+    .hero-note strong { font-size: 13px; }
+
+    /* 嵌进主看板时：不要重复的外观栏和多余留白 */
+    html.embed .topbar { display: none; }
+    html.embed .shell {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0 18px 40px;
+    }
+    html.embed .hero { padding-top: 18px; }
+    html.embed .tabs { top: 0; }
+
     .eyebrow {
       margin: 0 0 10px;
       color: var(--accent);
@@ -1681,14 +1731,14 @@
     </header>
 
     <section class="hero" aria-labelledby="page-title">
-      <div>
-        <p class="eyebrow">First month performance</p>
-        <h1 id="page-title">内容开始被看见，<br>商业出口仍然偏窄。</h1>
-        <p class="hero-copy">首月累计 1,033 次展示、40 次 Pin 点击和 7 次出站点击。圣诞内容负责被发现，宠物个性化产品负责把人送出 Pinterest。</p>
+      <div class="hero-main">
+        <p class="eyebrow">Pinterest Operations · 2026.09.22—10.20</p>
+        <h1 id="page-title">Pinterest 运营分析</h1>
+        <p class="hero-copy">首月累计 <b>1,033</b> 次展示、<b>40</b> 次 Pin 点击、<b>7</b> 次出站点击 · 29 天 · 20 张 Pin</p>
       </div>
       <aside class="hero-note">
-        <strong>本月核心判断</strong>
-        20 张 Pin 中 19 张可检出主商品/落地链接。Gift Guide 已有商品入口，但仍贡献 0 次出站，下一步优化链接与内容匹配。
+        <strong>核心判断</strong>
+        20 张 Pin 中 19 张可检出主商品/落地链接；Gift Guide 仍贡献 0 次出站。
       </aside>
     </section>
 
@@ -2237,6 +2287,14 @@
   </div>
 
   <script>
+    // 嵌进主看板时切换成“看板形态”（隐藏重复的顶部栏、收紧留白）
+    (() => {
+      let embedded = false;
+      try { embedded = window.self !== window.top; } catch (e) { embedded = true; }
+      if (embedded || new URLSearchParams(location.search).has('embed')) {
+        document.documentElement.classList.add('embed');
+      }
+    })();
     (() => {
       const daily = [
         { date: "09-22", value: 64 },
