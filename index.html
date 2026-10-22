@@ -457,6 +457,9 @@
   .pt-stage.s-mid{background:rgba(255,176,32,.16); color:#b57b0c; border-color:rgba(255,176,32,.35)}
   .pt-stage.s-live{background:rgba(18,169,122,.14); color:#12a97a; border-color:rgba(18,169,122,.3)}
   .pt-stage.s-off{background:var(--surface2); color:var(--muted)}
+  .pt-stage.s-alert{background:#dc2626; color:#fff; border-color:#dc2626; font-weight:700}
+  .pt-alert-chip{color:#dc2626 !important; border-color:rgba(220,38,38,.5) !important; font-weight:700}
+  .pt-alert-chip.active{background:#dc2626 !important; border-color:#dc2626 !important; color:#fff !important}
   .pt-top{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
   .pt-title{font-size:20px; font-weight:700}
   .pt-kv{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:9px}
@@ -3126,7 +3129,7 @@ function setView(v){
   if(v==='next') renderNext();
 }
 // ---------- 联盟客档案（本地存储 aff_lib） ----------
-const PT_STAGES=['候选','已建联','已回复','已会议','已提案','谈判中','已签约','已上线','已出单','暂停','淘汰'];
+const PT_STAGES=['候选','已建联','已回复','已会议','已提案','谈判中','已签约','已上线','已出单','需排查','暂停','淘汰'];
 const PT_HOT=['已建联','已回复','已会议','已提案','谈判中'];
 const PT_LIVE=['已签约','已上线','已出单'];
 const PT_NETS=['Impact','Tradedoubler','Partnerize','CAKE','自有','其他'];
@@ -3148,7 +3151,7 @@ let ptData=[], ptFilter='全部', ptSelId=null, ptEditId=null;
 
 function loadPt(){ const raw=localStorage.getItem('aff_lib'); if(raw){ try{ const a=JSON.parse(raw); if(Array.isArray(a)) return a; }catch(e){} } return []; }
 function savePt(){ try{ localStorage.setItem('aff_lib', JSON.stringify(ptData)); }catch(e){} }
-function ptStageClass(s){ if(PT_LIVE.indexOf(s)>=0) return 's-live'; if(PT_HOT.indexOf(s)>=0) return 's-hot'; if(s==='暂停'||s==='淘汰') return 's-off'; return 's-mid'; }
+function ptStageClass(s){ if(s==='需排查') return 's-alert'; if(PT_LIVE.indexOf(s)>=0) return 's-live'; if(PT_HOT.indexOf(s)>=0) return 's-hot'; if(s==='暂停'||s==='淘汰') return 's-off'; return 's-mid'; }
 function ptStageBadge(s){ return '<span class="pt-stage '+ptStageClass(s)+'">'+escapeHtml(s||'未定级')+'</span>'; }
 function ptById(id){ return ptData.find(p=>p.id===id)||null; }
 function ptLabel(v){ return (v===undefined||v===null||String(v).trim()==='')? '—' : String(v); }
@@ -3162,7 +3165,7 @@ function ptFiltered(){
 function renderPt(){
   const f=$('#ptFilter'); if(f){
     const cats=['全部',...PT_STAGES];
-    f.innerHTML=cats.map(c=>`<span class="tpl-tag ${ptFilter===c?'active':''}" data-ptcat="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join('');
+    f.innerHTML=cats.map(c=>`<span class="tpl-tag ${ptFilter===c?'active':''} ${c==='需排查'?'pt-alert-chip':''}" data-ptcat="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join('');
     f.querySelectorAll('[data-ptcat]').forEach(el=>el.onclick=()=>{ ptFilter=el.dataset.ptcat; renderPt(); });
   }
   const list=$('#ptList');
@@ -3213,7 +3216,7 @@ function ptPlainText(p){
   return lines.join('\n');
 }
 function ptSelOptions(list,val){
-  return list.map(o=>`<option value="${escapeHtml(o)}" ${o===val?'selected':''}>${escapeHtml(o)}</option>`).join('');
+  return list.map(o=>`<option value="${escapeHtml(o)}" ${o===val?'selected':''}${o==='需排查'?' style="color:#dc2626;font-weight:700"':''}>${escapeHtml(o)}</option>`).join('');
 }
 function ptInitialHtml(p){
   if(!p) return '';
