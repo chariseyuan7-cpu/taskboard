@@ -468,6 +468,34 @@
     box-shadow:0 2px 10px rgba(47,61,85,.04)}
   .pin-embed iframe{display:block; width:100%; height:calc(100vh - 128px); min-height:620px; border:0; background:#fff}
   .pt-top{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+  /* ---- 联盟客档案：卡片模式 ---- */
+  .pt-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px}
+  .pt-card{position:relative; background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:15px 16px 14px 19px; cursor:pointer; display:flex; flex-direction:column; gap:9px;
+    transition:.15s; box-shadow:0 2px 10px rgba(47,61,85,.04); min-width:0}
+  .pt-card:hover{border-color:var(--accent); transform:translateY(-1px); box-shadow:0 8px 20px rgba(47,61,85,.10)}
+  .pt-card.active{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent),0 8px 20px rgba(47,61,85,.10)}
+  .pt-card::before{content:''; position:absolute; left:0; top:14px; bottom:14px; width:3px;
+    border-radius:3px; background:var(--border)}
+  .pt-card.c-hot::before{background:#c0392b}
+  .pt-card.c-live::before{background:#12a97a}
+  .pt-card.c-alert::before{background:#dc2626}
+  .pt-card.c-off::before{background:#9aa7b8}
+  .pt-card.c-mid::before{background:#ffb020}
+  .pt-card-top{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .pt-card-name{font-size:15px; font-weight:700; line-height:1.45; word-break:break-word}
+  .pt-card-sub{font-size:12px; color:var(--muted); line-height:1.65; word-break:break-word}
+  .pt-card-meta{display:flex; flex-wrap:wrap; gap:5px 16px; font-size:12px; color:var(--muted);
+    border-top:1px dashed var(--border); padding-top:9px; margin-top:auto}
+  .pt-card-meta b{color:var(--fg); font-weight:600}
+  .pt-card-pending{font-size:12px; color:var(--fg); background:var(--surface2); border-radius:8px;
+    padding:6px 9px; line-height:1.6; word-break:break-word}
+  .pt-detail{background:var(--surface); border:1px solid var(--accent); border-radius:14px;
+    padding:16px 18px 18px; margin-bottom:16px}
+  .pt-detail[hidden]{display:none}
+  .pt-detail-bar{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px}
+  .pt-detail-lab{font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.06em; text-transform:uppercase}
+  .pt-empty{grid-column:1/-1; color:var(--muted); font-size:13.5px; padding:22px 4px; line-height:1.8}
   .pt-title{font-size:20px; font-weight:700}
   .pt-kv{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:9px}
   .pt-kv div{border:1px solid var(--border); border-radius:10px; padding:8px 10px; background:var(--surface)}
@@ -1099,13 +1127,9 @@
       </div>
     </div>
     <div class="kb-editor" id="ptEditor" style="display:none"></div>
-    <div class="kb-layout">
-      <aside class="kb-side" id="ptSide">
-        <div class="kb-filter" id="ptFilter"></div>
-        <div class="kb-list" id="ptList"></div>
-      </aside>
-      <section class="kb-main" id="ptMain"></section>
-    </div>
+    <div class="kb-filter" id="ptFilter"></div>
+    <section class="pt-detail" id="ptMain" hidden></section>
+    <div class="pt-grid" id="ptList"></div>
   </section><!-- /view-partners -->
 
   <section class="view" id="view-pin">
@@ -3186,25 +3210,43 @@ function renderPt(){
   const list=$('#ptList');
   if(list){
     const arr=ptFiltered();
-    if(!arr.length){ list.innerHTML='<div class="hint">'+(ptData.length? '没有匹配的联盟客':'还没有档案，点右上角「＋ 新增联盟客」开始')+'</div>'; }
-    else list.innerHTML=arr.map(p=>`<div class="kb-item ${p.id===ptSelId?'active':''}" data-ptid="${p.id}">
-        <div class="kb-t">${ptStageBadge(p.stage)}${escapeHtml(p.name||'(未命名)')}</div>
-        <div class="kb-c">${escapeHtml([p.partnerId?('ID '+p.partnerId):'', p.type||'', p.priority||''].filter(Boolean).join(' · ')||'（无更多信息）')}</div>
-      </div>`).join('');
-    list.querySelectorAll('[data-ptid]').forEach(el=>el.onclick=()=>{ ptSelId=el.dataset.ptid; closePtEditor(); renderPt(); });
+    if(!arr.length){ list.innerHTML='<div class="pt-empty">'+(ptData.length? '没有匹配的联盟客':'还没有档案，点右上角「＋ 新增联盟客」开始')+'</div>'; }
+    else list.innerHTML=arr.map(p=>{
+      const cls=ptStageClass(p.stage);
+      const sub=[p.network,p.type,p.countries].filter(Boolean).join(' · ');
+      const meta=[['负责人',p.owner],['ID',p.partnerId],['下次动作',p.nextDate]].filter(([,v])=>v)
+        .map(([k,v])=>`<span>${k} <b>${escapeHtml(String(v))}</b></span>`).join('');
+      const pending=(p.pending||'').trim();
+      return `<article class="pt-card c-${cls.replace('s-','')} ${p.id===ptSelId?'active':''}" data-ptid="${p.id}" tabindex="0">
+        <div class="pt-card-top">${ptStageBadge(p.stage)}
+          ${p.priority?`<span class="pt-stage s-mid">${escapeHtml(p.priority)}</span>`:''}
+        </div>
+        <div class="pt-card-name">${escapeHtml(p.name||'(未命名)')}</div>
+        ${sub?`<div class="pt-card-sub">${escapeHtml(sub)}</div>`:''}
+        ${pending?`<div class="pt-card-pending">未决：${escapeHtml(pending)}</div>`:''}
+        ${meta?`<div class="pt-card-meta">${meta}</div>`:''}
+      </article>`;
+    }).join('');
+    list.querySelectorAll('[data-ptid]').forEach(el=>{
+      const open=()=>{ ptSelId = (ptSelId===el.dataset.ptid)? null : el.dataset.ptid; closePtEditor(); renderPt();
+        if(ptSelId){ const d=$('#ptMain'); if(d) d.scrollIntoView({behavior:'smooth',block:'nearest'}); } };
+      el.onclick=open;
+      el.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } };
+    });
   }
   if(ptSelId && !ptById(ptSelId)) ptSelId=null;
-  if(!ptSelId && ptFiltered().length) ptSelId=ptFiltered()[0].id;
   renderPtMain();
 }
 function renderPtMain(){
   const el=$('#ptMain'); if(!el) return;
   const p=ptById(ptSelId);
-  if(!p){ el.innerHTML='<div class="kb-empty">从左侧选择一位联盟客查看档案；或点右上角「＋ 新增联盟客」新建。</div>'; return; }
+  if(!p){ el.hidden=true; el.innerHTML=''; return; }
+  el.hidden=false;
   const kv=[['Impact Partner ID',p.partnerId],['所属网络',p.network],['类型',p.type],['覆盖国家',p.countries],
     ['联系人',p.contact],['阶段',p.stage],['优先级 / 评分',[p.priority,p.score].filter(Boolean).join(' / ')],
     ['分级',p.grade],['可触达量',p.reach],['商业模型',p.model],['负责人',p.owner],['下次动作日期',p.nextDate]];
-  let html='<div class="pt-top"><span class="pt-title">'+escapeHtml(p.name||'(未命名)')+'</span>'+ptStageBadge(p.stage);
+  let html='<div class="pt-detail-bar"><span class="pt-detail-lab">档案详情</span><button class="btn" id="ptClose">收起</button></div>';
+  html+='<div class="pt-top"><span class="pt-title">'+escapeHtml(p.name||'(未命名)')+'</span>'+ptStageBadge(p.stage);
   if(p.priority) html+='<span class="pt-stage s-mid">'+escapeHtml(p.priority)+'</span>';
   html+='</div>';
   html+='<div class="pt-kv">'+kv.map(([k,v])=>'<div><div class="k">'+escapeHtml(k)+'</div><div class="v">'+escapeHtml(ptLabel(v))+'</div></div>').join('')+'</div>';
@@ -3216,6 +3258,7 @@ function renderPtMain(){
   }
   html+='<div class="kb-actions"><button class="btn primary" id="ptEdit">✎ 编辑档案</button><button class="btn" id="ptCopy">⧉ 复制档案文本</button><button class="btn" id="ptDel">✕ 删除</button></div>';
   el.innerHTML=html;
+  const cl=$('#ptClose'); if(cl) cl.onclick=()=>{ ptSelId=null; renderPt(); };
   const e=$('#ptEdit'); if(e) e.onclick=()=>openPtEditor(p.id);
   const c=$('#ptCopy'); if(c) c.onclick=()=>{ copyText(ptPlainText(p),'档案已复制'); };
   const d=$('#ptDel'); if(d) d.onclick=()=>{ if(confirm('确认删除「'+(p.name||'未命名')+'」的档案？')){ ptData=ptData.filter(x=>x.id!==p.id); savePt(); ptSelId=null; renderPt(); } };
