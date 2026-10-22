@@ -2853,7 +2853,7 @@
           panel.hidden = panel.id !== tab.getAttribute('aria-controls');
         });
         if (tab.id === 'tab-audience') {
-          setTimeout(renderAffinityChart, 0);
+          renderAffinityChart();
         }
         if (history.replaceState) {
           history.replaceState(null, '', `#${tab.id.replace('tab-', '')}`);
@@ -3324,7 +3324,7 @@
         new ResizeObserver(() => {
           const audiencePanel = document.getElementById('panel-audience');
           if (audiencePanel && !audiencePanel.hidden) {
-            setTimeout(renderAffinityChart, 0);
+            renderAffinityChart();
           }
         }).observe(affinityChartWrap);
       }
