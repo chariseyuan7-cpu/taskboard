@@ -2949,7 +2949,7 @@
       }
 
       function renderAffinityChart() {
-        if (!affinityChartWrap || affinityChartWrap.offsetParent === null) return;
+        if (!affinityChartWrap || affinityChartWrap.clientWidth < 20) return;
         const width = Math.max(280, Math.round(affinityChartWrap.clientWidth));
         const height = width < 520 ? 330 : 370;
         const margin = { top: 20, right: 22, bottom: 50, left: width < 520 ? 46 : 58 };
