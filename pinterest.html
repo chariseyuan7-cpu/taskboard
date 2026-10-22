@@ -2936,9 +2936,7 @@
 
           row.append(label, track, value);
           container.appendChild(row);
-          requestAnimationFrame(() => {
-            fill.style.width = `${Math.max((item.value / max) * 100, 2)}%`;
-          });
+          fill.style.width = `${Math.max((item.value / max) * 100, 2)}%`;
         });
       }
 
@@ -3161,9 +3159,7 @@
           value.textContent = `${item[activeBoardMetric]}${activeBoardMetric === 'imp' ? '' : ''}`;
           row.append(name, track, value);
           boardChart.appendChild(row);
-          requestAnimationFrame(() => {
-            fill.style.width = `${(item[activeBoardMetric] / max) * 100}%`;
-          });
+          fill.style.width = `${(item[activeBoardMetric] / max) * 100}%`;
         });
       }
 
