@@ -496,6 +496,18 @@
   .pt-detail-bar{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px}
   .pt-detail-lab{font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.06em; text-transform:uppercase}
   .pt-empty{grid-column:1/-1; color:var(--muted); font-size:13.5px; padding:22px 4px; line-height:1.8}
+  .pt-prep{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:8px}
+  .pt-prep-i{display:flex; align-items:center; gap:9px; font-size:13px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:9px; padding:8px 11px; cursor:pointer; transition:.15s}
+  .pt-prep-i:hover{border-color:var(--accent)}
+  .pt-prep-i input{width:15px; height:15px; accent-color:var(--good); cursor:pointer; flex:0 0 auto}
+  .pt-prep-i.on{background:rgba(34,196,141,.10); border-color:rgba(34,196,141,.45)}
+  .pt-prep-i.on span{color:var(--fg); font-weight:600}
+  .pt-prep-n{font-size:11.5px; font-weight:700; color:var(--muted); background:var(--surface2);
+    border-radius:20px; padding:2px 9px; margin-left:6px}
+  .pt-prep-ops{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  .pt-prep-chip{font-size:11px; font-weight:600; color:#12a97a; background:rgba(34,196,141,.12);
+    border-radius:20px; padding:2px 9px; white-space:nowrap}
   .pt-title{font-size:20px; font-weight:700}
   .pt-kv{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:9px}
   .pt-kv div{border:1px solid var(--border); border-radius:10px; padding:8px 10px; background:var(--surface)}
@@ -3186,6 +3198,15 @@ const PT_FIELDS=[
   ['risks','风险与红线'],
   ['meetings','会议索引（每行：YYYY-MM-DD 主题）']
 ];
+// 会前需要向对方索取/核对的基础资料
+const PT_PREP=[
+  ['kit','Media kit（介绍 / 受众 / 案例）'],
+  ['audience','受众数据（流量 / 国家 / 设备）'],
+  ['cases','过往合作案例'],
+  ['rates','报价与佣金（CPA / CPC / 固定费）'],
+  ['tracking','追踪与归因方式'],
+  ['agenda','会议议程与参会人']
+];
 let ptData=[], ptFilter='全部', ptSelId=null, ptEditId=null;
 
 function loadPt(){ const raw=localStorage.getItem('aff_lib'); if(raw){ try{ const a=JSON.parse(raw); if(Array.isArray(a)) return a; }catch(e){} } return []; }
@@ -3217,9 +3238,11 @@ function renderPt(){
       const meta=[['负责人',p.owner],['ID',p.partnerId],['下次动作',p.nextDate]].filter(([,v])=>v)
         .map(([k,v])=>`<span>${k} <b>${escapeHtml(String(v))}</b></span>`).join('');
       const pending=(p.pending||'').trim();
+      const prepDone=PT_PREP.filter(([k])=>p.prep&&p.prep[k]).length;
       return `<article class="pt-card c-${cls.replace('s-','')} ${p.id===ptSelId?'active':''}" data-ptid="${p.id}" tabindex="0">
         <div class="pt-card-top">${ptStageBadge(p.stage)}
           ${p.priority?`<span class="pt-stage s-mid">${escapeHtml(p.priority)}</span>`:''}
+          ${prepDone?`<span class="pt-prep-chip">会前资料 ${prepDone}/${PT_PREP.length}</span>`:''}
         </div>
         <div class="pt-card-name">${escapeHtml(p.name||'(未命名)')}</div>
         ${sub?`<div class="pt-card-sub">${escapeHtml(sub)}</div>`:''}
@@ -3250,6 +3273,13 @@ function renderPtMain(){
   if(p.priority) html+='<span class="pt-stage s-mid">'+escapeHtml(p.priority)+'</span>';
   html+='</div>';
   html+='<div class="pt-kv">'+kv.map(([k,v])=>'<div><div class="k">'+escapeHtml(k)+'</div><div class="v">'+escapeHtml(ptLabel(v))+'</div></div>').join('')+'</div>';
+  const prep=p.prep||{}; const prepN=PT_PREP.filter(([k])=>prep[k]).length;
+  html+='<div class="pt-sec"><h3>会前资料 <span class="pt-prep-n">'+prepN+'/'+PT_PREP.length+'</span></h3>'
+    +'<div class="pt-prep">'+PT_PREP.map(([k,label])=>
+      `<label class="pt-prep-i ${prep[k]?'on':''}"><input type="checkbox" data-prep="${k}" ${prep[k]?'checked':''}/><span>${escapeHtml(label)}</span></label>`
+    ).join('')+'</div>'
+    +'<div class="pt-prep-ops"><button class="btn" id="ptPrepFr">⧉ 复制法文索取邮件</button>'
+    +'<button class="btn" id="ptPrepEn">⧉ 复制英文索取邮件</button></div></div>';
   if(p.rt){
     html+='<div class="pt-sec"><h3>详细档案</h3><div class="pt-rich">'+kbSanitize(p.rt)+'</div></div>';
   } else {
@@ -3259,9 +3289,61 @@ function renderPtMain(){
   html+='<div class="kb-actions"><button class="btn primary" id="ptEdit">✎ 编辑档案</button><button class="btn" id="ptCopy">⧉ 复制档案文本</button><button class="btn" id="ptDel">✕ 删除</button></div>';
   el.innerHTML=html;
   const cl=$('#ptClose'); if(cl) cl.onclick=()=>{ ptSelId=null; renderPt(); };
+  el.querySelectorAll('[data-prep]').forEach(cb=>cb.onchange=()=>{
+    const t=ptById(p.id); if(!t) return;
+    t.prep=t.prep||{}; t.prep[cb.dataset.prep]=cb.checked;
+    savePt(); renderPt();
+  });
+  const fr=$('#ptPrepFr'); if(fr) fr.onclick=()=>copyText(ptPrepEmail(p,'fr'),'法文索取邮件已复制');
+  const en=$('#ptPrepEn'); if(en) en.onclick=()=>copyText(ptPrepEmail(p,'en'),'英文索取邮件已复制');
   const e=$('#ptEdit'); if(e) e.onclick=()=>openPtEditor(p.id);
   const c=$('#ptCopy'); if(c) c.onclick=()=>{ copyText(ptPlainText(p),'档案已复制'); };
   const d=$('#ptDel'); if(d) d.onclick=()=>{ if(confirm('确认删除「'+(p.name||'未命名')+'」的档案？')){ ptData=ptData.filter(x=>x.id!==p.id); savePt(); ptSelId=null; renderPt(); } };
+}
+// 会前资料索取邮件（法文 / 英文）
+function ptPrepEmail(p, lang){
+  const person=String(p.contact||'').split(/[\/,，·]/)[0].trim();
+  const brand=p.name? ` (${p.name})` : '';
+  if(lang==='fr'){
+    return [
+      `Objet : Notre échange${brand} — quelques informations avant la réunion`,
+      '',
+      (person? 'Bonjour '+person+',' : 'Bonjour,'),
+      '',
+      'Merci pour votre retour. Avant notre échange, pourriez-vous me partager ces éléments ?',
+      '',
+      '1. Votre media kit (présentation, audience, formats)',
+      '2. Les données d’audience : trafic mensuel, répartition par pays et par appareil',
+      '3. 2–3 exemples de collaborations récentes (avec résultats si possible)',
+      '4. Vos conditions : CPA / CPC / frais fixes / frais d’activation',
+      '5. Le suivi et l’attribution : plateforme, liens, codes promo',
+      '6. L’ordre du jour et les participants de notre échange',
+      '',
+      'De mon côté, je vous prépare une présentation de notre programme et des produits à mettre en avant.',
+      '',
+      'Merci d’avance,',
+      'Charise'
+    ].join('\n');
+  }
+  return [
+    `Subject: Our call${brand} — a few things before we meet`,
+    '',
+    (person? 'Hi '+person+',' : 'Hi,'),
+    '',
+    'Thanks for getting back to me. Before we meet, could you share the following?',
+    '',
+    '1. Your media kit (who you are, audience, formats)',
+    '2. Audience data: monthly traffic, country and device split',
+    '3. 2–3 recent brand collaborations (with results if possible)',
+    '4. Your rates: CPA / CPC / flat fee / activation fee',
+    '5. Tracking and attribution: platform, links, promo codes',
+    '6. The agenda and who will join our call',
+    '',
+    'On my side, I will prepare an overview of our programme and the products we would like to promote.',
+    '',
+    'Thanks in advance,',
+    'Charise'
+  ].join('\n');
 }
 function ptPlainText(p){
   const lines=['【'+(p.name||'')+'】'];
