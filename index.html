@@ -1627,10 +1627,13 @@ async function initCloud(){
       const loc=planLocal[x.id]||{};
       const tagName=memoTagName(x.tag||'日常');
       if((x.tag||'日常')!==tagName) plansRenamed=true;
-      return {id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:x.text, tag:tagName,
+      const stV = ('st' in x)? (x.st||'') : (loc.st||'');
+      const etV = ('et' in x)? (x.et||'') : (loc.et||'');
+      const clText = cleanPlanText(x.text, stV, etV);
+      if(clText !== (x.text||'')) plansRenamed=true;
+      return {id:x.id, start:x.start||x.date, end:x.end||x.start||x.date, text:clText, tag:tagName,
         done: ('done' in x)? !!x.done : !!loc.done,
-        st:   ('st'   in x)? (x.st||'') : (loc.st||''),
-        et:   ('et'   in x)? (x.et||'') : (loc.et||''),
+        st: stV, et: etV,
         key:  ('key'  in x)? !!x.key  : !!loc.key};
     });
     if(plist.length){ plans=plist; localStorage.setItem('plans', JSON.stringify(plans)); renderCalendar(); }
@@ -3470,6 +3473,28 @@ function bindSidebar(){
 }
 
 // ---------- 日历计划 ----------
+// 早期没有时间字段时，很多人把「14:00-15:00」直接写进了计划内容；
+// 现在有了 st/et，如果正文开头又带同一段时间，就去掉重复的那段（只在去掉后仍有内容时处理）
+function cleanPlanText(text, st, et){
+  let t=String(text||'').trim();
+  if(!st || !t) return t;
+  const variants = et ? [`${st}-${et}`, `${st}~${et}`, `${st}—${et}`, `${st}–${et}`, `${st} - ${et}`, `${st} ~ ${et}`] : [st];
+  for(const v of variants){
+    if(t.indexOf(v)===0){
+      const rest=t.slice(v.length).replace(/^[\s\-~—–:：·]+/,'').trim();
+      if(rest) return rest;
+    }
+  }
+  return t;
+}
+// 显示时兜底：正文已经带了同样的时间，前边就不再重复加
+function planTm(p){
+  const tm = p.st ? (p.et && p.et!==p.st ? p.st+'-'+p.et : p.st) : '';
+  if(!tm) return '';
+  const head=String(p.text||'').replace(/\s+/g,'');
+  if(head.indexOf(tm.replace(/\s+/g,''))===0) return '';
+  return tm;
+}
 function loadPlans(){
   let arr=[];
   const raw=localStorage.getItem('plans');
@@ -3482,7 +3507,9 @@ function loadPlans(){
   const mapped=arr.map(p=>{
     const tag=memoTagName(p.tag||'日常');
     if((p.tag||'日常')!==tag) renamed=true;
-    return {id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text:p.text,
+    const text=cleanPlanText(p.text, p.st, p.et);
+    if(text!==(p.text||'')) renamed=true;
+    return {id:p.id, start:p.start||p.date, end:p.end||p.start||p.date, text,
       tag, done:!!p.done, st:p.st||'', et:p.et||'', key:!!p.key};
   });
   if(renamed){ try{ localStorage.setItem('plans', JSON.stringify(mapped)); }catch(e){} }
@@ -3824,7 +3851,7 @@ function renderMonthGrid(){
     const ps=visiblePlans(ds); const ts=taskInRange(ds,ds);
     const today=ds===todayStr; const sel = planStart && ds>=planStart && ds<=planEnd;
     const subs=subItemsOn(ds);
-    const items=[...ps.slice(0,3).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, key:!!p.key, tm:(p.st? (p.et&&p.et!==p.st? p.st+'-'+p.et : p.st):'')})), ...ts.map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
+    const items=[...ps.slice(0,3).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, key:!!p.key, tm:planTm(p)})), ...ts.map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
     const show=items.slice(0,3); const overflow=items.length-show.length;
     const chips = show.map(it=>{
       if(it.kind==='plan') return `<span class="cmemo ${it.done?'done':''} ${it.key?'key':''}" data-kind="plan" data-id="${it.id}" title="点击修改内容" style="background:${tagBg(it.tag)};color:${tagColor(it.tag)}">${it.key?'★ ':''}${it.tm? escapeHtml(it.tm)+' ':''}${escapeHtml(it.text)}</span>`;
@@ -3852,7 +3879,7 @@ function renderWeek(){
     const hol=HOLIDAYS_2026.holidays[ds]; const wk=HOLIDAYS_2026.workdays[ds];
     const today=ds===todayStr;
     const subs=subItemsOn(ds);
-    const items=[...visiblePlans(ds).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, key:!!p.key, tm:(p.st? (p.et&&p.et!==p.st? p.st+'-'+p.et : p.st):'')})), ...taskInRange(ds,ds).map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
+    const items=[...visiblePlans(ds).map(p=>({kind:'plan', id:p.id, tag:p.tag, text:p.text, done:!!p.done, key:!!p.key, tm:planTm(p)})), ...taskInRange(ds,ds).map(t=>({kind:'task', id:t.id, pri:t.priority, done:isDone(t), text:t.title})), ...subs.map(s=>({kind:'sub', id:s.id, pri:s.pri, done:s.done, text:s.text}))];
     const mkts=mktOn(ds);
     let flag = hol? `<span class="cal-flag hol">休·${hol}</span>` : wk? `<span class="cal-flag wk">调班·上班</span>` : '';
     if(mkts.length) flag += mkts.map(n=>`<span class="cal-flag mkt">🎯 ${escapeHtml(n.name)}</span>`).join('');
