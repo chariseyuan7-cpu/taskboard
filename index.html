@@ -1530,7 +1530,7 @@ async function retrySync(){
 }
 function scheduleSync(kind){
   if(!cloudReady || !sb || cloudOff || readOnly) return;
-  const map={tasks:syncTasks, plans:syncPlans, templates:syncTemplates, kb:syncKb, next:syncNext};
+  const map={tasks:syncTasks, plans:syncPlans, templates:syncTemplates, kb:syncKb, next:syncNext, mkt:syncMkt};
   const fn=map[kind]; if(!fn) return;
   clearTimeout(cloudTimer);
   cloudTimer = setTimeout(async ()=>{ markSyncStart(); let ok=false; try{ ok=await fn(); }catch(e){ ok=false; } markSyncEnd(ok); }, 600);
@@ -1648,7 +1648,20 @@ async function initCloud(){
       localStorage.setItem('next_todos', JSON.stringify(nextTodos));
       renderNext();
     }
+    // 营销节点：同样寄存在 tasks 表（特殊 month），云端与本地合并，换设备也不会丢
+    const mktRows=tasks.filter(t=>t.month===MKT_MONTH);
+    if(mktRows.length){
+      const byId={}; mktNodes.forEach(n=>{ byId[n.id]=n; });
+      mktRows.forEach(t=>{
+        const end=(Array.isArray(t.subtasks)&&t.subtasks[0]&&t.subtasks[0].end)||t.due||'';
+        byId[String(t.id)]={id:String(t.id), name:t.title||'', start:t.due||'', end};
+      });
+      mktNodes=Object.values(byId).filter(n=>n.name);
+      localStorage.setItem('mkt_nodes', JSON.stringify(mktNodes));
+      renderMkt(); renderCalendar();
+    }
     cloudReady=true;
+    if(mktNodes.length) saveMkt();   // 本机已有节点 → 推一份到云端
     if(plansRenamed){ plansRenamed=false; savePlans(); }   // 标签改名后把云端也更新成新名字
     // 云端数据到手后再跑一次结转，避免结转结果被云端覆盖；此时才能同步上云
     if(carryOverInto(ym)){ localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); syncTasks(); }
@@ -3518,6 +3531,7 @@ function loadPlans(){
 function savePlans(){ localStorage.setItem('plans', JSON.stringify(plans)); scheduleSync('plans'); }
 /* ---------- 下月待办收集箱 ---------- */
 const INBOX_MONTH='__inbox__';                       // 云端仍存在 tasks 表，但用特殊 month 值，永不混进看板
+const MKT_MONTH='__mkt__';                           // 营销节点同样寄存 tasks 表，用特殊 month 区分
 let nextTodos=[];                                    // [{id, text, at}]
 function loadNext(){
   const raw=localStorage.getItem('next_todos'); let arr=[];
@@ -3658,7 +3672,21 @@ function loadMkt(){
   if(raw){ try{ const o=JSON.parse(raw); if(Array.isArray(o)) arr=o; else Object.keys(o).forEach(d=>arr.push({start:d, end:d, name:o[d]})); }catch(e){} }
   return arr.map(n=>({id:n.id||uid(), name:n.name, start:n.start||n.date, end:n.end||n.start||n.date}));
 }
-function saveMkt(){ localStorage.setItem('mkt_nodes', JSON.stringify(mktNodes)); }
+function saveMkt(){ localStorage.setItem('mkt_nodes', JSON.stringify(mktNodes)); scheduleSync('mkt'); }
+async function syncMkt(){
+  if(!sb) return false;
+  try{
+    const rows=mktNodes.map(n=>({id:String(n.id), month:MKT_MONTH, cat:'', title:n.name||'',
+      priority:'mid', due:n.start||'', done:false, status:'', subtasks:[{end:n.end||n.start||''}],
+      updated_at:new Date().toISOString()}));
+    if(rows.length){ const r=await sb.from('tasks').upsert(rows, {onConflict:'id'}); if(r && r.error) return false; }
+    const {data:ex}=await sb.from('tasks').select('id').eq('month', MKT_MONTH);
+    const local=new Set(rows.map(r=>r.id));
+    const del=(ex||[]).map(r=>r.id).filter(id=>!local.has(id));
+    if(del.length) await sb.from('tasks').delete().in('id', del);
+    return true;
+  }catch(e){ return false; }
+}
 function mktOn(date){ return mktNodes.filter(n=> n.start<=date && date<=n.end ); }
 function renderMkt(){
   const list=[...mktNodes].sort((a,b)=> a.start<b.start?-1:a.start>b.start?1:0);
