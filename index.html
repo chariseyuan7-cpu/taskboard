@@ -1624,7 +1624,7 @@ async function initCloud(){
       });
     });
     if(byMonth[ym] && byMonth[ym].length){ data=byMonth[ym]; taskKnown[ym]=new Set(data.map(t=>String(t.id)));
-      localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); }
+      localStorage.setItem(storeKey(ym), JSON.stringify(data)); ensureVisibleCats(); render(); }
     if(tpls.length){ tplData=tpls.map(t=>({id:t.id, group:t.grp||'develop', tag:t.tag, purpose:t.purpose, content:t.content, aiNote:t.ai_note||''}));
       localStorage.setItem('tpl_lib', JSON.stringify(tplData)); renderTpl(); }
     // 云端 plans 表如果还没有 done / st / et 字段，就保留本机已有的值，避免刷新后打勾丢失
@@ -2095,8 +2095,8 @@ function subtaskEditor(t){
 function bind(){
   $('#prevMonth').onclick=()=>{shiftMonth(-1);};
   $('#nextMonth').onclick=()=>{shiftMonth(1);};
-  $('#goToday').onclick=()=>{ym=new Date().toISOString().slice(0,7); history=[]; data=load(ym); taskKnown[ym]=new Set(data.map(t=>String(t.id))); carryNoteHidden=false; if(carryOverInto(ym)) save(); render();};
-  $('#monthPick').onchange=e=>{ym=e.target.value; history=[]; data=load(ym); taskKnown[ym]=new Set(data.map(t=>String(t.id))); carryNoteHidden=false; if(carryOverInto(ym)) save(); render();};
+  $('#goToday').onclick=()=>{ym=new Date().toISOString().slice(0,7); history=[]; data=load(ym); taskKnown[ym]=new Set(data.map(t=>String(t.id))); carryNoteHidden=false; if(carryOverInto(ym)) save(); ensureVisibleCats(); render();};
+  $('#monthPick').onchange=e=>{ym=e.target.value; history=[]; data=load(ym); taskKnown[ym]=new Set(data.map(t=>String(t.id))); carryNoteHidden=false; if(carryOverInto(ym)) save(); ensureVisibleCats(); render();};
   $('#hideDone').onchange=e=>{hideDone=e.target.checked; render();};
   $('#undoBtn').onclick=undo;
   $('#taskSearch').oninput=e=>{ taskSearch=e.target.value; render(); };
@@ -2263,7 +2263,18 @@ function shiftMonth(n){
   const d=new Date(+ym.slice(0,4), +ym.slice(5,7)-1+n, 1);
   ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   history=[]; data=load(ym); taskKnown[ym]=new Set(data.map(t=>String(t.id)));
-  carryNoteHidden=false; if(carryOverInto(ym)) save(); render();
+  carryNoteHidden=false; if(carryOverInto(ym)) save();
+  ensureVisibleCats(); render();
+}
+// 切到新月份时，如果当前展开的分类里没有任务，就把「有任务的分类」自动展开，
+// 避免一个月明明有数据、看板却像空了
+function ensureVisibleCats(){
+  const withTasks=CATS.filter(c=>data.some(t=>t.cat===c.id)).map(c=>c.id);
+  if(!withTasks.length) return false;
+  const hasOpen=[...openCats].some(id=>withTasks.indexOf(id)>=0);
+  if(hasOpen) return false;
+  openCats=new Set(withTasks);
+  return true;
 }
 function toggle(id){
   const t=data.find(x=>x.id===id); if(!t)return;
@@ -4219,6 +4230,7 @@ function bootApp(){
   renderCalendar(); quickRange('month'); applySidebar();
   renderMkt(); bindMkt();
   if(carryOverInto(ym)) save();
+  ensureVisibleCats();
   initAddModal(); render(); initCloud();
   const so=$('#signOutLink');
   if(so){ so.style.display = (sb && !cloudOff)? 'inline' : 'none';
