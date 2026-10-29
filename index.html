@@ -1337,6 +1337,8 @@ const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 let ym = new Date().toISOString().slice(0,7);      // 当前查看月份 YYYY-MM
 let data = load(ym);
+const taskKnown = {};                              // 每月「本机见过的任务 id」，用于安全删除
+taskKnown[ym] = new Set(data.map(t=>String(t.id)));
 let hideDone = false;
 let openCats = new Set([CATS[0].id]);               // 当前展开的分类（可多选）
 let multiMode = false;                             // 多选模式
@@ -1545,7 +1547,10 @@ async function syncTasks(){
     if(res && res.error){ const r2=await sb.from('tasks').upsert(data.map(base), {onConflict:'id'}); if(r2 && r2.error) return false; }
     const {data:ex} = await sb.from('tasks').select('id').eq('month', ym);
     const local = new Set(data.map(t=>String(t.id)));
-    const del = (ex||[]).map(r=>r.id).filter(id=>!local.has(id));
+    // 安全删除：只删「本机确实见过、现在被用户删掉」的 id，
+    // 避免本机数据不完整时把云端整个月误删
+    const known = taskKnown[ym];
+    const del = known ? (ex||[]).map(r=>r.id).filter(id=>!local.has(id) && known.has(String(id))) : [];
     if(del.length) await sb.from('tasks').delete().in('id', del);
     return true;
   }catch(e){ return false; }
@@ -1618,7 +1623,8 @@ async function initCloud(){
         subtasks: (cloudSub && cloudSub.length)? cloudSub : ((loc && Array.isArray(loc.subtasks))? loc.subtasks : [])
       });
     });
-    if(byMonth[ym] && byMonth[ym].length){ data=byMonth[ym]; localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); }
+    if(byMonth[ym] && byMonth[ym].length){ data=byMonth[ym]; taskKnown[ym]=new Set(data.map(t=>String(t.id)));
+      localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); }
     if(tpls.length){ tplData=tpls.map(t=>({id:t.id, group:t.grp||'develop', tag:t.tag, purpose:t.purpose, content:t.content, aiNote:t.ai_note||''}));
       localStorage.setItem('tpl_lib', JSON.stringify(tplData)); renderTpl(); }
     // 云端 plans 表如果还没有 done / st / et 字段，就保留本机已有的值，避免刷新后打勾丢失
@@ -2089,8 +2095,8 @@ function subtaskEditor(t){
 function bind(){
   $('#prevMonth').onclick=()=>{shiftMonth(-1);};
   $('#nextMonth').onclick=()=>{shiftMonth(1);};
-  $('#goToday').onclick=()=>{ym=new Date().toISOString().slice(0,7); history=[]; data=load(ym); carryNoteHidden=false; if(carryOverInto(ym)) save(); render();};
-  $('#monthPick').onchange=e=>{ym=e.target.value; history=[]; data=load(ym); carryNoteHidden=false; if(carryOverInto(ym)) save(); render();};
+  $('#goToday').onclick=()=>{ym=new Date().toISOString().slice(0,7); history=[]; data=load(ym); taskKnown[ym]=new Set(data.map(t=>String(t.id))); carryNoteHidden=false; if(carryOverInto(ym)) save(); render();};
+  $('#monthPick').onchange=e=>{ym=e.target.value; history=[]; data=load(ym); taskKnown[ym]=new Set(data.map(t=>String(t.id))); carryNoteHidden=false; if(carryOverInto(ym)) save(); render();};
   $('#hideDone').onchange=e=>{hideDone=e.target.checked; render();};
   $('#undoBtn').onclick=undo;
   $('#taskSearch').oninput=e=>{ taskSearch=e.target.value; render(); };
@@ -2256,7 +2262,8 @@ function onBulk(k){
 function shiftMonth(n){
   const d=new Date(+ym.slice(0,4), +ym.slice(5,7)-1+n, 1);
   ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  history=[]; data=load(ym); render();
+  history=[]; data=load(ym); taskKnown[ym]=new Set(data.map(t=>String(t.id)));
+  carryNoteHidden=false; if(carryOverInto(ym)) save(); render();
 }
 function toggle(id){
   const t=data.find(x=>x.id===id); if(!t)return;
