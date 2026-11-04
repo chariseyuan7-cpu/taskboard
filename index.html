@@ -893,6 +893,7 @@
     </div>
     <nav class="nav">
       <button class="nav-item active" data-view="tasks" title="查看任务看板"><span class="nav-ic">📋</span><span class="nav-tx">任务看板</span><span class="nav-badge" id="tasksBadge"></span></button>
+      <button class="nav-item" data-view="gmv" title="查看个人 GMV 增长结构分析"><span class="nav-ic">📈</span><span class="nav-tx">GMV结构分析</span></button>
       <button class="nav-item" data-view="pin" title="查看 Pinterest 运营分析"><span class="nav-ic">📌</span><span class="nav-tx">Pinterest运营分析</span></button>
       <button class="nav-item" data-view="next" title="随手记下个月要做的事"><span class="nav-ic">📥</span><span class="nav-tx">下月待办</span><span class="nav-badge" id="nextBadge"></span></button>
       <button class="nav-item" data-view="tpl" title="查看邮件模板"><span class="nav-ic">✉️</span><span class="nav-tx">邮件模板</span></button>
@@ -1149,6 +1150,12 @@
       <iframe id="pinFrame" title="Pinterest 运营分析" loading="lazy"></iframe>
     </div>
   </section><!-- /view-pin -->
+
+  <section class="view" id="view-gmv">
+    <div class="pin-embed">
+      <iframe id="gmvFrame" title="个人 GMV 增长结构分析" loading="lazy"></iframe>
+    </div>
+  </section><!-- /view-gmv -->
 
   <section class="view" id="view-hunt">
     <header>
@@ -3212,6 +3219,7 @@ function setView(v){
   if(v==='partners') renderPt();
   if(v==='hunt') renderHunt();
   if(v==='next') renderNext();
+  if(v==='gmv'){ const f=$('#gmvFrame'); if(f && !f.getAttribute('src')) f.setAttribute('src','gmv-structure.html'); }
   if(v==='pin'){ const f=$('#pinFrame'); if(f && !f.getAttribute('src')) f.setAttribute('src','pinterest.html?embed=1'); }
 }
 // ---------- 联盟客档案（本地存储 aff_lib） ----------

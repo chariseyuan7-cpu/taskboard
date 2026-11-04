@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>个人 GMV 增长结构分析（2026.01–09）</title>
+<style>
+  :root{
+    --bg:#faf6f0; --surface:#fff; --surface2:#f6f1e9; --border:#ece5da;
+    --fg:#1f1b16; --muted:#8b8378; --accent:#e0873c; --accent2:#2f9e8f;
+    --good:#2f9e8f; --bad:#d94f6b; --warn:#e0a13c; --violet:#7c7ba8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--fg);
+    font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    line-height:1.75; font-size:14px}
+  .wrap{max-width:1120px; margin:0 auto; padding:34px 22px 90px}
+  header{border-bottom:2px solid var(--accent); padding-bottom:15px; margin-bottom:20px}
+  header .kicker{color:var(--accent); font-weight:700; letter-spacing:.16em; font-size:12px}
+  header h1{font-size:29px; font-weight:800; margin:9px 0 6px; letter-spacing:-.015em}
+  header p{margin:0; color:var(--muted); font-size:13.5px}
+  h2{font-size:20px; font-weight:800; margin:32px 0 10px; letter-spacing:-.01em}
+  h3{font-size:15.5px; font-weight:700; margin:0 0 9px}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:14px}
+  table{width:100%; border-collapse:collapse; font-size:12.8px}
+  th{background:#2a2521; color:#fff; text-align:left; padding:8px 9px; font-size:12px; font-weight:600; white-space:nowrap}
+  td{padding:8px 9px; border-bottom:1px solid var(--border); vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .neg{color:var(--bad)} .pos{color:var(--good)}
+  ul{margin:0 0 0 18px; padding:0}
+  li{margin-bottom:6px; color:var(--muted); font-size:13.2px}
+  li b{color:var(--fg)}
+  .pill{display:inline-block; padding:1px 8px; border-radius:20px; font-size:11px; font-weight:700}
+  .p0{background:rgba(217,79,107,.13); color:#b23552}
+  .p1{background:rgba(224,135,60,.16); color:#b8651f}
+  .p2{background:rgba(124,123,168,.16); color:#5d5c8c}
+  .p3{background:#eee7dc; color:#7a7167}
+  .callout{border-left:3px solid var(--accent); background:var(--surface2); border-radius:8px; padding:11px 14px; font-size:13px; margin:10px 0}
+  .callout.warn{border-left-color:var(--warn)}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  @media(max-width:900px){.grid3{grid-template-columns:1fr}}
+  .mcard{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px}
+  .mcard h4{margin:0 0 6px; font-size:14px}
+  .mcard .tag{font-size:11.5px; color:var(--muted)}
+  .foot{margin-top:30px; padding-top:13px; border-top:1px solid var(--border); font-size:11.5px; color:var(--muted)}
+  .scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">INDIVIDUAL GMV · STRUCTURE ANALYSIS</div>
+  <h1>个人 GMV 增长结构分析</h1>
+  <p>联盟客类型 × 国家分布 ｜ 个人 · 大盘 · Lexit · 未分配组 ｜ 数据周期：2026.01–09（Impact）+ TD 单期</p>
+</header>
+
+<div class="card">
+  <h3>数据审计（先看清口径，再下结论）</h3>
+  <ul>
+    <li><b>统计周期：</b>Impact = 2026-01 ~ 2026-09 Superset 审单；TD = 单期汇总（**无日期字段，拆不了月**）。两者周期不同，<b>不直接相加做同比</b>。</li>
+    <li><b>币种 / GMV 口径：</b>统一美元、<b>不含运费</b>的订单金额（Superset 口径）；Hybrid 时以 Impact 为主、TD 单列。</li>
+    <li><b>去重：</b>按订单号去重；每月取最新最全的 Superset 文件。</li>
+    <li><b>组别定义：</b>数据里只有两个命名团队——<b>Charise（你，88 家）</b>与 <b>Lexit（41 家）</b>；其余 <b>562 家无团队归属</b>。所以本报告的「组别 B」= <b>未分配组</b>，<b>不是第二个团队</b>。</li>
+    <li><b>大盘含个人：</b>大盘 = 个人 + Lexit + 未分配 = <b>$199,810 / 5,835 单</b>；<b>剔除个人后</b> = $131,809 / 3,883 单，本报告已用剔除口径做参照。</li>
+    <li><b>Impact 审单只含 Impact 流量</b>（traffic_source 100% impact）；TD 数据单独成表。</li>
+  </ul>
+</div>
+
+<h2>第一部分 · 核心结论</h2>
+<div class="card">
+  <ul>
+    <li><b>1. 你是"CSS 单腿"结构：</b>CSS/比价占个人 GMV <b>96.2%</b>，其余 6 类加起来不到 4%。</li>
+    <li><b>2. 集中度极高：</b>Top5 占 <b>95.4%</b>，Booncy 一家 <b>57.6%</b>；单点波动直接决定月度业绩。</li>
+    <li><b>3. 大盘最大的类型缺口是 Cashback 与 Coupon/Deals：</b>大盘分别 <b>8.8%</b> / <b>6.6%</b>，你只有 <b>0.3%</b> / <b>1.2%</b>（差 <b>-8.5pp</b> / <b>-5.4pp</b>）。</li>
+    <li><b>4. 大盘最大的国家缺口是法国：</b>大盘 FR <b>29.7%</b>，你只有 <b>8.5%</b>（差 <b>-21.2 个百分点</b>），是单项最大差距。</li>
+    <li><b>5. 你的优势市场是 DE / SE / NL：</b>DE <b>41.9%</b>（大盘 26.8%，+15.1pp）、SE 23.5%（大盘 9.9%，+13.6pp）、NL 13.9%（大盘 10%，+3.9pp）。</li>
+    <li><b>6. TD 是结构性短板：</b>13.7 万点击只出 19 单（CR <b>0.014%</b>），而 TD 的 CSS 品类本身能出单（你的 CSS 3 单 / 5 千点击；Lexit 的 CSS 202 单）。</li>
+    <li><b>7. 战略层几乎空白：</b>Content/评测 0.5%、KOL/KOC 0%，长期新客与内容资产没有承接。</li>
+    <li><b>8. 最值得争取的增量：</b>① FR 的 Coupon/Deals；② DE 的 Cashback；③ TD 侧清理 Sub Network/Content 垃圾点击、把预算换到 CSS 与 Media Buying。</li>
+  </ul>
+</div>
+
+<h2>第二部分 · 联盟客类型结构</h2>
+<div class="card">
+  <div class="scroll">
+  <table>
+    <thead><tr>
+      <th>联盟客类型</th><th class="num">个人 GMV</th><th class="num">个人占比</th>
+      <th class="num">大盘 GMV</th><th class="num">大盘占比</th>
+      <th class="num">Lexit</th><th class="num">Lexit 占比</th>
+      <th class="num">未分配</th><th class="num">差距（pp）</th><th>业务角色</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><b>CSS / 比价</b></td><td class="num">$65,422</td><td class="num">96.2%</td><td class="num">$138,984</td><td class="num">69.6%</td><td class="num">$675</td><td class="num">82.5%</td><td class="num">$72,887</td><td class="num pos">+26.6</td><td>基础层（绝对主力）</td></tr>
+      <tr><td><b>Sub Network</b></td><td class="num">$1,218</td><td class="num">1.8%</td><td class="num">$27,943</td><td class="num">14.0%</td><td class="num">$0</td><td class="num">0.0%</td><td class="num">$26,725</td><td class="num neg">-12.2</td><td>增长层（高风险）</td></tr>
+      <tr><td><b>Cashback / 返利</b></td><td class="num">$194</td><td class="num">0.3%</td><td class="num">$17,505</td><td class="num">8.8%</td><td class="num">$45</td><td class="num">5.5%</td><td class="num">$17,266</td><td class="num neg">-8.5</td><td>增长层（复购）</td></tr>
+      <tr><td><b>Coupon / Deals</b></td><td class="num">$825</td><td class="num">1.2%</td><td class="num">$13,089</td><td class="num">6.6%</td><td class="num">$69</td><td class="num">8.4%</td><td class="num">$12,195</td><td class="num neg">-5.4</td><td>增长层（大促）</td></tr>
+      <tr><td><b>Content / 评测</b></td><td class="num">$342</td><td class="num">0.5%</td><td class="num">$1,773</td><td class="num">0.9%</td><td class="num">$29</td><td class="num">3.6%</td><td class="num">$1,402</td><td class="num neg">-0.4</td><td>战略层（长期）</td></tr>
+      <tr><td>科技 / APP / 其他</td><td class="num">$0</td><td class="num">0.0%</td><td class="num">$314</td><td class="num">0.2%</td><td class="num">$0</td><td class="num">0.0%</td><td class="num">$314</td><td class="num">-0.2</td><td>观察</td></tr>
+      <tr><td>KOL / KOC</td><td class="num">$0</td><td class="num">0.0%</td><td class="num">$189</td><td class="num">0.1%</td><td class="num">$0</td><td class="num">0.0%</td><td class="num">$189</td><td class="num">-0.1</td><td>低优先</td></tr>
+      <tr><td><b>合计</b></td><td class="num"><b>$68,001</b></td><td class="num"><b>100%</b></td><td class="num"><b>$199,810</b></td><td class="num"><b>100%</b></td><td class="num"><b>$819</b></td><td class="num"><b>100%</b></td><td class="num"><b>$130,990</b></td><td class="num">—</td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:11.5px;color:var(--muted);margin-top:8px">差距 = 个人占比 − 大盘占比（百分点）。数据：Impact 2026.01–09，Superset 不含运费口径。</p>
+</div>
+
+<div class="card">
+  <h3>个人类型的"有效产出"质量</h3>
+  <table>
+    <thead><tr><th>类型</th><th class="num">有单伙伴数</th><th class="num">GMV</th><th class="num">人均产出</th><th>判断</th></tr></thead>
+    <tbody>
+      <tr><td><b>CSS / 比价</b></td><td class="num">6</td><td class="num">$65,422</td><td class="num"><b>$10,904</b></td><td>成熟、可复制</td></tr>
+      <tr><td>Sub Network</td><td class="num">7</td><td class="num">$1,218</td><td class="num">$174</td><td>有量无产出</td></tr>
+      <tr><td>Coupon / Deals</td><td class="num">5</td><td class="num">$825</td><td class="num">$165</td><td>未成型</td></tr>
+      <tr><td>Cashback / 返利</td><td class="num">2</td><td class="num">$194</td><td class="num">$97</td><td>几乎空白</td></tr>
+      <tr><td>Content / 评测</td><td class="num">1</td><td class="num">$342</td><td class="num">$342</td><td>单点、未成体系</td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><b>诊断：</b>除 CSS 外，其余类型的<b>人均产出只有 $97–$342</b>，说明不是"没签伙伴"，而是<b>签了跑不起来</b>——问题在准入、素材与喂养方式，不在数量。</div>
+</div>
+
+<div class="card">
+  <h3>联盟营销金字塔（按数据判断，不机械套层）</h3>
+  <table>
+    <thead><tr><th>层级</th><th>业务角色</th><th>你当前的构成</th><th>健康度</th></tr></thead>
+    <tbody>
+      <tr><td><b>基础层</b></td><td>稳定贡献订单与 GMV</td><td>CSS/比价 96.2%，6 家；Top5 95.4%</td><td class="neg">过度集中</td></tr>
+      <tr><td><b>增长层</b></td><td>可扩规模、可增加有效伙伴</td><td>Coupon 1.2% + Cashback 0.3% + Sub Net 1.8% = 3.3%</td><td class="neg">严重不足</td></tr>
+      <tr><td><b>战略层</b></td><td>长期新客、内容与差异化</td><td>Content 0.5%、KOL 0%</td><td class="neg">几乎空白</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn"><b>风险：</b>基础层再稳，也只是"一个渠道 + 一个平台"。一旦 Booncy 或 Impact 出问题，没有第二层接得住。</div>
+</div>
+
+<h2>第三部分 · 国家销售额结构</h2>
+<div class="card">
+  <div class="scroll">
+  <table>
+    <thead><tr>
+      <th>国家</th><th class="num">个人 GMV</th><th class="num">个人占比</th>
+      <th class="num">大盘 GMV</th><th class="num">大盘占比</th>
+      <th class="num">Lexit</th><th class="num">Lexit 占比</th>
+      <th class="num">未分配</th><th class="num">差距（pp）</th><th>市场分类</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><b>DE 德国</b></td><td class="num">$28,487</td><td class="num">41.9%</td><td class="num">$53,578</td><td class="num">26.8%</td><td class="num">$133</td><td class="num">16.2%</td><td class="num">$24,958</td><td class="num pos">+15.1</td><td><b>优势市场</b></td></tr>
+      <tr><td><b>SE 瑞典</b></td><td class="num">$15,952</td><td class="num">23.5%</td><td class="num">$19,867</td><td class="num">9.9%</td><td class="num">$223</td><td class="num">27.3%</td><td class="num">$3,692</td><td class="num pos">+13.6</td><td><b>优势市场</b></td></tr>
+      <tr><td><b>NL 荷兰</b></td><td class="num">$9,445</td><td class="num">13.9%</td><td class="num">$19,944</td><td class="num">10.0%</td><td class="num">$261</td><td class="num">31.8%</td><td class="num">$10,238</td><td class="num pos">+3.9</td><td>优势市场</td></tr>
+      <tr><td><b>FR 法国</b></td><td class="num">$5,751</td><td class="num">8.5%</td><td class="num">$59,247</td><td class="num">29.7%</td><td class="num">$21</td><td class="num">2.6%</td><td class="num">$53,475</td><td class="num neg"><b>-21.2</b></td><td><b>潜力市场（最大缺口）</b></td></tr>
+      <tr><td>IT 意大利</td><td class="num">$3,451</td><td class="num">5.1%</td><td class="num">$14,068</td><td class="num">7.0%</td><td class="num">$0</td><td class="num">0.0%</td><td class="num">$10,617</td><td class="num neg">-1.9</td><td>潜力市场</td></tr>
+      <tr><td>ES 西班牙</td><td class="num">$1,960</td><td class="num">2.9%</td><td class="num">$12,251</td><td class="num">6.1%</td><td class="num">$20</td><td class="num">2.4%</td><td class="num">$10,271</td><td class="num neg">-3.2</td><td>待验证</td></tr>
+      <tr><td>PL 波兰</td><td class="num">$2,144</td><td class="num">3.2%</td><td class="num">$5,096</td><td class="num">2.6%</td><td class="num">$45</td><td class="num">5.5%</td><td class="num">$2,907</td><td class="num pos">+0.6</td><td>低优先</td></tr>
+      <tr><td>NO 挪威</td><td class="num">$323</td><td class="num">0.5%</td><td class="num">$5,804</td><td class="num">2.9%</td><td class="num">$58</td><td class="num">7.1%</td><td class="num">$5,423</td><td class="num neg">-2.4</td><td>待验证</td></tr>
+      <tr><td>FI 芬兰</td><td class="num">$173</td><td class="num">0.3%</td><td class="num">$2,566</td><td class="num">1.3%</td><td class="num">$58</td><td class="num">7.1%</td><td class="num">$2,335</td><td class="num neg">-1.0</td><td>低优先</td></tr>
+      <tr><td>其他（UK/AU 等）</td><td class="num">$315</td><td class="num">0.5%</td><td class="num">$7,089</td><td class="num">3.5%</td><td class="num">$0</td><td class="num">0.0%</td><td class="num">$6,774</td><td class="num neg">-3.0</td><td>低优先</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:11.5px;color:var(--muted);margin-top:8px">大盘 GMV = 所有组别合计；未分配组在 FR 的 $53,475 是最大单一板块，说明 FR 不是"没有需求"，而是"你没接住"。</p>
+</div>
+
+<div class="card">
+  <h3>国家诊断</h3>
+  <ul>
+    <li><b>DE：</b>你的绝对主力（41.9%），但大盘只占 26.8% —— 你在这里<b>已经超配</b>，继续加量的边际收益要看能否提高单产，而不是再铺量。</li>
+    <li><b>SE：</b>23.5%，且高度依赖 Booncy（占你瑞典约 91%）—— <b>优势但脆弱</b>，要补第二来源。</li>
+    <li><b>FR：</b>大盘 29.7%，你 8.5% —— <b>最大的结构性缺口</b>，且未分配组在 FR 有 $53k，说明有现成的伙伴类型可对标。</li>
+    <li><b>NL：</b>13.9%，已有基础（$9.4k），Lexit 在 NL 占比 31.8% —— 有可复制的空间。</li>
+    <li><b>IT / ES：</b>大盘 7.0% / 6.1%，你 5.1% / 2.9% —— 有一定基础，适合"低成本测试"。</li>
+    <li><b>NO / FI：</b>大盘 2.9% / 1.3%，你 0.5% / 0.3% —— 体量小，先不投入主力资源。</li>
+  </ul>
+</div>
+
+<h2>第四部分 · 优先级排序</h2>
+
+<div class="card">
+  <h3>最值得投入的联盟客类型</h3>
+  <table>
+    <thead><tr><th>优先级</th><th>类型</th><th>依据（数据）</th><th>潜在增量</th><th>风险 / 验证</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p0">高</span></td><td><b>Coupon / Deals</b></td><td>大盘 6.6%、你 1.2%（-5.4pp）；人均仅 $165，说明是"没跑起来"</td><td>短期：$1–2k；中期：$3–4k</td><td>需要整站码与曝光位；2 周测 CR≥1%</td></tr>
+      <tr><td><span class="pill p0">高</span></td><td><b>Cashback / 返利</b></td><td>大盘 8.8%、你 0.3%（-8.5pp）；你新客 84.8%，复购弱</td><td>中期：$2–4k，且改善复购</td><td>佣金结构敏感；先测 1–2 家</td></tr>
+      <tr><td><span class="pill p1">中</span></td><td><b>CSS / 比价</b></td><td>已占 96.2%，人均 $10,904</td><td>短期：靠 Velka 型加量 $2–3k</td><td>不要只加量，要加"高效型"</td></tr>
+      <tr><td><span class="pill p2">中低</span></td><td>Sub Network</td><td>大盘 14%，你 1.8%；但你 7 家人均仅 $174</td><td>选优 2–3 家，$1–2k</td><td>高风险（垃圾点击），必须能传 Sub ID</td></tr>
+      <tr><td><span class="pill p2">中低（长期）</span></td><td>Content / 评测</td><td>你 0.5%、仅 1 家；大盘也仅 0.9%</td><td>长期：SEO/新客，短期 GMV 小</td><td>见效慢，按季度评估</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h3>最值得关注的国家</h3>
+  <table>
+    <thead><tr><th>优先级</th><th>国家</th><th>依据（数据）</th><th>建议动作</th><th>验证指标</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p0">高</span></td><td><b>FR 法国</b></td><td>大盘 29.7% / 你 8.5%（-21.2pp），未分配组在 FR 有 $53k</td><td>先找 1–2 家 FR 券站 + 1 家 FR CSS，做 4 周测试</td><td>FR GMV 占比、CR、EPC</td></tr>
+      <tr><td><span class="pill p1">中</span></td><td><b>SE 瑞典</b></td><td>你 23.5%，但 91% 来自 Booncy</td><td>补 1 家瑞典专精 CSS（第二来源）</td><td>Booncy 外 GMV 占比</td></tr>
+      <tr><td><span class="pill p1">中</span></td><td><b>NL 荷兰</b></td><td>你 13.9%，已有 $9.4k 基础</td><td>加 1 家 NL 本地 CSS / Cashback</td><td>NL GMV 增量、新客占比</td></tr>
+      <tr><td><span class="pill p2">中低</span></td><td>IT / ES</td><td>大盘 7.0% / 6.1%，你 5.1% / 2.9%</td><td>各测 1 家本地 CSS / 券站，预算 $200–300</td><td>4 周 CR ≥1%</td></tr>
+      <tr><td><span class="pill p3">低</span></td><td>NO / FI / PL</td><td>体量小（大盘 2.9% / 1.3% / 2.6%）</td><td>暂不投入主力</td><td>—</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h3>最值得测试的「类型 × 国家」组合</h3>
+  <table>
+    <thead><tr><th>优先级</th><th>组合</th><th>为什么</th><th>测试方式</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p0">高</span></td><td><b>Coupon/Deals × FR</b></td><td>同时命中"最大类型缺口"和"最大国家缺口"</td><td>2 家 FR 券站，整站码 + 4 周</td></tr>
+      <tr><td><span class="pill p0">高</span></td><td><b>Cashback × DE</b></td><td>DE 是你的基本盘，Cashback 能拉复购</td><td>1–2 家 DE 返利站，8 周</td></tr>
+      <tr><td><span class="pill p1">中</span></td><td>Coupon/Deals × ES / IT</td><td>大盘有量，你几乎空白，成本低</td><td>各 1 家，$200–300 测试</td></tr>
+      <tr><td><span class="pill p2">中低</span></td><td>Content × FR / DE</td><td>长期 SEO 与新客，短期小</td><td>1–2 篇/月，季度评估</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>第五部分 · 个人 GMV 增长行动计划</h2>
+<div class="grid3">
+  <div class="mcard">
+    <h4>30 天 · 止血 + 试点</h4>
+    <div class="tag">目标：结构不动大手术，先拿低成本增量</div>
+    <ul>
+      <li>清理 TD 的 Sub Network / Content 垃圾点击（13.6 万点击、仅 3 单）</li>
+      <li>TD 已有 30+ 伙伴中，激活 3 家能传 Sub ID 的</li>
+      <li>FR 谈 1 家券站；DE 谈 1 家 Cashback</li>
+      <li>Velka 型加量 1 家</li>
+    </ul>
+    <p style="font-size:12px;color:var(--muted)"><b>指标：</b>TD CR ≥0.1%；新增 2 个测试；个人 GMV 不降。<br><b>停止条件：</b>2 周 CR &lt;0.5% 且无解释。</p>
+  </div>
+  <div class="mcard">
+    <h4>60 天 · 补第二层</h4>
+    <div class="tag">目标：让 Coupon/Cashback 从"0"变成"有"</div>
+    <ul>
+      <li>Coupon/Deals 上线 2 家（FR + ES/IT）</li>
+      <li>Cashback 上线 1–2 家（DE）</li>
+      <li>SE / NL 各补 1 家本地 CSS</li>
+      <li>Top5 集中度压到 ≤92%</li>
+    </ul>
+    <p style="font-size:12px;color:var(--muted)"><b>指标：</b>Coupon 占比 ≥2.5%、Cashback ≥1%、FR 占比 ≥10%。<br><b>调整：</b>未达 CR 1% 的类型砍掉。</p>
+  </div>
+  <div class="mcard">
+    <h4>90 天 · 结构成型</h4>
+    <div class="tag">目标：三层金字塔初步成立</div>
+    <ul>
+      <li>Coupon 3–5%、Cashback 1.5–2.5%、Content 1%</li>
+      <li>Top5 集中度 ≤88%，Booncy ≤45%</li>
+      <li>TD 订单占比 ≥5%（当前 0.8%）</li>
+      <li>FR 占比 12–15%</li>
+    </ul>
+    <p style="font-size:12px;color:var(--muted)"><b>指标：</b>GMV 净增、ROI 不降、单点依赖下降。<br><b>决策：</b>按 90 天结果定下一季扩量名单。</p>
+  </div>
+</div>
+
+<h2>第六部分 · 数据限制与待验证假设</h2>
+<div class="card">
+  <h3>能支持的结论</h3>
+  <ul>
+    <li>你的类型结构（CSS 96.2%）与集中度（Top5 95.4%）；</li>
+    <li>你与 Lexit / 未分配组 / 大盘在类型与国家上的占比差距；</li>
+    <li>TD 侧点击与订单的悬殊（CR 0.014%）；</li>
+    <li>各类型的有效伙伴数与人均产出。</li>
+  </ul>
+  <h3>只能作为假设的判断</h3>
+  <ul>
+    <li>Coupon/Cashback 的"潜在增量"是按占比差推算的方向，不是已验证的 GMV；</li>
+    <li>FR 的 $53k 来自未分配组，不代表你能复制同样产出；</li>
+    <li>TD 单期数据的绝对规模不能与 Impact 九个月直接相加比较。</li>
+  </ul>
+  <h3>仍需补充的数据</h3>
+  <ul>
+    <li><b>佣金 / 结算成本</b>（按类型、按国家）—— 没有它无法算 ROI 与真实净增；</li>
+    <li><b>点击 / Sessions</b>（Impact 侧）—— 目前只有订单，没有分母；</li>
+    <li><b>TD 按月的导出</b>—— 现在只有单期，看不到趋势；</li>
+    <li><b>第二个团队的组别定义</b>—— 数据里只有 Charise 与 Lexit。</li>
+  </ul>
+  <div class="callout warn"><b>最影响判断的一项：</b>佣金成本。没有它，"增量"可能只是"用更高佣金买来的收入"，并不等于利润增长。</div>
+</div>
+
+<div class="foot">
+  数据源：Superset 审单（2026.01–09，Impact，不含运费）、Tradedoubler 导出（单期）、伙伴关系表（Groups 字段）。
+  生成日期 2026-10-29。
+</div>
+
+</div>
+</body>
+</html>
