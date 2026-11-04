@@ -70,6 +70,18 @@
   .brand-tx b{font-size:15px; display:block}
   .brand-tx span{font-size:11px; color:var(--muted)}
   .nav{display:flex; flex-direction:column; gap:6px; margin-top:4px}
+  /* ---- 二级导航 ---- */
+  .nav-group{display:flex; flex-direction:column; gap:3px}
+  .nav-group-h{display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
+    border:none; background:transparent; color:var(--muted); font:inherit; font-size:11px; font-weight:800;
+    letter-spacing:.12em; padding:9px 12px 3px; cursor:pointer; text-transform:uppercase}
+  .nav-group-h:hover{color:var(--accent)}
+  .nav-caret{font-size:10px; transition:transform .18s; opacity:.8}
+  .nav-group.closed .nav-caret{transform:rotate(-90deg)}
+  .nav-sub{display:flex; flex-direction:column; gap:3px; overflow:hidden}
+  .nav-group.closed .nav-sub{display:none}
+  .nav-sub .nav-item{padding-left:15px}
+  .nav-group + .nav-group{border-top:1px dashed var(--border); margin-top:2px; padding-top:2px}
   .nav-item{position:relative; display:flex; align-items:center; gap:10px; text-align:left; border:none; background:transparent; text-decoration:none;
     color:var(--muted); font:inherit; font-size:14px; font-weight:600; padding:12px 13px;
     border-radius:11px; cursor:pointer; transition:.15s}
@@ -94,6 +106,9 @@
   .app.collapsed .brand{justify-content:center}
   .app.collapsed .nav-item{justify-content:center; padding:12px}
   .app.collapsed .nav-item .nav-tx{display:none}
+  .app.collapsed .nav-group-h{display:none}
+  .app.collapsed .nav-group + .nav-group{border-top:1px solid var(--border); margin-top:6px; padding-top:6px}
+  .app.collapsed .nav-sub .nav-item{padding-left:12px}
   .app.collapsed #multibar{left:74px}
   @media(max-width:860px){
     .side-toggle{display:none}
@@ -103,6 +118,11 @@
     .brand-tx span{display:none}
     .nav{flex-direction:row; margin-left:auto; overflow-x:auto; scrollbar-width:none}
     .nav::-webkit-scrollbar{display:none}
+    .nav-group{display:contents}
+    .nav-group-h{display:none}
+    .nav-group.closed .nav-sub{display:flex}
+    .nav-sub{flex-direction:row; gap:6px}
+    .nav-sub .nav-item{padding:10px 13px}
     .nav-item{flex:0 0 auto}
     .side-foot{display:none}
     #multibar{left:0}
@@ -892,15 +912,30 @@
       <div class="brand-tx"><b>个人任务看板</b><span>Personal Task Board</span></div>
     </div>
     <nav class="nav">
-      <button class="nav-item active" data-view="tasks" title="查看任务看板"><span class="nav-ic">📋</span><span class="nav-tx">任务看板</span><span class="nav-badge" id="tasksBadge"></span></button>
-      <button class="nav-item" data-view="gmv" title="查看个人 GMV 增长结构分析"><span class="nav-ic">📈</span><span class="nav-tx">GMV结构分析</span></button>
-      <button class="nav-item" data-view="pin" title="查看 Pinterest 运营分析"><span class="nav-ic">📌</span><span class="nav-tx">Pinterest运营分析</span></button>
-      <button class="nav-item" data-view="next" title="随手记下个月要做的事"><span class="nav-ic">📥</span><span class="nav-tx">下月待办</span><span class="nav-badge" id="nextBadge"></span></button>
-      <button class="nav-item" data-view="tpl" title="查看邮件模板"><span class="nav-ic">✉️</span><span class="nav-tx">邮件模板</span></button>
-      <button class="nav-item" data-view="cal" title="查看全年日历"><span class="nav-ic">📅</span><span class="nav-tx">全年日历</span></button>
-      <button class="nav-item" data-view="kb" title="查看知识库"><span class="nav-ic">📚</span><span class="nav-tx">知识库</span></button>
-      <button class="nav-item" data-view="partners" title="查看联盟客档案"><span class="nav-ic">🤝</span><span class="nav-tx">联盟客档案</span></button>
-      <button class="nav-item" data-view="hunt" title="采集网页线索"><span class="nav-ic">🔎</span><span class="nav-tx">线索采集</span></button>
+      <div class="nav-group" data-group="work">
+        <button class="nav-group-h" type="button"><span class="nav-group-t">日常执行</span><span class="nav-caret">▾</span></button>
+        <div class="nav-sub">
+          <button class="nav-item active" data-view="tasks" title="查看任务看板"><span class="nav-ic">📋</span><span class="nav-tx">任务看板</span><span class="nav-badge" id="tasksBadge"></span></button>
+          <button class="nav-item" data-view="next" title="随手记下个月要做的事"><span class="nav-ic">📥</span><span class="nav-tx">下月待办</span><span class="nav-badge" id="nextBadge"></span></button>
+          <button class="nav-item" data-view="cal" title="查看全年日历"><span class="nav-ic">📅</span><span class="nav-tx">全年日历</span></button>
+        </div>
+      </div>
+      <div class="nav-group" data-group="analysis">
+        <button class="nav-group-h" type="button"><span class="nav-group-t">运营分析</span><span class="nav-caret">▾</span></button>
+        <div class="nav-sub">
+          <button class="nav-item" data-view="gmv" title="查看个人 GMV 增长结构分析"><span class="nav-ic">📈</span><span class="nav-tx">GMV结构分析</span></button>
+          <button class="nav-item" data-view="pin" title="查看 Pinterest 运营分析"><span class="nav-ic">📌</span><span class="nav-tx">Pinterest运营分析</span></button>
+        </div>
+      </div>
+      <div class="nav-group" data-group="library">
+        <button class="nav-group-h" type="button"><span class="nav-group-t">内容与资料</span><span class="nav-caret">▾</span></button>
+        <div class="nav-sub">
+          <button class="nav-item" data-view="tpl" title="查看邮件模板"><span class="nav-ic">✉️</span><span class="nav-tx">邮件模板</span></button>
+          <button class="nav-item" data-view="kb" title="查看知识库"><span class="nav-ic">📚</span><span class="nav-tx">知识库</span></button>
+          <button class="nav-item" data-view="partners" title="查看联盟客档案"><span class="nav-ic">🤝</span><span class="nav-tx">联盟客档案</span></button>
+          <button class="nav-item" data-view="hunt" title="采集网页线索"><span class="nav-ic">🔎</span><span class="nav-tx">线索采集</span></button>
+        </div>
+      </div>
     </nav>
     <div class="side-foot">进度保存在本机浏览器<br>离线可用 · 数据不联网<br>Ctrl+F 搜索 · Esc 关闭<br><a id="signOutLink" style="display:none; text-decoration:underline; cursor:pointer">退出登录</a></div>
   </aside>
@@ -3213,6 +3248,7 @@ function setView(v){
   currentView=v;
   $$('.view').forEach(el=>el.classList.toggle('active', el.id==='view-'+v));
   $$('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  openNavGroupFor(v);
   if(v==='tpl') renderTpl();
   if(v==='cal') renderCalendar();
   if(v==='kb') renderKb();
@@ -3494,6 +3530,31 @@ function bindPt(){
 
 function bindView(){
   $$('.nav-item[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+}
+
+// ---- 二级导航：分组展开 / 收起（记住上次状态） ----
+let navClosed={};
+function bindNavGroups(){
+  try{ const raw=localStorage.getItem('nav_groups'); if(raw) navClosed=JSON.parse(raw)||{}; }catch(e){ navClosed={}; }
+  $$('.nav-group').forEach(g=>{
+    const key=g.dataset.group;
+    g.classList.toggle('closed', !!navClosed[key]);
+    const h=g.querySelector('.nav-group-h');
+    if(h) h.onclick=()=>{
+      const closed=g.classList.toggle('closed');
+      navClosed[key]=closed;
+      try{ localStorage.setItem('nav_groups', JSON.stringify(navClosed)); }catch(e){}
+    };
+  });
+}
+function openNavGroupFor(view){
+  const item=document.querySelector('.nav-sub .nav-item[data-view="'+view+'"]');
+  const g=item && item.closest('.nav-group');
+  if(g && g.classList.contains('closed')){
+    g.classList.remove('closed');
+    navClosed[g.dataset.group]=false;
+    try{ localStorage.setItem('nav_groups', JSON.stringify(navClosed)); }catch(e){}
+  }
 }
 
 // ---------- 侧边栏收起 / 展开 ----------
@@ -4235,7 +4296,7 @@ function bootApp(){
   ptData=loadPt(); bindPt(); renderPt();
   nextTodos=loadNext(); bindNext(); renderNext();
   t24Bind();
-  bindView(); bindSidebar(); bindCal();
+  bindNavGroups(); bindView(); bindSidebar(); bindCal();
   renderCalendar(); quickRange('month'); applySidebar();
   renderMkt(); bindMkt();
   if(carryOverInto(ym)) save();
