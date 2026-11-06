@@ -1726,8 +1726,12 @@ async function initCloud(){
     // 联盟客档案：同样寄存在 tasks 表，云端与本机合并（换设备/清缓存后可恢复）
     const affRow=tasks.find(t=>t.month===AFF_MONTH && Array.isArray(t.subtasks));
     if(affRow && affRow.subtasks.length){
-      const byId={}; ptData.forEach(p=>{ if(p&&p.id) byId[p.id]=p; });
-      affRow.subtasks.forEach(p=>{ if(p&&p.id) byId[p.id]={...(byId[p.id]||{}), ...p}; });
+      const byId={};
+      const take=p=>{ if(!p||!p.id) return; const old=byId[p.id]; if(!old){ byId[p.id]=p; return; }
+        const a=String(old.updatedAt||''), b=String(p.updatedAt||'');
+        byId[p.id]=(b>=a)?{...old,...p}:old; };
+      ptData.forEach(take);
+      affRow.subtasks.forEach(take);
       ptData=Object.values(byId);
       localStorage.setItem('aff_lib', JSON.stringify(ptData));
       renderPt();
@@ -3353,6 +3357,21 @@ function savePt(){ try{ localStorage.setItem('aff_lib', JSON.stringify(ptData));
 async function syncPt(){
   if(!sb) return false;
   try{
+    // 先读取云端现有档案，按 id 合并（updatedAt 较新的胜出），避免多设备互相覆盖
+    const cur=await sb.from('tasks').select('*').eq('id',AFF_ROW_ID);
+    const cloudProfiles=(cur && !cur.error && cur.data && cur.data[0] && Array.isArray(cur.data[0].subtasks))? cur.data[0].subtasks : [];
+    const byId={};
+    const take=p=>{
+      if(!p || !p.id) return;
+      const old=byId[p.id];
+      if(!old){ byId[p.id]=p; return; }
+      const a=String(old.updatedAt||''), b=String(p.updatedAt||'');
+      byId[p.id]=(b>=a)? {...old,...p} : old;
+    };
+    cloudProfiles.forEach(take);
+    ptData.forEach(take);
+    ptData=Object.values(byId);
+    try{ localStorage.setItem('aff_lib', JSON.stringify(ptData)); }catch(e){}
     const row={id:AFF_ROW_ID, month:AFF_MONTH, cat:'', title:'affiliate profiles',
       priority:'mid', due:'', done:false, status:'', subtasks:ptData, updated_at:new Date().toISOString()};
     const r=await sb.from('tasks').upsert([row], {onConflict:'id'});
@@ -3360,6 +3379,7 @@ async function syncPt(){
     const {data:ex}=await sb.from('tasks').select('id').eq('month', AFF_MONTH);
     const del=(ex||[]).map(x=>x.id).filter(id=>id!==AFF_ROW_ID);
     if(del.length) await sb.from('tasks').delete().in('id', del);
+    renderPt();
     return true;
   }catch(e){ return false; }
 }
@@ -3369,7 +3389,7 @@ function ptById(id){ return ptData.find(p=>p.id===id)||null; }
 function ptLabel(v){ return (v===undefined||v===null||String(v).trim()==='')? '—' : String(v); }
 function ptFiltered(){
   const q=(($('#ptSearch')&&$('#ptSearch').value)||'').trim().toLowerCase();
-  let arr=ptData.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'zh'));
+  let arr=ptData.filter(p=>!p.deleted).slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'zh'));
   if(ptFilter!=='全部') arr=arr.filter(p=>(p.stage||'')===ptFilter);
   if(q) arr=arr.filter(p=>[p.name,p.partnerId,p.contact,p.email,p.website,p.type,p.countries,p.pending,p.owner].join(' ').toLowerCase().indexOf(q)>=0);
   return arr;
@@ -3462,7 +3482,7 @@ function renderPtMain(){
   const en=$('#ptPrepEn'); if(en) en.onclick=()=>copyText(ptPrepEmail(p,'en'),'英文索取邮件已复制');
   const e=$('#ptEdit'); if(e) e.onclick=()=>openPtEditor(p.id);
   const c=$('#ptCopy'); if(c) c.onclick=()=>{ copyText(ptPlainText(p),'档案已复制'); };
-  const d=$('#ptDel'); if(d) d.onclick=()=>{ if(confirm('确认删除「'+(p.name||'未命名')+'」的档案？')){ ptData=ptData.filter(x=>x.id!==p.id); savePt(); ptSelId=null; renderPt(); } };
+  const d=$('#ptDel'); if(d) d.onclick=()=>{ if(confirm('确认删除「'+(p.name||'未命名')+'」的档案？')){ p.deleted=true; p.updatedAt=new Date().toISOString().slice(0,10); savePt(); ptSelId=null; renderPt(); } };
 }
 // 会前资料索取邮件（法文 / 英文）
 function ptPrepEmail(p, lang){
