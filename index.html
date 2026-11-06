@@ -91,6 +91,9 @@
     border-radius:10px; background:#f45d74; color:#fff; font-size:11px; font-weight:700;
     display:none; place-items:center; line-height:1; box-shadow:0 1px 3px rgba(0,0,0,.2)}
   .side-foot{margin-top:auto; font-size:11.5px; color:var(--muted); line-height:1.6; padding:0 6px}
+  .side-backup{display:flex; flex-direction:column; gap:3px; margin:6px 0}
+  .side-backup a{font-size:11.5px; color:var(--blue); cursor:pointer; text-decoration:none}
+  .side-backup a:hover{text-decoration:underline; color:var(--accent)}
   .content{flex:1; min-width:0; padding:0 32px 90px; width:100%}
   .view{display:none}
   .view.active{display:block}
@@ -937,7 +940,15 @@
         </div>
       </div>
     </nav>
-    <div class="side-foot">进度保存在本机浏览器<br>离线可用 · 数据不联网<br>Ctrl+F 搜索 · Esc 关闭<br><a id="signOutLink" style="display:none; text-decoration:underline; cursor:pointer">退出登录</a></div>
+    <div class="side-foot">
+      数据自动同步到云端<br>离线可用 · 换设备可恢复<br>Ctrl+F 搜索 · Esc 关闭<br>
+      <div class="side-backup">
+        <a id="backupAll" title="把全部数据导出成一个 JSON 文件">⤓ 备份全部</a>
+        <a id="restoreAll" title="从备份文件恢复全部数据">⤒ 恢复备份</a>
+        <input type="file" id="restoreFile" accept=".json,application/json" style="display:none" />
+      </div>
+      <a id="signOutLink" style="display:none; text-decoration:underline; cursor:pointer">退出登录</a>
+    </div>
   </aside>
   <main class="content">
   <div class="ro-banner" id="roBanner" style="display:none">🔒 只读模式：你正在查看这个看板，登录后可编辑。</div>
@@ -945,7 +956,7 @@
   <header>
     <div class="kicker">Personal Task Board</div>
     <h1>个人月度任务看板</h1>
-    <p>记录每月要完成的事情，把每一项打好勾，进度会自动计算并保存在你的浏览器里，刷新也不会丢。</p>
+    <p>记录每月要完成的事情，把每一项打好勾，进度会自动计算并同步到云端，换设备也能接着做。</p>
     <div class="meta">
       <span>今日：<b id="today"></b></span>
       <span>当前查看：<b id="viewMonth"></b></span>
@@ -1016,7 +1027,7 @@
       <h1>邮件模板</h1>
       <p>整理你的红人开发 / 外联邮件模板，填好即可一键复制去发信。</p>
       <div class="meta">
-        <span>数据保存在：<b>本机浏览器</b></span>
+        <span>数据保存在：<b>本机 + 云端同步</b></span>
         <span>支持：<b>新增 / 编辑 / 复制 / 搜索 / 标签筛选</b></span>
       </div>
     </header>
@@ -1045,7 +1056,7 @@
       <h1>全年日历</h1>
       <p>在任意日期上点一下，或点右上角「＋ 增加计划」，添加一段带起止日期的计划。</p>
       <div class="meta">
-        <span>数据保存在：<b>本机浏览器</b></span>
+        <span>数据保存在：<b>本机 + 云端同步</b></span>
         <span>操作：<b>点日期或「＋ 增加计划」添加 / 删除计划</b></span>
       </div>
     </header>
@@ -1136,7 +1147,7 @@
       <h1>知识库</h1>
       <p>记录工作中的重要内容、经验和常用资料，随时搜索查看。</p>
       <div class="meta">
-        <span>数据保存在：<b>本机浏览器</b></span>
+        <span>数据保存在：<b>本机 + 云端同步</b></span>
         <span>支持：<b>新增 / 编辑 / 复制 / 搜索 / 分类</b></span>
       </div>
     </header>
@@ -1159,7 +1170,7 @@
     <header>
       <div class="kicker">Affiliate Profiles</div>
       <h1>联盟客档案</h1>
-      <p>每个联盟客一张档案卡：身份、阶段、商业条款、受众口径、我方立场与未决事项。数据保存在本机浏览器，可用右上角按钮导出 JSON 备份。</p>
+      <p>每个联盟客一张档案卡：身份、阶段、商业条款、受众口径、我方立场与未决事项。数据会自动同步到云端，也可用右上角按钮导出 JSON 备份。</p>
       <div class="meta">
         <span>主键：<b>Impact Partner ID</b></span>
         <span>支持：<b>新增 / 编辑 / 筛选 / 搜索 / 导入导出</b></span>
@@ -1575,7 +1586,7 @@ async function retrySync(){
 }
 function scheduleSync(kind){
   if(!cloudReady || !sb || cloudOff || readOnly) return;
-  const map={tasks:syncTasks, plans:syncPlans, templates:syncTemplates, kb:syncKb, next:syncNext, mkt:syncMkt};
+  const map={tasks:syncTasks, plans:syncPlans, templates:syncTemplates, kb:syncKb, next:syncNext, mkt:syncMkt, pt:syncPt, hunt:syncHunt};
   const fn=map[kind]; if(!fn) return;
   clearTimeout(cloudTimer);
   cloudTimer = setTimeout(async ()=>{ markSyncStart(); let ok=false; try{ ok=await fn(); }catch(e){ ok=false; } markSyncEnd(ok); }, 600);
@@ -1709,8 +1720,35 @@ async function initCloud(){
       localStorage.setItem('mkt_nodes', JSON.stringify(mktNodes));
       renderMkt(); renderCalendar();
     }
+    // 联盟客档案：同样寄存在 tasks 表，云端与本机合并（换设备/清缓存后可恢复）
+    const affRow=tasks.find(t=>t.month===AFF_MONTH && Array.isArray(t.subtasks));
+    if(affRow && affRow.subtasks.length){
+      const byId={}; ptData.forEach(p=>{ if(p&&p.id) byId[p.id]=p; });
+      affRow.subtasks.forEach(p=>{ if(p&&p.id) byId[p.id]={...(byId[p.id]||{}), ...p}; });
+      ptData=Object.values(byId);
+      localStorage.setItem('aff_lib', JSON.stringify(ptData));
+      renderPt();
+    }
+    // 线索采集结果：同样寄存在 tasks 表，按 URL 去重合并
+    const huntRow=tasks.find(t=>t.month===HUNT_MONTH && Array.isArray(t.subtasks));
+    if(huntRow && huntRow.subtasks.length){
+      const byUrl={}; huntResults.forEach(r=>{ if(r&&r.url) byUrl[r.url]=r; });
+      huntRow.subtasks.forEach(r=>{ if(r&&r.url) byUrl[r.url]={...(byUrl[r.url]||{}), ...r}; });
+      huntResults=Object.values(byUrl).slice(0, FC_MAX_RESULTS);
+      localStorage.setItem('hunt_results', JSON.stringify(huntResults));
+      renderHuntResults();
+    }
     cloudReady=true;
+    // 从备份恢复后：把所有数据推回云端
+    if(localStorage.getItem('pending_restore')==='1'){
+      localStorage.removeItem('pending_restore');
+      pushAllMonthsTasks();
+      savePlans(); saveTpl(); saveKb(); saveNext(); saveMkt(); savePt(); saveHuntResults();
+      toast('备份已同步到云端 ✓');
+    }
     if(mktNodes.length) saveMkt();   // 本机已有节点 → 推一份到云端
+    if(ptData.length) savePt();      // 本机已有档案 → 推一份到云端
+    if(huntResults.length) saveHuntResults();
     if(plansRenamed){ plansRenamed=false; savePlans(); }   // 标签改名后把云端也更新成新名字
     // 云端数据到手后再跑一次结转，避免结转结果被云端覆盖；此时才能同步上云
     if(carryOverInto(ym)){ localStorage.setItem(storeKey(ym), JSON.stringify(data)); render(); syncTasks(); }
@@ -2999,8 +3037,24 @@ const FC_BASE = 'https://api.firecrawl.dev';
 const FC_MAX_RESULTS = 30;
 let huntKey = localStorage.getItem('fc_api_key') || '';
 let huntMode = 'search';
-let huntResults = [];
+const HUNT_MONTH='__hunt__', HUNT_ROW_ID='__hunt_lib__';
+function loadHuntResults(){ try{ const a=JSON.parse(localStorage.getItem('hunt_results')||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+let huntResults = loadHuntResults();
 let huntBusy = false;
+function saveHuntResults(){ try{ localStorage.setItem('hunt_results', JSON.stringify(huntResults)); }catch(e){} scheduleSync('hunt'); }
+async function syncHunt(){
+  if(!sb) return false;
+  try{
+    const row={id:HUNT_ROW_ID, month:HUNT_MONTH, cat:'', title:'hunt results', priority:'mid',
+      due:'', done:false, status:'', subtasks:huntResults, updated_at:new Date().toISOString()};
+    const r=await sb.from('tasks').upsert([row], {onConflict:'id'});
+    if(r && r.error) return false;
+    const {data:ex}=await sb.from('tasks').select('id').eq('month', HUNT_MONTH);
+    const del=(ex||[]).map(x=>x.id).filter(id=>id!==HUNT_ROW_ID);
+    if(del.length) await sb.from('tasks').delete().in('id', del);
+    return true;
+  }catch(e){ return false; }
+}
 
 const HUNT_PLACEHOLDER = {
   search: '输入关键词，例如：personalised gifts affiliate program',
@@ -3117,6 +3171,7 @@ function setHuntResults(items){
     seen.add(it.url); huntResults.push(it);
   });
   huntResults = huntResults.slice(0, FC_MAX_RESULTS);
+  saveHuntResults();
   renderHuntResults();
 }
 
@@ -3214,7 +3269,7 @@ function bindHunt(){
   if(sel) sel.innerHTML = CATS.map(c=>`<option value="${c.id}"${c.id==='partner'?' selected':''}>${c.name}</option>`).join('');
   $$('#huntModes .hm').forEach(b=>b.onclick=()=>{ huntMode = b.dataset.mode; huntApplyMode(); });
   $('#huntRun').onclick = huntRun;
-  $('#huntClear').onclick = ()=>{ huntResults = []; renderHuntResults(); toast('已清空结果'); };
+  $('#huntClear').onclick = ()=>{ huntResults = []; saveHuntResults(); renderHuntResults(); toast('已清空结果'); };
   $('#huntSaveAll').onclick = ()=>{
     if(!huntResults.length){ toast('还没有结果'); return; }
     let n = 0;
@@ -3287,9 +3342,24 @@ const PT_PREP=[
   ['agenda','会议议程与参会人']
 ];
 let ptData=[], ptFilter='全部', ptSelId=null, ptEditId=null;
+const AFF_MONTH='__aff__';                 // 联盟客档案寄存 tasks 表，用特殊 month 区分
+const AFF_ROW_ID='__aff_lib__';
 
 function loadPt(){ const raw=localStorage.getItem('aff_lib'); if(raw){ try{ const a=JSON.parse(raw); if(Array.isArray(a)) return a; }catch(e){} } return []; }
-function savePt(){ try{ localStorage.setItem('aff_lib', JSON.stringify(ptData)); }catch(e){} }
+function savePt(){ try{ localStorage.setItem('aff_lib', JSON.stringify(ptData)); }catch(e){} scheduleSync('pt'); }
+async function syncPt(){
+  if(!sb) return false;
+  try{
+    const row={id:AFF_ROW_ID, month:AFF_MONTH, cat:'', title:'affiliate profiles',
+      priority:'mid', due:'', done:false, status:'', subtasks:ptData, updated_at:new Date().toISOString()};
+    const r=await sb.from('tasks').upsert([row], {onConflict:'id'});
+    if(r && r.error) return false;
+    const {data:ex}=await sb.from('tasks').select('id').eq('month', AFF_MONTH);
+    const del=(ex||[]).map(x=>x.id).filter(id=>id!==AFF_ROW_ID);
+    if(del.length) await sb.from('tasks').delete().in('id', del);
+    return true;
+  }catch(e){ return false; }
+}
 function ptStageClass(s){ if(s==='需排查') return 's-alert'; if(PT_LIVE.indexOf(s)>=0) return 's-live'; if(PT_HOT.indexOf(s)>=0) return 's-hot'; if(s==='暂停'||s==='淘汰') return 's-off'; return 's-mid'; }
 function ptStageBadge(s){ return '<span class="pt-stage '+ptStageClass(s)+'">'+escapeHtml(s||'未定级')+'</span>'; }
 function ptById(id){ return ptData.find(p=>p.id===id)||null; }
@@ -3571,6 +3641,79 @@ function bindSidebar(){
     localStorage.setItem('sb_collapsed', sidebarCollapsed?'1':'0');
     applySidebar();
   };
+}
+
+/* ---------- 全量备份 / 恢复（万一同步出问题也能找回） ---------- */
+function allMonthsTasks(){
+  const out={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(!k || k.indexOf('taskboard_')!==0) continue;
+    const m=k.slice(10); if(!/^\d{4}-\d{2}$/.test(m)) continue;
+    try{ out[m]=JSON.parse(localStorage.getItem(k)||'[]'); }catch(e){}
+  }
+  return out;
+}
+function allDataSnapshot(){
+  return {app:'personal-task-board', version:1, exportedAt:new Date().toISOString(),
+    tasks:allMonthsTasks(), plans, templates:tplData, kb:kbData,
+    nextTodos, mktNodes, profiles:ptData, hunt:huntResults};
+}
+function downloadJson(obj, name){
+  const blob=new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+}
+async function pushAllMonthsTasks(){
+  if(!sb || cloudOff || readOnly) return;
+  const all=allMonthsTasks();
+  for(const m of Object.keys(all)){
+    const arr=all[m]||[]; if(!arr.length) continue;
+    const rows=arr.map(t=>({id:String(t.id), month:m, cat:t.cat, title:t.title, priority:t.priority,
+      due:t.due||null, done:!!t.done, status:t.status||'未开始', subtasks:t.subtasks||[],
+      updated_at:new Date().toISOString()}));
+    try{ await sb.from('tasks').upsert(rows, {onConflict:'id'}); }catch(e){}
+  }
+}
+function applyRestore(obj){
+  if(!obj || obj.app!=='personal-task-board'){ toast('这不是本看板的备份文件'); return; }
+  if(!confirm('恢复会用备份覆盖当前数据。继续吗？')) return;
+  try{ localStorage.setItem('backup_before_restore', JSON.stringify(allDataSnapshot())); }catch(e){}
+  if(obj.tasks && typeof obj.tasks==='object'){
+    Object.keys(obj.tasks).forEach(m=>{
+      if(/^\d{4}-\d{2}$/.test(m)) localStorage.setItem('taskboard_'+m, JSON.stringify(obj.tasks[m]||[]));
+    });
+  }
+  if(Array.isArray(obj.plans)) localStorage.setItem('plans', JSON.stringify(obj.plans));
+  if(Array.isArray(obj.templates)) localStorage.setItem('tpl_lib', JSON.stringify(obj.templates));
+  if(Array.isArray(obj.kb)) localStorage.setItem('kb_lib', JSON.stringify(obj.kb));
+  if(Array.isArray(obj.nextTodos)) localStorage.setItem('next_todos', JSON.stringify(obj.nextTodos));
+  if(Array.isArray(obj.mktNodes)) localStorage.setItem('mkt_nodes', JSON.stringify(obj.mktNodes));
+  if(Array.isArray(obj.profiles)) localStorage.setItem('aff_lib', JSON.stringify(obj.profiles));
+  if(Array.isArray(obj.hunt)) localStorage.setItem('hunt_results', JSON.stringify(obj.hunt));
+  localStorage.setItem('pending_restore','1');
+  toast('已恢复，正在同步到云端…');
+  setTimeout(()=>location.reload(), 700);
+}
+function bindBackup(){
+  const b=$('#backupAll');
+  if(b) b.onclick=()=>{
+    const d=new Date(); const stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    downloadJson(allDataSnapshot(), `taskboard-backup-${stamp}.json`);
+    toast('备份文件已下载 ✓');
+  };
+  const r=$('#restoreAll'), f=$('#restoreFile');
+  if(r && f){
+    r.onclick=()=>f.click();
+    f.onchange=e=>{
+      const file=e.target.files && e.target.files[0]; if(!file) return;
+      const reader=new FileReader();
+      reader.onload=()=>{ try{ applyRestore(JSON.parse(reader.result)); }catch(err){ toast('备份文件读取失败'); } };
+      reader.readAsText(file); e.target.value='';
+    };
+  }
 }
 
 // ---------- 日历计划 ----------
@@ -4299,6 +4442,7 @@ function bootApp(){
   bindNavGroups(); bindView(); bindSidebar(); bindCal();
   renderCalendar(); quickRange('month'); applySidebar();
   renderMkt(); bindMkt();
+  bindBackup();
   if(carryOverInto(ym)) save();
   ensureVisibleCats();
   initAddModal(); render(); initCloud();
