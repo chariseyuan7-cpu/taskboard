@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Pinterest运营分析 · 2026.09.22—10.20</title>
+  <title>Pinterest运营分析 · 10月与11月双周期复盘</title>
   <style>
     :root {
       --bg: #f3efe8;
@@ -99,6 +99,162 @@
       width: min(100% - 32px, var(--max));
       margin: 0 auto;
       padding: 28px 0 64px;
+    }
+
+    .period-switch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      box-shadow: var(--shadow);
+    }
+
+    .period-switch-copy {
+      min-width: 0;
+    }
+
+    .period-switch-copy span {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .period-switch-copy strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .period-switch-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .period-switch-button {
+      min-height: 44px;
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .period-switch-button span,
+    .period-switch-button small {
+      display: block;
+    }
+
+    .period-switch-button span {
+      color: inherit;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .period-switch-button small {
+      margin-top: 1px;
+      font-size: 10px;
+      opacity: 0.8;
+    }
+
+    .period-switch-button[aria-pressed="true"] {
+      border-color: var(--ink);
+      background: var(--ink);
+      color: var(--surface);
+    }
+
+    .period-view[hidden] {
+      display: none;
+    }
+
+    .period-view {
+      min-width: 0;
+    }
+
+    .role-table td:nth-child(1) {
+      min-width: 160px;
+      white-space: normal;
+    }
+
+    .role-table td:nth-child(8) {
+      min-width: 220px;
+      max-width: 360px;
+      white-space: normal;
+      text-align: left;
+    }
+
+    .insight-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .insight-list li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .insight-list li:first-child {
+      border-top: 0;
+    }
+
+    .insight-list strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .priority {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      min-height: 24px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .priority.high {
+      color: var(--danger);
+      background: var(--accent-soft);
+    }
+
+    .priority.medium {
+      color: var(--ochre);
+      background: var(--ochre-soft);
+    }
+
+    .priority.low {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .nov-note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 12px;
     }
 
     .topbar {
@@ -993,6 +1149,334 @@
       text-align: left;
     }
 
+    .sku-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .sku-summary-card {
+      min-height: 112px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+    }
+
+    .sku-summary-card span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .sku-summary-card strong {
+      display: block;
+      margin: 8px 0 3px;
+      font-size: 31px;
+      line-height: 1.05;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+    }
+
+    .sku-summary-card small {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .sku-code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .sku-card-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+      border-top: 1px solid var(--line);
+      counter-reset: sku-rank;
+    }
+
+    .sku-card {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      align-items: start;
+      min-width: 0;
+      overflow: hidden;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      counter-increment: sku-rank;
+    }
+
+    .sku-card.strong {
+      background: color-mix(in srgb, var(--green-soft) 48%, transparent);
+    }
+
+    .sku-card-visual {
+      position: relative;
+      display: block;
+      width: 62px;
+      height: 62px;
+      margin: 12px 0 12px 8px;
+      overflow: hidden;
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+
+    .sku-card-visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      transition: transform 240ms ease;
+    }
+
+    .sku-card-visual:hover img {
+      transform: scale(1.025);
+    }
+
+    .sku-card-rank {
+      display: none;
+    }
+
+    .sku-card-visits {
+      display: none;
+    }
+
+    .sku-card-body {
+      padding: 11px 8px 12px 4px;
+    }
+
+    .sku-card-title {
+      margin: 5px 0 9px;
+      min-height: 0;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .sku-card-title::before {
+      content: "#" counter(sku-rank) "  ";
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sku-card-path {
+      margin: 5px 0 8px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .sku-card-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sku-card-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 9px;
+      border-top: 1px solid var(--line);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .sku-table td:nth-child(2) {
+      min-width: 220px;
+      white-space: normal;
+      text-align: left;
+    }
+
+    .sku-table td:nth-child(10) {
+      min-width: 190px;
+      max-width: 280px;
+      white-space: normal;
+      text-align: left;
+    }
+
+    .sku-table tr.strong-row td {
+      background: color-mix(in srgb, var(--green-soft) 62%, transparent);
+    }
+
+    .sku-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      margin-top: 5px;
+      font-size: 10px;
+    }
+
+    .sku-links a {
+      font-weight: 600;
+    }
+
+    .match-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .match-chip.good {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .match-chip.watch {
+      color: var(--ochre);
+      background: var(--ochre-soft);
+    }
+
+    .match-chip.risk {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .flow-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .flow-step {
+      min-height: 80px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+    }
+
+    .flow-step span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .sku-note-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .sku-code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .sku-link-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 11px;
+    }
+
+    .sku-link-list a {
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .match-good,
+    .match-watch,
+    .match-risk {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .match-good {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .match-watch {
+      color: var(--ochre);
+      background: var(--ochre-soft);
+    }
+
+    .match-risk {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .sku-flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .sku-flow-step {
+      position: relative;
+      min-height: 78px;
+      padding: 14px;
+      background: var(--surface-2);
+    }
+
+    .sku-flow-step span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .sku-flow-step strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .sku-table td:nth-child(2) {
+      min-width: 210px;
+      white-space: normal;
+      text-align: left;
+    }
+
+    .sku-table td:nth-child(10) {
+      min-width: 180px;
+      white-space: normal;
+      text-align: left;
+    }
+
+    .sku-table .strong-row td {
+      background: color-mix(in srgb, var(--green-soft) 58%, transparent);
+    }
+
     .section-head {
       display: flex;
       align-items: end;
@@ -1750,7 +2234,17 @@
       }
 
       .audience-grid,
-      .affinity-card {
+      .affinity-card,
+      .sku-flow {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-strip,
+      .sku-note-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .sku-card-grid {
         grid-template-columns: 1fr;
       }
 
@@ -1767,6 +2261,16 @@
       .shell {
         width: min(100% - 20px, var(--max));
         padding-top: 16px;
+      }
+
+      .period-switch {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .period-switch-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
       }
 
       .topbar {
@@ -1864,6 +2368,16 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .sku-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .flow-strip,
+      .sku-note-grid,
+      .sku-card-grid {
+        grid-template-columns: 1fr;
+      }
+
       .coverage-grid {
         grid-template-columns: 1fr 1fr;
       }
@@ -1914,6 +2428,10 @@
       .target-grid,
       .link-audit,
       .audience-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .sku-summary {
         grid-template-columns: 1fr;
       }
     }
@@ -1967,6 +2485,736 @@
 </head>
 <body>
   <div class="shell">
+    <div class="period-switch" aria-label="切换复盘周期">
+      <div class="period-switch-copy">
+        <span>月度复盘周期</span>
+        <strong>10 月与 11 月独立保留，可随时切换</strong>
+      </div>
+      <div class="period-switch-buttons">
+        <button class="period-switch-button" type="button" data-period-target="period-november" aria-pressed="true">
+          <span>2026.11</span>
+          <small>10.23—11.23 · 第二周期</small>
+        </button>
+        <button class="period-switch-button" type="button" data-period-target="period-october" aria-pressed="false">
+          <span>2026.10</span>
+          <small>09.22—10.20 · 首月</small>
+        </button>
+      </div>
+    </div>
+
+    <section aria-labelledby="click-taxonomy-title" style="margin-bottom:18px">
+      <div class="section-head" style="margin-top:0">
+        <div>
+          <h2 id="click-taxonomy-title">点击口径</h2>
+          <p>三种点击不是同一指标；排期表只负责把 SKU 映射到具体 Pin 和 Board。</p>
+        </div>
+      </div>
+      <div class="coverage-grid" style="margin-bottom:0">
+        <article class="coverage-card">
+          <div class="name">Pin贴点击 · Pinterest 内</div>
+          <div class="big">仍站内</div>
+          <div class="detail">点击 Pin 图/标题打开 Pin 详情，用户仍在 Pinterest。</div>
+        </article>
+        <article class="coverage-card">
+          <div class="name">出站点击 · Pinterest 记录</div>
+          <div class="big">平台记录</div>
+          <div class="detail">Pinterest 平台归因的离站点击；与 UTM 访问人数不能直接相减。</div>
+        </article>
+        <article class="coverage-card">
+          <div class="name">UTM点击 / 站内访问</div>
+          <div class="big">到站访客</div>
+          <div class="detail">内部后台按 UTM 记录的访问人数；当前字段不是原始按钮点击次数。</div>
+        </article>
+        <article class="coverage-card">
+          <div class="name">SKU → Pin → Board</div>
+          <div class="big">可归因</div>
+          <div class="detail">仅匹配成功的 SKU 才能分析其对应 Pin 与 Board；未匹配词不能强行归因。</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="period-view" id="period-november" aria-label="2026年11月复盘">
+      <header class="topbar">
+        <a class="brand" href="https://chariseyuan7-cpu.github.io/taskboard/" aria-label="返回个人任务看板">
+          <div class="brand-mark" aria-hidden="true">P</div>
+          <div>
+            <div>Pinterest运营分析</div>
+            <div class="period" style="text-align:left">Callie 个性化礼品 · 第二周期</div>
+          </div>
+        </a>
+        <div class="period">
+          2026.10.23—11.23 · 32 天<br>
+          更新于 2026.11.24
+        </div>
+      </header>
+
+      <section class="hero" aria-labelledby="nov-page-title">
+        <div>
+          <p class="eyebrow">Second period performance</p>
+          <h1 id="nov-page-title">曝光放大 4.4 倍，<br>到站已确认，商品决策仍为 0。</h1>
+          <p class="hero-copy">本期展示从首月 1,033 增至 4,518，Pin贴点击增至 101。Pinterest 后台仅记录 7 次出站点击，但内部 UTM 同期有 69 位站内访问者，因此不能把 7 当作实际到站人数；真正的问题转移到商品页与加购环节。</p>
+        </div>
+        <aside class="hero-note">
+          <strong>本期核心判断</strong>
+          18 个可匹配 SKU 产生 53 位站内访问，其中 48 位是新用户；但订单、加购和 GMV 仍为 0。Gift Guide 负责放大曝光，首饰与照片礼品更像当前的高意图出口。
+        </aside>
+      </section>
+
+      <nav class="tabs" role="tablist" aria-label="2026年11月复盘栏目">
+        <button class="tab-button" id="nov-tab-overview" role="tab" type="button" aria-controls="nov-panel-overview" aria-selected="true">总览</button>
+        <button class="tab-button" id="nov-tab-audience" role="tab" type="button" aria-controls="nov-panel-audience" aria-selected="false">受众</button>
+        <button class="tab-button" id="nov-tab-skus" role="tab" type="button" aria-controls="nov-panel-skus" aria-selected="false">SKU</button>
+        <button class="tab-button" id="nov-tab-pins" role="tab" type="button" aria-controls="nov-panel-pins" aria-selected="false">内容 / Pin</button>
+        <button class="tab-button" id="nov-tab-plan" role="tab" type="button" aria-controls="nov-panel-plan" aria-selected="false">下月计划</button>
+        <button class="tab-button" id="nov-tab-growth" role="tab" type="button" aria-controls="nov-panel-growth" aria-selected="false">增长对比</button>
+      </nav>
+
+      <main>
+        <section class="tab-panel" id="nov-panel-growth" role="tabpanel" aria-labelledby="nov-tab-growth" hidden>
+          <div class="section-head">
+            <div>
+              <h2>10月 → 11月：增长点拆解</h2>
+              <p>先看增长来自哪里，再看这条增长链是否健康、能否复制。</p>
+            </div>
+          </div>
+
+          <div class="sku-summary">
+            <article class="sku-summary-card"><span>曝光增长</span><strong>+337.4%</strong><small>1,033 → 4,518 · 有展示 Pin 20 → 45</small></article>
+            <article class="sku-summary-card"><span>Pin贴点击增长</span><strong>+152.5%</strong><small>40 → 101 · 单 Pin 的 Pin贴点击 +12.2%</small></article>
+            <article class="sku-summary-card"><span>可匹配 SKU 新客</span><strong>+242.9%</strong><small>14 → 48 · 新客占比 42.4% → 90.6%</small></article>
+            <article class="sku-summary-card"><span>订单增长</span><strong>0</strong><small>0 → 0 · 流量增长尚未进入成交层</small></article>
+          </div>
+
+          <div class="takeaway">
+            <article class="decision">
+              <div class="decision-label">Growth is real</div>
+              <p>11 月增长不是单看总量：有展示 Pin 增加 25 条，平均每 Pin 展示提升 94.4%，UTM 可匹配新客从 14 位增至 48 位。</p>
+            </article>
+            <article class="decision secondary">
+              <div class="decision-label">But concentration is high</div>
+              <p>Oma/Opa 单 Pin 带来 +1,818 展示，占总增量 52.2%；其 +61 次 Pin贴点击也等于全账号 Pin贴点击净增量。</p>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="panel" aria-labelledby="growth-source-heading">
+              <div class="panel-header">
+                <div>
+                  <h3 id="growth-source-heading">曝光增长来自哪里</h3>
+                  <p class="panel-sub">总展示增加 3,485；前三条 Pin 合计解释其中的 85.4%。</p>
+                </div>
+              </div>
+              <div class="board-chart">
+                <div class="board-row" data-rank="1">
+                  <div class="board-name">Oma/Opa Gift Guide</div>
+                  <div class="bar-track" role="progressbar" aria-label="Oma Opa Gift Guide 展示增量 1818" aria-valuemin="0" aria-valuemax="1818" aria-valuenow="1818"><div class="bar-fill" style="width:100%"></div></div>
+                  <div class="board-value">+1,818</div>
+                </div>
+                <div class="board-row">
+                  <div class="board-name">Christmas Gift for Her</div>
+                  <div class="bar-track" role="progressbar" aria-label="Christmas Gift for Her 展示增量 787" aria-valuemin="0" aria-valuemax="1818" aria-valuenow="787"><div class="bar-fill" style="width:43.3%"></div></div>
+                  <div class="board-value">+787</div>
+                </div>
+                <div class="board-row">
+                  <div class="board-name">Familien-Halskette</div>
+                  <div class="bar-track" role="progressbar" aria-label="Familien Halskette 展示增量 373" aria-valuemin="0" aria-valuemax="1818" aria-valuenow="373"><div class="bar-fill" style="width:20.5%"></div></div>
+                  <div class="board-value">+373</div>
+                </div>
+                <div class="board-row">
+                  <div class="board-name">其余 Pin 合计</div>
+                  <div class="bar-track" role="progressbar" aria-label="其余 Pin 展示增量 507" aria-valuemin="0" aria-valuemax="1818" aria-valuenow="507"><div class="bar-fill" style="width:27.9%"></div></div>
+                  <div class="board-value">+507</div>
+                </div>
+              </div>
+              <p class="nov-note">Top 3 Pin 在 11 月占总展示 69.9%；其中 Oma/Opa 单条占 44.2%。增长已经发生，但对少量内容依赖较高。</p>
+            </section>
+
+            <section class="panel" aria-labelledby="growth-risk-heading">
+              <div class="panel-header">
+                <div>
+                  <h3 id="growth-risk-heading">增长的集中度</h3>
+                  <p class="panel-sub">Pin贴点击增长几乎完全由一个 Pin 承担。</p>
+                </div>
+              </div>
+              <ul class="insight-list">
+                <li><div><strong>Oma/Opa</strong>Pin贴点击 +61，等于账号 Pin贴点击净增量的 100%。</div><span class="priority high">主引擎</span></li>
+                <li><div><strong>其余 Pin 合计</strong>Pin贴点击净增量为 0；Christmas for Her、Family Necklace 等新增量抵消了旧 Pin 的下滑。</div><span class="priority medium">结构未扩散</span></li>
+                <li><div><strong>单一依赖风险</strong>如果 Oma/Opa 分发回落，账号 Pin贴点击增长可能立即消失。</div><span class="match-chip risk">需复制</span></li>
+              </ul>
+            </section>
+          </div>
+
+          <section class="panel" style="margin-bottom:18px" aria-labelledby="growth-board-heading">
+            <div class="panel-header">
+              <div>
+                <h3 id="growth-board-heading">画板增长对比</h3>
+                <p class="panel-sub">仅比较 10 月与 11 月均进入 Top Boards 导出的画板；新进入导出的画板不假设从 0 开始。</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>画板</th><th>10月展示</th><th>11月展示</th><th>展示增长</th><th>Pin贴点击 10→11</th><th>Pinterest出站点击 10→11</th><th>增长判断</th></tr></thead>
+                <tbody>
+                  <tr><td>Weihnachtsgeschenke</td><td>559</td><td>3,160</td><td>+465.3%</td><td>24 → 79</td><td>2 → 4</td><td>第一增长引擎，Pin贴点击与 Pinterest出站点击同时扩大。</td></tr>
+                  <tr><td>Personalisierter Schmuck</td><td>46</td><td>468</td><td>+917.4%</td><td>1 → 8</td><td>0 → 2</td><td>增长最快，有潜力成为第二引擎。</td></tr>
+                  <tr><td>Haustier-Geschenke</td><td>199</td><td>136</td><td>-31.7%</td><td>9 → 5</td><td>5 → 0</td><td>Pin贴点击与 Pinterest出站点击同时回落，需核查素材与归因。</td></tr>
+                  <tr><td>Personalisierte Taschen</td><td>166</td><td>65</td><td>-60.8%</td><td>3 → 0</td><td>0 → 0</td><td>明显衰退方向，暂不扩量。</td></tr>
+                  <tr><td>Andenken &amp; Grabschmuck</td><td>27</td><td>24</td><td>-11.1%</td><td>1 → 0</td><td>0 → 0</td><td>基本持平，尚未形成增长。</td></tr>
+                  <tr><td>Küche &amp; Tischdeko</td><td>未进入 Top</td><td>158</td><td>不可计算</td><td>— → 4</td><td>— → 0</td><td>本期首次进入 Top Boards，与 3 个餐桌 SKU 的 UTM 访问互相印证。</td></tr>
+                  <tr><td>Fotogeschenke</td><td>未进入 Top</td><td>104</td><td>不可计算</td><td>— → 2</td><td>— → 1</td><td>新出现的可验证方向，有 1 次 Pinterest 出站点击。</td></tr>
+                  <tr><td>Geschenke für Familie</td><td>未进入 Top</td><td>26</td><td>不可计算</td><td>— → 0</td><td>— → 0</td><td>样本小，暂作为长尾观察。</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="dashboard-grid">
+            <section class="panel" aria-labelledby="growth-utm-heading">
+              <div class="panel-header">
+                <div>
+                  <h3 id="growth-utm-heading">到站与用户质量增长</h3>
+                  <p class="panel-sub">使用 UTM可匹配 SKU 访客，避免把 Pinterest 出站点击作为真实人数。</p>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>指标</th><th>10月</th><th>11月</th><th>变化</th><th>解读</th></tr></thead>
+                  <tbody>
+                    <tr><td>有访问的匹配 SKU</td><td>9</td><td>18</td><td>+9</td><td>覆盖产品从 9 个扩展到 18 个，流量分布更宽。</td></tr>
+                    <tr><td>UTM可匹配站内访问</td><td>33</td><td>53</td><td>+60.6%</td><td>到站规模确实增长，不是 Pinterest 出站点击口径造成的。</td></tr>
+                    <tr><td>新用户</td><td>14</td><td>48</td><td>+242.9%</td><td>本期最明确的增长点：Pinterest 正在带来更多首次到站用户。</td></tr>
+                    <tr><td>老用户</td><td>19</td><td>5</td><td>-73.7%</td><td>增长不再主要依赖旧用户回访。</td></tr>
+                    <tr><td>新用户占比</td><td>42.4%</td><td>90.6%</td><td>+48.2 个百分点</td><td>获客质量显著提升，但样本仍小。</td></tr>
+                    <tr><td>加购 / 订单</td><td>0 / 0</td><td>0 / 0</td><td>0</td><td>增长尚未穿透到商业结果层。</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="panel" aria-labelledby="growth-utm-driver-heading">
+              <div class="panel-header">
+                <div>
+                  <h3 id="growth-utm-driver-heading">新客增长来自哪些 SKU</h3>
+                  <p class="panel-sub">同时保留连续性与新增产品两条线。</p>
+                </div>
+              </div>
+              <ul class="insight-list">
+                <li><div><strong>CAPS262968</strong>访问 3 → 6，新客 3 → 6；在展示下降 69.8% 的同时仍翻倍获客。</div><span class="match-chip good">持续增长</span></li>
+                <li><div><strong>PL261951</strong>访问 7 → 6，但新客 3 → 6；旧用户占比下降，获客质量上升。</div><span class="match-chip good">质量提升</span></li>
+                <li><div><strong>CAJJ252331</strong>新进入分析，6 位访问中 4 位为新用户。</div><span class="match-chip good">新增 SKU</span></li>
+                <li><div><strong>JL25088 / CAJJ262700 / CAT1911</strong>新客均较 10 月增加，但绝对样本仍只有 4 位左右。</div><span class="match-chip watch">扩量验证</span></li>
+              </ul>
+            </section>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="panel" aria-labelledby="growth-audience-heading">
+              <div class="panel-header">
+                <div>
+                  <h3 id="growth-audience-heading">受众结构增长</h3>
+                  <p class="panel-sub">增长开始更多来自 DACH 与 25—44 岁核心送礼人群。</p>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>受众指标</th><th>10月</th><th>11月</th><th>变化</th></tr></thead>
+                  <tbody>
+                    <tr><td>受众总计</td><td>402</td><td>2,917</td><td>+625.6%</td></tr>
+                    <tr><td>DACH 合计</td><td>64.7%</td><td>69.8%</td><td>+5.1 个百分点</td></tr>
+                    <tr><td>德国</td><td>52.7%</td><td>51.6%</td><td>-1.1 个百分点</td></tr>
+                    <tr><td>奥地利</td><td>7.5%</td><td>11.3%</td><td>+3.8 个百分点</td></tr>
+                    <tr><td>瑞士</td><td>4.5%</td><td>6.9%</td><td>+2.4 个百分点</td></tr>
+                    <tr><td>25—44 岁</td><td>55.0%</td><td>60.3%</td><td>+5.3 个百分点</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="nov-note">德国占比略降，但奥地利和瑞士增长抵消并推高 DACH 合计。增长点应定义为“DACH 扩展”，不是“德国单市场扩张”。</p>
+            </section>
+
+            <section class="panel" aria-labelledby="growth-content-heading">
+              <div class="panel-header">
+                <div>
+                  <h3 id="growth-content-heading">内容角色增长对比</h3>
+                  <p class="panel-sub">为避免分类差异，10 月内容归并为三个可比较角色。</p>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                <thead><tr><th>内容角色</th><th>展示</th><th>Pin贴点击</th><th>Pin贴 CTR</th><th>判断</th></tr></thead>
+                  <tbody>
+                    <tr><td>Gift Guide</td><td>556 → 3,202</td><td>21 → 80</td><td>3.78% → 2.50%</td><td>规模增长最快，但平均点击效率下降。</td></tr>
+                    <tr><td>个性化 / 节日产品</td><td>405 → 1,246</td><td>16 → 17</td><td>3.95% → 1.36%</td><td>曝光翻倍但点击几乎停滞，是最大的质量缺口。</td></tr>
+                    <tr><td>情感纪念</td><td>72 → 68</td><td>3 → 2</td><td>4.17% → 2.94%</td><td>尚未形成增长。</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <section class="panel" aria-labelledby="growth-opportunity-heading">
+            <div class="panel-header">
+              <div>
+                <h3 id="growth-opportunity-heading">下月增长机会排序</h3>
+                <p class="panel-sub">按“已有增长证据 × 可复制性 × 商业接近度”排序。</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>优先级</th><th>增长点</th><th>数据依据</th><th>下一步</th><th>主指标</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="priority high">1 高</span></td><td>复制 Oma/Opa 收礼人礼单</td><td>展示 180 → 1,998；Pin贴点击 11 → 72；贡献账号 Pin贴点击净增量的 100%。</td><td>扩成祖父母、父母、伴侣、家庭 4 个收礼人分支，每个 3 条视觉变体。</td><td>每组 Pin贴 CTR、UTM SKU 访问。</td></tr>
+                  <tr><td><span class="priority high">2 高</span></td><td>家庭姓名首饰成为第二引擎</td><td>画板展示 46 → 468；Pin贴点击 1 → 8；FA231 有 7 次 Pin贴点击。</td><td>做家庭组合、宝宝名字、纪念日 3 条产品线，落地页先放价格和配送。</td><td>UTM 到站、商品浏览、Pinterest 出站点击辅助。</td></tr>
+                  <tr><td><span class="priority high">3 高</span></td><td>承接新用户而非只追曝光</td><td>可匹配新客 14 → 48；新客占比 42.4% → 90.6%，但加购仍为 0。</td><td>给 CAPS262968、PL261951、CAJJ252331 做“价格 + 交期 + 定制步骤”首屏。</td><td>商品浏览率、加购率。</td></tr>
+                  <tr><td><span class="priority high">4 高</span></td><td>修复 Gift Guide 到商品链路</td><td>Gift Guide 展示 +475.9%，但 Pin贴 CTR 3.78% → 2.50%。</td><td>每条清单固定 3 个可购买 SKU、对应图片和独立 UTM。</td><td>UTM SKU访问、Pin贴 CTR。</td></tr>
+                  <tr><td><span class="priority medium">5 中</span></td><td>DACH 扩展内容</td><td>DACH 64.7% → 69.8%，奥地利 +3.8pp、瑞士 +2.4pp。</td><td>德语标题保留，描述加入 DACH 配送、交期与价格信息。</td><td>DACH 受众占比、新客占比。</td></tr>
+                  <tr><td><span class="priority medium">6 中</span></td><td>照片礼品小样本验证</td><td>11 月 108 展示、2 次 Pin贴点击、1 次 Pinterest 出站点击；Partner 盒有 2 位 UTM 站内访问。</td><td>做伴侣、父母、宠物 3 个场景，每个先发 2 条内容。</td><td>UTM SKU 访问、Pinterest 出站点击。</td></tr>
+                  <tr><td><span class="priority low">观察</span></td><td>宠物和餐桌产品</td><td>宠物画板展示下降，但仍有多个 SKU 的 UTM 站内访问；餐桌画板本期进入 Top。</td><td>保留少量测试，先修商品入口与创意，不直接停投。</td><td>UTM SKU 访问、Pin贴 CTR。</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="tab-panel" id="nov-panel-overview" role="tabpanel" aria-labelledby="nov-tab-overview">
+          <div class="kpi-grid">
+            <article class="kpi accent">
+              <div class="kpi-label">Impressions</div>
+              <div class="kpi-value">4,518</div>
+              <div class="kpi-meta">较 10 月 +337.4% · 日均 141.2</div>
+            </article>
+            <article class="kpi">
+              <div class="kpi-label">Pin贴点击</div>
+              <div class="kpi-value">101</div>
+              <div class="kpi-meta">较 10 月 +152.5% · CTR 2.24%</div>
+            </article>
+            <article class="kpi blue">
+              <div class="kpi-label">Pinterest出站点击*</div>
+              <div class="kpi-value">7</div>
+              <div class="kpi-meta">平台记录值 · UTM 同期 69 位访客</div>
+            </article>
+            <article class="kpi">
+              <div class="kpi-label">Saves</div>
+              <div class="kpi-value">3</div>
+              <div class="kpi-meta">较 10 月 +2 · 收藏率 0.066%</div>
+            </article>
+            <article class="kpi green">
+              <div class="kpi-label">Engaged audience</div>
+              <div class="kpi-value">84</div>
+              <div class="kpi-meta">区间受众总计 2,917</div>
+            </article>
+            <article class="kpi">
+              <div class="kpi-label">Orders / GMV</div>
+              <div class="kpi-value">0</div>
+              <div class="kpi-meta">69 位内部访问 · 归因仍不足</div>
+            </article>
+          </div>
+
+          <div class="note-box" role="note">
+            <strong>出站口径需要纠正：</strong>Pinterest 记录的 7 次出站不等于实际离开 Pinterest 的人数。内部 UTM 同期显示 69 位访问者、62 位新用户、7 位老用户和 53 次浏览；这里的“老用户 7 位”与“Pinterest 出站 7 次”只是数值相同，不是同一指标。后续用 UTM 判断到站流量，用订单判断商业结果，Pinterest 出站仅保留作平台内对比。
+          </div>
+
+          <div class="takeaway">
+            <article class="decision">
+              <div class="decision-label">Discovery expansion</div>
+              <p>展示增长 337.4%，其中 11.13—11.23 的 11 天贡献 2,455 次。Pinterest 后台记录 7 次出站点击，但内部后台确认 69 位 UTM站内访问者，平台出站值明显不足以代表真实到站。</p>
+            </article>
+            <article class="decision secondary">
+              <div class="decision-label">Commercial signal</div>
+              <p>Gift Guide 占 70.9% 展示和 79.2% Pin贴点击；UTM 匹配到的 53 位 SKU 访客中，48 位是新用户。流量已经到站，但加购和订单仍为 0。</p>
+            </article>
+          </div>
+
+          <section class="panel" style="margin-bottom:18px" aria-labelledby="nov-compare-heading">
+            <div class="panel-header">
+              <div>
+                <h2 id="nov-compare-heading">核心指标对比</h2>
+                <p class="panel-sub">10 月首月与 11 月第二周期的绝对量、比率及业务含义。</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>指标</th><th>2026.10</th><th>2026.11</th><th>绝对变化</th><th>增长率</th><th>业务解读</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Impressions</td><td>1,033</td><td>4,518</td><td>+3,485</td><td>+337.4%</td><td>分发明显扩张，主要由 Gift Guide 与节日内容带动。</td></tr>
+                  <tr><td>Pin贴点击</td><td>40</td><td>101</td><td>+61</td><td>+152.5%</td><td>打开 Pin 详情的 Pin贴点击增长显著，但慢于展示增长。</td></tr>
+                  <tr><td>Pinterest 记录出站*</td><td>7</td><td>7</td><td>0</td><td>0.0%</td><td>平台记录值；与内部 UTM 的 69 位访问差距过大，疑似低估。</td></tr>
+                  <tr><td>Saves</td><td>1</td><td>3</td><td>+2</td><td>+200.0%</td><td>收藏样本仍极小，不能据此判断长期流量。</td></tr>
+                  <tr><td>Pin贴 CTR</td><td>3.87%</td><td>2.24%</td><td>-1.63 个百分点</td><td>-42.1%</td><td>展示放大后，点击 Pin 详情的效率下降。</td></tr>
+                  <tr><td>Pinterest出站点击率*</td><td>0.68%</td><td>0.155%</td><td>-0.525 个百分点</td><td>-77.2%</td><td>仅说明平台归因结果；UTM 已确认 69 位到站，不能解释为真实离站率。</td></tr>
+                  <tr><td>Engaged audience</td><td>17</td><td>84</td><td>+67</td><td>+394.1%</td><td>互动受众扩大，但仍不是订单证据。</td></tr>
+                  <tr><td>受众总计</td><td>402</td><td>2,917</td><td>+2,515</td><td>+625.6%</td><td>账号触达规模跨级增长。</td></tr>
+                  <tr><td>UTM 站内访问人数</td><td>15（旧汇总口径）</td><td>69（新 62 / 老 7）</td><td colspan="2">不可直比</td><td>更接近实际到站人数；本期改为 UTM + SKU 匹配。</td></tr>
+                  <tr><td>订单 / GMV</td><td>0 / 无</td><td>0 / 0</td><td>0</td><td>不可计算</td><td>没有订单或佣金数据，无法判断商品最终转化。</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="dashboard-grid">
+            <section class="panel" aria-labelledby="nov-daily-heading">
+              <div class="panel-header">
+                <div>
+                  <h2 id="nov-daily-heading">每日展示走势</h2>
+                  <p class="panel-sub">10.23—11.01：601；11.02—11.12：1,462；11.13—11.23：2,455。峰值出现在 11.17，504 次。</p>
+                </div>
+                <div class="chart-meta"><span><i class="legend-dot"></i>Impressions</span><span>峰值 504</span></div>
+              </div>
+              <div class="daily-chart" aria-label="2026年10月23日至11月23日每日展示量">
+                <div class="chart-grid" aria-hidden="true"><span>504</span><span>378</span><span>252</span><span>126</span></div>
+                <div class="daily-bars" id="novDailyBars"></div>
+                <div class="day-labels" id="novDailyLabels"></div>
+                <div class="chart-popover" id="novChartPopover" role="status" aria-live="polite"></div>
+              </div>
+              <div class="note-box">11.22—11.23 可能仍包含 Pinterest 估算值，后续下载可能发生小幅校正。11.24 仅有 3 次展示，已排除。</div>
+            </section>
+
+            <aside class="panel" aria-labelledby="nov-board-heading">
+              <div class="panel-header">
+                <div>
+                  <h2 id="nov-board-heading">画板贡献</h2>
+                  <p class="panel-sub">画板表合计 4,141 展示；账号总览为 4,518，少 377，不做强行对账。</p>
+                </div>
+              </div>
+              <div class="board-chart">
+                <div class="board-row" data-rank="1"><div class="board-name">Weihnachtsgeschenke</div><div class="bar-track" role="progressbar" aria-label="Weihnachtsgeschenke 展示 3160" aria-valuemin="0" aria-valuemax="3160" aria-valuenow="3160"><div class="bar-fill" style="width:100%"></div></div><div class="board-value">3,160</div></div>
+                <div class="board-row"><div class="board-name">Personalisierter Schmuck</div><div class="bar-track" role="progressbar" aria-label="Personalisierter Schmuck 展示 468" aria-valuemin="0" aria-valuemax="3160" aria-valuenow="468"><div class="bar-fill" style="width:14.8%"></div></div><div class="board-value">468</div></div>
+                <div class="board-row"><div class="board-name">Küche &amp; Tischdeko</div><div class="bar-track" role="progressbar" aria-label="Küche und Tischdeko 展示 158" aria-valuemin="0" aria-valuemax="3160" aria-valuenow="158"><div class="bar-fill" style="width:5.0%"></div></div><div class="board-value">158</div></div>
+                <div class="board-row"><div class="board-name">Haustier-Geschenke</div><div class="bar-track" role="progressbar" aria-label="Haustier-Geschenke 展示 136" aria-valuemin="0" aria-valuemax="3160" aria-valuenow="136"><div class="bar-fill" style="width:4.3%"></div></div><div class="board-value">136</div></div>
+                <div class="board-row"><div class="board-name">Fotogeschenke</div><div class="bar-track" role="progressbar" aria-label="Fotogeschenke 展示 104" aria-valuemin="0" aria-valuemax="3160" aria-valuenow="104"><div class="bar-fill" style="width:3.3%"></div></div><div class="board-value">104</div></div>
+                <div class="board-row"><div class="board-name">Personalisierte Taschen</div><div class="bar-track" role="progressbar" aria-label="Personalisierte Taschen 展示 65" aria-valuemin="0" aria-valuemax="3160" aria-valuenow="65"><div class="bar-fill" style="width:2.1%"></div></div><div class="board-value">65</div></div>
+                <div class="board-row"><div class="board-name">Geschenke für Familie</div><div class="bar-track" role="progressbar" aria-label="Geschenke für Familie 展示 26" aria-valuemin="0" aria-valuemax="3160" aria-valuenow="26"><div class="bar-fill" style="width:0.8%"></div></div><div class="board-value">26</div></div>
+                <div class="board-row"><div class="board-name">Andenken &amp; Grabschmuck</div><div class="bar-track" role="progressbar" aria-label="Andenken und Grabschmuck 展示 24" aria-valuemin="0" aria-valuemax="3160" aria-valuenow="24"><div class="bar-fill" style="width:0.8%"></div></div><div class="board-value">24</div></div>
+              </div>
+              <p class="nov-note">Weihnachtsgeschenke 贡献 76.3% 画板展示，并占 Pinterest出站点击 4/7。由于平台出站疑似低估，这只能作为方向性线索，不能解释全部 UTM站内到站。</p>
+            </aside>
+          </div>
+
+          <section class="panel" aria-labelledby="nov-content-ranking-heading">
+            <div class="panel-header">
+              <div>
+                <h2 id="nov-content-ranking-heading">内容方向表现排名</h2>
+                <p class="panel-sub">按 Pin 标题与所属画板归类；这是分析分类，不是排期表中的原始标签。</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="role-table">
+                <thead>
+                  <tr><th>内容方向</th><th>Pin 数</th><th>展示</th><th>Pin贴点击</th><th>Pinterest出站点击*</th><th>收藏</th><th>Pinterest出站点击率</th><th>承担的运营角色</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Gift Guide</td><td>9</td><td>3,202</td><td>80</td><td>4</td><td>3</td><td>0.12%</td><td>最大发现入口；Pinterest出站点击只能作方向性参考，需用 UTM SKU访问验证。</td></tr>
+                  <tr><td>节日产品</td><td>14</td><td>497</td><td>3</td><td>0</td><td>0</td><td>0.00%</td><td>高展示但低点击；适合做视觉与标题重设计测试。</td></tr>
+                  <tr><td>首饰</td><td>8</td><td>518</td><td>9</td><td>2</td><td>0</td><td>0.39%</td><td>Pin贴点击效率较高，并有 2 次 Pinterest出站点击；属于值得扩量的方向性线索。</td></tr>
+                  <tr><td>照片礼品</td><td>3</td><td>108</td><td>2</td><td>1</td><td>0</td><td>0.93%</td><td>样本小但 Pinterest出站点击率最高，适合补充量级与 UTM验证。</td></tr>
+                  <tr><td>宠物个性化</td><td>6</td><td>122</td><td>3</td><td>0</td><td>0</td><td>0.00%</td><td>UTM已确认多个站内访问，Pinterest出站点击却为 0，说明平台口径更可能漏记。</td></tr>
+                  <tr><td>情感纪念</td><td>4</td><td>68</td><td>2</td><td>0</td><td>0</td><td>0.00%</td><td>标题 CTR 较高，但样本与商品证据不足，继续小量观察。</td></tr>
+                  <tr><td>其他个性化</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0.00%</td><td>仅 1 次展示，不能评价内容质量。</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="nov-note">账号均值：Pin贴 CTR 2.24%，Pinterest 出站点击率 0.155%。因为 UTM 已记录 69 位到站访客，平台出站点击不应被解释成真实离开 Pinterest 的比例；低展示 Pin 的整体表现也只视为线索。</p>
+          </section>
+        </section>
+
+        <section class="tab-panel" id="nov-panel-audience" role="tabpanel" aria-labelledby="nov-tab-audience" hidden>
+          <div class="section-head">
+            <div>
+              <h2>受众分析</h2>
+              <p>截至 2026.11.20 的受众快照，样本 10,000。与首月相比，DACH 占比回升，但仍有约三成受众在 DACH 之外。</p>
+            </div>
+          </div>
+
+          <div class="audience-metrics">
+            <article class="audience-metric"><span>受众样本</span><strong>10,000</strong><small>平台月度受众，不等于账号粉丝</small></article>
+            <article class="audience-metric"><span>德国占比</span><strong>51.6%</strong><small>DACH 合计 69.8%</small></article>
+            <article class="audience-metric"><span>女性占比</span><strong>87.4%</strong><small>男性 7.4% · 未指定 5.2%</small></article>
+            <article class="audience-metric"><span>核心年龄</span><strong>60.3%</strong><small>25—44 岁 · 购买与送礼核心带</small></article>
+          </div>
+
+          <div class="audience-grid">
+            <section class="panel" aria-labelledby="nov-country-heading">
+              <div class="panel-header"><div><h3 id="nov-country-heading">国家分布</h3><p class="panel-sub">德国仍是第一市场，奥地利与瑞士合计 18.2%。</p></div></div>
+              <div class="audience-bars">
+                <div class="audience-bar-row"><div class="audience-bar-label">德国</div><div class="audience-bar-track" role="progressbar" aria-label="德国 51.6%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="51.6"><div class="audience-bar-fill" style="--audience-color:var(--accent);width:51.6%"></div></div><div class="audience-bar-value">51.6%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">奥地利</div><div class="audience-bar-track" role="progressbar" aria-label="奥地利 11.3%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="11.3"><div class="audience-bar-fill" style="--audience-color:var(--accent);width:11.3%"></div></div><div class="audience-bar-value">11.3%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">瑞士</div><div class="audience-bar-track" role="progressbar" aria-label="瑞士 6.9%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="6.9"><div class="audience-bar-fill" style="--audience-color:var(--accent);width:6.9%"></div></div><div class="audience-bar-value">6.9%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">其他</div><div class="audience-bar-track" role="progressbar" aria-label="其他 18.4%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="18.4"><div class="audience-bar-fill" style="--audience-color:var(--muted);width:18.4%"></div></div><div class="audience-bar-value">18.4%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">印度</div><div class="audience-bar-track" role="progressbar" aria-label="印度 5.1%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="5.1"><div class="audience-bar-fill" style="--audience-color:var(--muted);width:5.1%"></div></div><div class="audience-bar-value">5.1%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">美国</div><div class="audience-bar-track" role="progressbar" aria-label="美国 3.9%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3.9"><div class="audience-bar-fill" style="--audience-color:var(--muted);width:3.9%"></div></div><div class="audience-bar-value">3.9%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">巴西</div><div class="audience-bar-track" role="progressbar" aria-label="巴西 1.8%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="1.8"><div class="audience-bar-fill" style="--audience-color:var(--muted);width:1.8%"></div></div><div class="audience-bar-value">1.8%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">意大利</div><div class="audience-bar-track" role="progressbar" aria-label="意大利 1.1%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="1.1"><div class="audience-bar-fill" style="--audience-color:var(--muted);width:1.1%"></div></div><div class="audience-bar-value">1.1%</div></div>
+              </div>
+            </section>
+
+            <section class="panel" aria-labelledby="nov-age-heading">
+              <div class="panel-header"><div><h3 id="nov-age-heading">年龄结构</h3><p class="panel-sub">25—34 岁是最大单一年龄段，25—44 合计 60.3%。</p></div></div>
+              <div class="audience-bars">
+                <div class="audience-bar-row"><div class="audience-bar-label">25—34</div><div class="audience-bar-track" role="progressbar" aria-label="25 至 34 岁 37.0%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="37"><div class="audience-bar-fill" style="--audience-color:var(--green);width:37%"></div></div><div class="audience-bar-value">37.0%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">35—44</div><div class="audience-bar-track" role="progressbar" aria-label="35 至 44 岁 23.3%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="23.3"><div class="audience-bar-fill" style="--audience-color:var(--green);width:23.3%"></div></div><div class="audience-bar-value">23.3%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">18—24</div><div class="audience-bar-track" role="progressbar" aria-label="18 至 24 岁 18.4%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="18.4"><div class="audience-bar-fill" style="--audience-color:var(--green);width:18.4%"></div></div><div class="audience-bar-value">18.4%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">45—49</div><div class="audience-bar-track" role="progressbar" aria-label="45 至 49 岁 5.2%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="5.2"><div class="audience-bar-fill" style="--audience-color:var(--green);width:5.2%"></div></div><div class="audience-bar-value">5.2%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">55—64</div><div class="audience-bar-track" role="progressbar" aria-label="55 至 64 岁 5.0%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="5"><div class="audience-bar-fill" style="--audience-color:var(--green);width:5%"></div></div><div class="audience-bar-value">5.0%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">65+</div><div class="audience-bar-track" role="progressbar" aria-label="65 岁以上 3.8%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3.8"><div class="audience-bar-fill" style="--audience-color:var(--green);width:3.8%"></div></div><div class="audience-bar-value">3.8%</div></div>
+                <div class="audience-bar-row"><div class="audience-bar-label">50—54</div><div class="audience-bar-track" role="progressbar" aria-label="50 至 54 岁 3.6%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3.6"><div class="audience-bar-fill" style="--audience-color:var(--green);width:3.6%"></div></div><div class="audience-bar-value">3.6%</div></div>
+              </div>
+            </section>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="panel" aria-labelledby="nov-device-heading">
+              <div class="panel-header"><div><h3 id="nov-device-heading">设备与性别</h3><p class="panel-sub">移动端占绝对主导，落地页与商品图首先按手机体验优化。</p></div></div>
+              <div class="device-list">
+                <div class="device-item"><span>iPhone</span><strong>50.5%</strong></div>
+                <div class="device-item"><span>Android Mobile</span><strong>37.1%</strong></div>
+                <div class="device-item"><span>Web</span><strong>22.6%</strong></div>
+                <div class="device-item"><span>iPad</span><strong>12.5%</strong></div>
+                <div class="device-item"><span>Mobile Web</span><strong>6.0%</strong></div>
+                <div class="device-item"><span>Android Tablet</span><strong>3.5%</strong></div>
+                <div class="device-item"><span>女性</span><strong>87.4%</strong></div>
+                <div class="device-item"><span>男性</span><strong>7.4%</strong></div>
+              </div>
+              <p class="nov-note">设备类别可能重叠，不能相加为 100%。</p>
+            </section>
+
+            <section class="panel" aria-labelledby="nov-interests-heading">
+              <div class="panel-header"><div><h3 id="nov-interests-heading">高亲和兴趣</h3><p class="panel-sub">亲和度高于 1，代表相对 Pinterest 大盘更偏好该主题。</p></div></div>
+              <ul class="insight-list">
+                <li><div><strong>Wedding</strong>覆盖 62.4% · 亲和度 1.990</div><span class="match-chip good">礼物场景</span></li>
+                <li><div><strong>Parenting</strong>覆盖 68.2% · 亲和度 1.885</div><span class="match-chip good">家庭送礼</span></li>
+                <li><div><strong>Gardening</strong>覆盖 67.2% · 亲和度 1.842</div><span class="match-chip watch">情感纪念</span></li>
+                <li><div><strong>Event Planning</strong>覆盖 76.9% · 亲和度 1.826</div><span class="match-chip good">节日清单</span></li>
+                <li><div><strong>Food &amp; Drinks</strong>覆盖 74.2% · 亲和度 1.714</div><span class="match-chip watch">餐桌场景</span></li>
+                <li><div><strong>DIY &amp; Crafts</strong>覆盖 78.7% · 亲和度 1.581</div><span class="match-chip watch">教程灵感</span></li>
+              </ul>
+            </section>
+          </div>
+
+          <div class="note-box">与 10 月相比，DACH 占比约从 64.7% 升至 69.8%；本期 69 位内部访问中 62 位是新用户（89.9%）。德国内容正在拉动更广的 DACH 新客，但仍有约 30.2% 受众位于 DACH 之外，需用德语标题和 DACH 可配送信息过滤低意图流量。</div>
+        </section>
+
+        <section class="tab-panel" id="nov-panel-skus" role="tabpanel" aria-labelledby="nov-tab-skus" hidden>
+          <div class="section-head">
+            <div>
+              <h2>有 UTM站内访问的 SKU</h2>
+              <p>结合内部 UTM 点击与线上排期，18 个 SKU 成功匹配；商品缩略图直接取自商品页，不使用 Pin 封面替代。</p>
+            </div>
+          </div>
+
+          <div class="sku-summary">
+            <article class="sku-summary-card"><span>有 UTM访问的匹配 SKU</span><strong>18</strong><small>共 53 位匹配访客</small></article>
+            <article class="sku-summary-card"><span>新用户</span><strong>48</strong><small>匹配 SKU 的 90.6%</small></article>
+            <article class="sku-summary-card"><span>老用户</span><strong>5</strong><small>匹配 SKU 的 9.4%</small></article>
+            <article class="sku-summary-card"><span>订单 / GMV</span><strong>0</strong><small>加购、Checkout 也均为 0</small></article>
+          </div>
+
+          <section class="panel" style="margin-bottom:18px" aria-labelledby="nov-board-map-heading">
+            <div class="panel-header">
+              <div>
+                <h3 id="nov-board-map-heading">按 Board 汇总的 SKU → Pin 映射</h3>
+                <p class="panel-sub">UTM访问人数来自内部后台；Pin贴点击和出站点击来自 Pinterest，仅汇总排期可映射到这些 SKU 的 Pin。</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Board</th><th>匹配 SKU</th><th>UTM站内访问人数</th><th>Pin贴点击</th><th>Pinterest出站点击</th><th>说明</th></tr></thead>
+                <tbody>
+                  <tr><td>Weihnachtsgeschenke</td><td>7</td><td>21</td><td>2</td><td>0</td><td>主要获客入口；UTM访问最多，但多数 Pin贴点击尚未记录到这些具体 SKU。</td></tr>
+                  <tr><td>Haustier-Geschenke</td><td>3</td><td>10</td><td>2</td><td>0</td><td>UTM访问仍存在，说明不能仅凭 Pinterest 出站 0 判断无到站。</td></tr>
+                  <tr><td>Küche &amp; Tischdeko</td><td>3</td><td>10</td><td>1</td><td>0</td><td>餐桌场景已产生多个 SKU 的 UTM访问。</td></tr>
+                  <tr><td>Personalisierter Schmuck</td><td>3</td><td>9</td><td>8</td><td>2</td><td>单位 UTM 访客对应的 Pin贴点击最高，是更接近商品意图的方向。</td></tr>
+                  <tr><td>Fotogeschenke</td><td>1</td><td>2</td><td>2</td><td>1</td><td>样本小，但三类点击同时出现，值得继续验证。</td></tr>
+                  <tr><td>Geschenke für Familie</td><td>1</td><td>1</td><td>0</td><td>0</td><td>已按标题补匹配到 Pin；仅 1 次展示，不能做表现判断。</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="nov-note">上表只汇总可映射 SKU 对应的 Pin，不等于 Board 的全部表现；Pin贴点击也不是 UTM访问的前一步，三者不能相加或相减。</p>
+          </section>
+
+          <section class="panel" style="margin-bottom:18px" aria-labelledby="nov-sku-heading">
+            <div class="panel-header">
+              <div>
+                <h3 id="nov-sku-heading">SKU → Pin → Board 专项排名</h3>
+                <p class="panel-sub">每行同时展示 Board、UTM站内访问、Pin贴点击与 Pinterest出站点击；Pin 指标仅在排期可映射时展示。</p>
+              </div>
+            </div>
+            <div class="sku-card-grid" id="novSkuGrid" aria-live="polite"></div>
+            <p class="nov-note">样本极小：最高单 SKU 仅 6 位访客。排序用于发现“值得先验证的线索”，不用于宣布稳定胜负。</p>
+          </section>
+
+          <div class="dashboard-grid">
+            <section class="panel" aria-labelledby="nov-utm-heading">
+              <div class="panel-header"><div><h3 id="nov-utm-heading">UTM 匹配覆盖</h3><p class="panel-sub">22 个 UTM 词中，18 个可映射到具体 SKU；4 个未映射。</p></div></div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>UTM 词</th><th>访问人数</th><th>浏览</th><th>新用户</th><th>处理建议</th></tr></thead>
+                  <tbody>
+                    <tr><td>forgrandparents</td><td>6</td><td>1</td><td>6</td><td>泛词；关联 Oma/Opa Gift Guide，但需补 SKU 或专用落地页。</td></tr>
+                    <tr><td>christmas</td><td>5</td><td>0</td><td>4</td><td>泛词；无法归因到具体商品，下一轮改为内容 ID 或 SKU UTM。</td></tr>
+                    <tr><td>weihnachten</td><td>2</td><td>0</td><td>2</td><td>泛词；不建议继续用于单品 Pin。</td></tr>
+                    <tr><td>空 UTM</td><td>3</td><td>0</td><td>2</td><td>补齐 utm_term，否则无法连接排期。</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="panel" aria-labelledby="nov-sku-diagnosis-heading">
+              <div class="panel-header"><div><h3 id="nov-sku-diagnosis-heading">SKU 诊断</h3><p class="panel-sub">严格区分 UTM站内访问、Pin贴点击与 Pinterest出站点击。</p></div></div>
+              <ul class="insight-list">
+                <li><div><strong>新客明确、优先扩测</strong>CAPS262968、PL261951、CAJJ252331 各有 6 位访问，前两者全部为新客。</div><span class="priority high">高</span></li>
+                <li><div><strong>Pinterest 强、UTM 弱</strong>FA231 有 373 展示、7 次 Pin贴点击和 1 次 Pinterest出站点击，但内部仅 1 位老用户访问。</div><span class="priority high">核对</span></li>
+                <li><div><strong>Pinterest出站与 UTM 不一致</strong>RU683 与 CAJJ262330 各有 1 次 Pinterest出站点击，UTM站内访问分别 4、2 位。</div><span class="priority medium">观察</span></li>
+                <li><div><strong>高展示、零 Pin贴点击</strong>CAJJ263735 85 展示、CAJJ263402 63、CAJJ263579 32。</div><span class="priority medium">重设计</span></li>
+                <li><div><strong>Gift Guide 无法单品归因</strong>Oma/Opa 与 Christmas Gift Ideas for Her 合计 2,785 展示，但排期 SKU 为空或为多商品链接。</div><span class="priority high">补数据</span></li>
+              </ul>
+            </section>
+          </div>
+
+          <div class="note-box">内部共有 69 位 UTM站内访问：62 位新用户、7 位老用户；其中 53 位可匹配 SKU，16 位无法映射。Pinterest 同期只记录 7 次出站点击，差距说明平台出站疑似严重低估。后续以 UTM站内访问作为到站口径，以订单作为成交口径，不能把 7 次 Pinterest出站点击当成实际到站人数。</div>
+        </section>
+
+        <section class="tab-panel" id="nov-panel-pins" role="tabpanel" aria-labelledby="nov-tab-pins" hidden>
+          <div class="section-head">
+            <div>
+              <h2>优秀与待优化 Pin</h2>
+              <p>按展示量列出 Top 10，并给出下一步动作。点击 Pin 图进入 Pinterest，点击下方链接进入对应内容或商品出口。</p>
+            </div>
+          </div>
+          <div class="note-box" role="note" style="margin-top:0;margin-bottom:18px">
+            Pin 卡片中的“Pin贴点击”发生在 Pinterest 内；Pinterest出站点击是平台归因的离站点击；UTM站内访问人数来自内部后台。UTM 已确认 69 位到站访问者，因此 0 或 1 次 Pinterest出站点击不能解释为该 Pin 完全没有带来网站访问。
+          </div>
+          <div class="pin-grid" id="novPinGrid"></div>
+
+          <div class="dashboard-grid" style="margin-top:18px">
+            <section class="panel" aria-labelledby="nov-pin-diagnosis-heading">
+              <div class="panel-header"><div><h3 id="nov-pin-diagnosis-heading">高表现与异常信号</h3><p class="panel-sub">展示门槛与样本量同时考虑。</p></div></div>
+              <ul class="insight-list">
+                <li><div><strong>7 Weihnachtsgeschenke für Oma und Opa</strong>1,998 展示、72 次 Pin贴点击、3 次 Pinterest出站点击；单 Pin 占账号 44.2% 展示。</div><span class="match-chip good">复制结构</span></li>
+                <li><div><strong>Christmas Gift Ideas for Her</strong>787 展示、4 次 Pin贴点击、0 次 Pinterest出站点击；需要结合 UTM 商品访问判断是否真正无出口。</div><span class="match-chip watch">补归因</span></li>
+                <li><div><strong>Familien-Halskette</strong>373 展示、7 次 Pin贴点击和 1 次 Pinterest出站点击，首饰方向值得通过 UTM 访问继续验证。</div><span class="match-chip good">扩量测试</span></li>
+                <li><div><strong>Partner-Foto-Geschenkbox</strong>42 展示、1 次 Pinterest出站点击；样本小，但可结合 2 位 UTM站内访问做 3 个变体。</div><span class="match-chip watch">小样本</span></li>
+                <li><div><strong>Weihnachtsessen Becher</strong>85 展示、0 次 Pin贴点击；问题可能出在标题承诺、画面层级与商品不清。</div><span class="match-chip risk">重设计</span></li>
+              </ul>
+            </section>
+
+            <section class="panel" aria-labelledby="nov-seo-heading">
+              <div class="panel-header"><div><h3 id="nov-seo-heading">SEO 与关键词机会</h3><p class="panel-sub">当前只有标题级表现，没有真实搜索词级导出。</p></div></div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>德语方向</th><th>已有证据</th><th>判断</th></tr></thead>
+                  <tbody>
+                    <tr><td>Weihnachtsgeschenke für Oma und Opa</td><td>7 件清单 Pin 达 1,998 展示</td><td>高曝光已证实；是否来自该搜索词待验证。</td></tr>
+                    <tr><td>Weihnachtsdeko personalisiert mit Namen</td><td>Top 10 清单 112 展示、1 次 Pinterest出站点击</td><td>兼具礼物与家居场景，适合继续扩展。</td></tr>
+                    <tr><td>Familien-Halskette mit Namen und Geburtssteinen</td><td>373 展示、7 次 Pin贴点击、1 次 Pinterest出站点击</td><td>较高意图线索，优先结合 UTM 做系列变体。</td></tr>
+                    <tr><td>Weihnachtsserviette mit Namen</td><td>3 个餐桌类 SKU 产生 UTM站内访问</td><td>UTM需求线索明确；Pinterest出站记录不足，需继续判断。</td></tr>
+                    <tr><td>Christmas Gift Ideas for Her</td><td>787 展示、4 次 Pin贴点击、0 次 Pinterest出站点击</td><td>英语标题与德国主市场匹配度待验证，Pinterest出站需结合 UTM。</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="nov-note">不得把标题表现写成真实关键词流量。建议补充 Pinterest 搜索词、展示、Pin贴点击和 Pinterest出站点击字段后再做关键词级结论。</p>
+            </section>
+          </div>
+
+          <section class="panel" style="margin-top:18px" aria-labelledby="nov-funnel-heading">
+            <div class="panel-header"><div><h3 id="nov-funnel-heading">流量与转化漏斗</h3><p class="panel-sub">Pinterest 漏斗与内部 UTM 漏斗分开计算。</p></div></div>
+            <div class="funnel-grid">
+              <div>
+                <div class="funnel">
+                  <div class="funnel-step"><div><strong>Impressions</strong><small>Pinterest 展示</small></div><div class="funnel-number">4,518</div></div>
+                  <div class="funnel-step"><div><strong>Pin贴点击</strong><small>展示 → Pin贴点击 2.24%</small></div><div class="funnel-number">101</div></div>
+                  <div class="funnel-step"><div><strong>Pinterest出站点击*</strong><small>平台记录 · Pin贴点击 → 出站点击 6.93%</small></div><div class="funnel-number">7</div></div>
+                </div>
+                <p class="nov-note">Pinterest仅记录 7 次出站点击，而内部后台记录 69 位 UTM站内访问者。二者统计单位不同，但数量级明显不匹配，因此不能把 7 当作真实到站人数。</p>
+              </div>
+              <div>
+                <div class="funnel">
+                  <div class="funnel-step"><div><strong>UTM站内访问人数</strong><small>内部后台 · Pinterest + affiliate</small></div><div class="funnel-number">69</div></div>
+                  <div class="funnel-step"><div><strong>浏览人数</strong><small>浏览 53 人次</small></div><div class="funnel-number">53</div></div>
+                  <div class="funnel-step"><div><strong>加购 → Checkout</strong><small>未见行为</small></div><div class="funnel-number">0 → 0</div></div>
+                  <div class="funnel-step"><div><strong>订单 → GMV</strong><small>无可归因成交</small></div><div class="funnel-number">0 → 0</div></div>
+                </div>
+                <p class="nov-note">新用户 62 位，占 UTM站内访问 89.9%。问题已不在“是否带来人”，而在“带来的人是否进入商品决策”；这是比 Pinterest出站点击更可靠的下一层诊断。</p>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="tab-panel" id="nov-panel-plan" role="tabpanel" aria-labelledby="nov-tab-plan" hidden>
+          <div class="section-head">
+            <div>
+              <h2>下月行动计划</h2>
+              <p>优先级按“能否直接提升 UTM 可归因到站、商品访问与加购”排序。所有动作在 11.24—12.21 的圣诞购物窗口执行。</p>
+            </div>
+          </div>
+
+          <section class="panel" style="margin-bottom:18px" aria-labelledby="nov-actions-heading">
+            <div class="panel-header"><div><h3 id="nov-actions-heading">执行清单</h3><p class="panel-sub">每项任务都绑定数据依据、要解决的问题与衡量指标。</p></div></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>优先级</th><th>任务与执行方式</th><th>数据依据 / 问题</th><th>完成时间</th><th>成功指标</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="priority high">高</span></td><td>建立 SKU-first 发布模板：每条 Pin 必须有唯一 Pin ID、内容 ID、单品 SKU、商品 URL、UTM term。</td><td>4 个 UTM 泛词丢失 16 位访问；多 SKU 内容无法单品归因。</td><td>11.27</td><td>新发 Pin 字段完整率 100%。</td></tr>
+                  <tr><td><span class="priority high">高</span></td><td>复制 “7 Weihnachtsgeschenke für Oma und Opa” 的清单结构，新增三代家庭、父母、伴侣 3 个细分版本。</td><td>单 Pin 贡献 1,998 展示、72 次 Pin贴点击和 3 次 Pinterest出站点击。</td><td>11.29</td><td>每组至少 300 展示；UTM到站或 Pinterest出站点击至少一项提升。</td></tr>
+                  <tr><td><span class="priority high">高</span></td><td>为 Gift Guide 增加单品入口：首图明确 “7 Ideen”，描述写清人群，落地页首屏突出 3 个可直接购买 SKU。</td><td>Gift Guide 占 70.9% 展示；Pinterest出站点击仅 4 次，不能据此判断真实到站失败。</td><td>12.02</td><td>UTM可匹配 SKU访问 ≥15；Pinterest出站点击作为辅助指标。</td></tr>
+                  <tr><td><span class="priority high">高</span></td><td>扩测首饰与照片礼品：Familien-Halskette、Partner-Foto-Geschenkbox 各做 3 个视觉变体。</td><td>首饰与照片礼品的 Pinterest出站点击率高于账号均值，但绝对量很小，需 UTM验证。</td><td>12.04</td><td>每组 UTM SKU访问不低于当前组别；Pinterest出站点击率作为辅助对照。</td></tr>
+                  <tr><td><span class="priority medium">中</span></td><td>重设计 0 次 Pin贴点击的高展示 Pin：Becher、Weihnachtskugel、Haustierdecke；改商品特写、姓氏展示与 CTA。</td><td>分别 85、63、32 展示但 Pin贴点击为 0。</td><td>12.06</td><td>Pin贴 CTR 从 <0.6% 提升至 ≥1.0%。</td></tr>
+                  <tr><td><span class="priority medium">中</span></td><td>为新客 SKU 增加 3 条内容链路：圣诞卡、宠物毛毯、餐桌布艺各 3 个 Pin，统一使用 SKU UTM。</td><td>CAPS262968、PL261951、CAJJ252331 各 6 位访问，新客占比高。</td><td>12.08</td><td>每个 SKU 访问 ≥10；新客占比 ≥75%。</td></tr>
+                  <tr><td><span class="priority medium">中</span></td><td>用 DACH 过滤低意图曝光：德语标题与描述加入 “Lieferung nach Deutschland / Österreich / Schweiz” 等可配送信息。</td><td>受众中约 30.2% 在 DACH 之外。</td><td>12.10</td><td>DACH 受众占比 ≥72%，Pin贴 CTR 不下降。</td></tr>
+                  <tr><td><span class="priority low">低</span></td><td>补齐排期表缺失链接：11.19—11.22 的 Pin URL、多 SKU 内容拆分、Geldhalter 内容 ID。</td><td>39 个排期 Pin ID 可匹配，仍有链接和 SKU 字段缺口。</td><td>11.28</td><td>排期缺 Pin 链接为 0；多 SKU 行可唯一映射。</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel" style="margin-bottom:18px" aria-labelledby="nov-test-heading">
+            <div class="panel-header"><div><h3 id="nov-test-heading">A/B 测试矩阵</h3><p class="panel-sub">以 6 周为最小观察窗口；主指标优先使用 UTM可匹配 SKU访问，Pin贴点击与 Pinterest出站点击分别作为上游和辅助指标。</p></div></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>测试</th><th>假设</th><th>变量</th><th>主指标</th><th>辅助指标</th><th>成功标准</th></tr></thead>
+                <tbody>
+                  <tr><td>Gift Guide 商品 CTA</td><td>单品入口比泛榜单链接更能推动商品决策。</td><td>A：榜单落地页；B：首屏单品卡片 + 明确德语 CTA。</td><td>UTM可匹配 SKU访问</td><td>Pin贴点击、Pinterest出站点击、商品浏览</td><td>B 在每组至少 1,000 展示后 SKU访问提高 ≥25%，且 Pinterest出站点击不下降。</td></tr>
+                  <tr><td>Oma/Opa 清单数量</td><td>“7 件”比“9 件”更容易快速选择。</td><td>标题 7 vs 9；视觉保持同结构。</td><td>Pin贴 CTR</td><td>UTM SKU访问、Pinterest出站点击</td><td>同一 3 周窗口内 Pin贴 CTR 高 ≥20%，且 UTM SKU访问不下降。</td></tr>
+                  <tr><td>新客 SKU 画面</td><td>生活场景 + 姓名定制比纯商品图更能建立需求。</td><td>A：商品白底；B：真实使用场景 + 姓名特写。</td><td>Pin贴 CTR</td><td>UTM SKU访问、新客占比</td><td>B 的 UTM SKU访问提升 ≥30%，新客占比 ≥75%。</td></tr>
+                  <tr><td>首饰 CTA 语言</td><td>情感故事后的直接商品 CTA 更适合高意图受众。</td><td>“Geschenk mit Bedeutung entdecken” vs “Jetzt personalisieren”。</td><td>UTM SKU访问</td><td>Pinterest出站点击、商品浏览、加购</td><td>CTA 组 SKU访问提升 ≥15%，且 Pin贴 CTR 不下降。</td></tr>
+                  <tr><td>大型节庆图场景</td><td>完整餐桌/家庭场景比单品摆拍更易被点击。</td><td>A：单品居中；B：餐桌合照场景 + 姓名道具。</td><td>Pin贴 CTR</td><td>UTM SKU访问、Pinterest出站点击、Save rate</td><td>B 的 Pin贴 CTR ≥1.5%，且 UTM SKU访问或收藏率至少一项高于基线。</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="dashboard-grid">
+            <section class="panel" aria-labelledby="nov-scale-heading">
+              <div class="panel-header"><div><h3 id="nov-scale-heading">继续与优化方向</h3><p class="panel-sub">基于本期数据，而非抽象内容偏好。</p></div></div>
+              <ul class="insight-list">
+                <li><div><strong>继续扩大</strong>Oma/Opa 家庭礼单、带名字的圣诞餐桌布艺、家庭姓名首饰。</div><span class="priority high">3 类</span></li>
+                <li><div><strong>优先优化</strong>圣诞食品与杯具、宠物圣诞用品、英语泛 Gift Guide。</div><span class="priority medium">3 类</span></li>
+                <li><div><strong>降低投入</strong>无 SKU、无商品链接、只做空泛氛围的单品 Pin；不是停止节日内容，而是先修好链路。</div><span class="priority low">控量</span></li>
+              </ul>
+            </section>
+
+            <section class="panel" aria-labelledby="nov-gaps-heading">
+              <div class="panel-header"><div><h3 id="nov-gaps-heading">仍需补充的数据</h3><p class="panel-sub">补齐后才能从内容线索升级为商业归因。</p></div></div>
+              <ul class="source-list">
+                <li>Pinterest 搜索词级导出：query、impressions、Pin贴点击、Pinterest出站点击。</li>
+                <li>点击口径对照日志：Pinterest出站点击 7 次与 UTM站内访问 69 位之间的跳转、延迟、去重和归因规则说明。</li>
+                <li>订单级归因：UTM term、Pin ID、SKU、订单号、GMV、佣金、退款与归因窗口。</li>
+                <li>商品页行为：商品浏览、加购、Checkout、下单的逐 SKU 漏斗。</li>
+                <li>完整排期字段：唯一 Pin ID、Pin URL、单/多 SKU 映射、发布日期与发布时间。</li>
+                <li>库存、价格和配送范围，用于解释 DACH 点击后的转化损失。</li>
+              </ul>
+            </section>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer-note">
+        <span>Callie · Pinterest 德国第二周期运营看板</span>
+        <span>10.23—11.23 · 11.24 数据已排除</span>
+      </footer>
+    </section>
+
+    <section class="period-view" id="period-october" aria-label="2026年10月复盘" hidden>
     <header class="topbar">
       <a class="brand" href="https://chariseyuan7-cpu.github.io/taskboard/" aria-label="返回个人任务看板">
         <div class="brand-mark" aria-hidden="true">P</div>
@@ -1985,11 +3233,11 @@
       <div>
         <p class="eyebrow">First month performance</p>
         <h1 id="page-title">内容开始被看见，<br>商业出口仍然偏窄。</h1>
-        <p class="hero-copy">首月累计 1,033 次展示、40 次 Pin 点击和 7 次出站点击。圣诞内容负责被发现，宠物个性化产品负责把人送出 Pinterest。</p>
+        <p class="hero-copy">首月累计 1,033 次展示、40 次 Pin贴点击，Pinterest 后台记录 7 次出站点击。内部 UTM站内访问另有一套计数口径，因此 7 不代表实际离站人数。</p>
       </div>
       <aside class="hero-note">
         <strong>本月核心判断</strong>
-        20 张 Pin 中 19 张可检出主商品/落地链接。Gift Guide 已有商品入口，但仍贡献 0 次出站，下一步优化链接与内容匹配。
+        Pinterest、内部点击与线上排期已匹配：9 个 SKU 产生站内访问，其中 14/33 位可匹配访客是新用户，但所有 SKU 尚无订单。
       </aside>
     </section>
 
@@ -1997,6 +3245,7 @@
       <button class="tab-button" id="tab-overview" role="tab" type="button" aria-controls="panel-overview" aria-selected="true" aria-label="总览">总览</button>
       <button class="tab-button" id="tab-audience" role="tab" type="button" aria-controls="panel-audience" aria-selected="false" aria-label="受众分析">受众</button>
       <button class="tab-button" id="tab-content" role="tab" type="button" aria-controls="panel-content" aria-selected="false" aria-label="内容方向">内容</button>
+      <button class="tab-button" id="tab-skus" role="tab" type="button" aria-controls="panel-skus" aria-selected="false" aria-label="SKU 与落地页分析">SKU</button>
       <button class="tab-button" id="tab-pins" role="tab" type="button" aria-controls="panel-pins" aria-selected="false" aria-label="Pin 明细">Pin</button>
       <button class="tab-button" id="tab-funnel" role="tab" type="button" aria-controls="panel-funnel" aria-selected="false" aria-label="转化漏斗">漏斗</button>
       <button class="tab-button" id="tab-strategy" role="tab" type="button" aria-controls="panel-strategy" aria-selected="false" aria-label="下月行动">计划</button>
@@ -2012,14 +3261,14 @@
             <div class="kpi-meta">日均 35.6 · 无对比月</div>
           </article>
           <article class="kpi">
-            <div class="kpi-label">Pin clicks</div>
+            <div class="kpi-label">Pin贴点击</div>
             <div class="kpi-value">40</div>
             <div class="kpi-meta">点击率 3.87%</div>
           </article>
           <article class="kpi blue">
-            <div class="kpi-label">Outbound clicks</div>
+            <div class="kpi-label">Pinterest outbound*</div>
             <div class="kpi-value">7</div>
-            <div class="kpi-meta">出站率 0.68%</div>
+            <div class="kpi-meta">平台记录值 · 非实际离站人数</div>
           </article>
           <article class="kpi">
             <div class="kpi-label">Saves</div>
@@ -2041,11 +3290,11 @@
         <div class="takeaway">
           <article class="decision">
             <div class="decision-label">Discovery engine</div>
-            <p>圣诞画板拿下 54.1% 展示和 60% Pin 点击，也贡献本月唯一一次收藏。</p>
+            <p>圣诞画板拿下 54.1% 展示和 60% Pin贴点击，也贡献本月唯一一次收藏。</p>
           </article>
           <article class="decision secondary">
             <div class="decision-label">Commercial signal</div>
-            <p>宠物画板只占 19.3% 展示，却贡献 5/7 次出站点击。</p>
+            <p>宠物画板只占 19.3% 展示，却贡献 Pinterest 平台记录出站的 5/7。该数值可作方向参考，不能代表全部真实到站。</p>
           </article>
         </div>
 
@@ -2100,8 +3349,8 @@
             </div>
             <div class="metric-switch" role="group" aria-label="选择画板指标">
               <button class="metric-button" type="button" data-board-metric="imp" aria-pressed="true">展示</button>
-              <button class="metric-button" type="button" data-board-metric="clicks" aria-pressed="false">Pin 点击</button>
-              <button class="metric-button" type="button" data-board-metric="out" aria-pressed="false">出站</button>
+              <button class="metric-button" type="button" data-board-metric="clicks" aria-pressed="false">Pin贴点击</button>
+              <button class="metric-button" type="button" data-board-metric="out" aria-pressed="false">Pinterest出站点击</button>
               <button class="metric-button" type="button" data-board-metric="saves" aria-pressed="false">收藏</button>
             </div>
           </div>
@@ -2263,7 +3512,7 @@
             <table class="audience-vs-behavior">
               <thead><tr><th scope="col">方向</th><th scope="col">受众信号</th><th scope="col">本月行为</th><th scope="col">下一动作</th></tr></thead>
               <tbody>
-                <tr><td>宠物个性化</td><td>Animals 覆盖 51.2%、亲和度 1.65x；DIY Bag 亲和度 2.87x</td><td>宠物画板贡献 5/7 次出站点击</td><td>优先级最高，继续扩成宠物、多宠、姓名与真实场景系列</td></tr>
+                <tr><td>宠物个性化</td><td>Animals 覆盖 51.2%、亲和度 1.65x；DIY Bag 亲和度 2.87x</td><td>宠物画板占 Pinterest 平台记录出站的 5/7</td><td>优先继续扩成宠物、多宠、姓名与真实场景系列，同时用 UTM 验证到站</td></tr>
                 <tr><td>节日礼赠</td><td>Event Planning 覆盖 76.5%，Holiday 覆盖 95.1%，Gifts 覆盖 49.0%</td><td>圣诞画板贡献 54.1% 展示和 60% Pin 点击</td><td>继续扩大曝光，并将 Gift Guide 接到具体商品</td></tr>
                 <tr><td>婚礼与纪念日</td><td>Wedding 覆盖 59.5%、亲和度 1.87x</td><td>首饰画板仅 46 次展示、0 出站</td><td>用情侣戒指、日期与照片定制做小样本单品测试</td></tr>
                 <tr><td>家居与餐桌</td><td>Home Decor 覆盖 79.2%、亲和度 1.32x</td><td>Serviette 与 Tischläufer 已获得 Pin 点击</td><td>增加真实餐桌布置与 10 分钟教程型内容</td></tr>
@@ -2321,11 +3570,11 @@
                   <th scope="col">画板</th>
                   <th scope="col">Pin 数</th>
                   <th scope="col">展示</th>
-                  <th scope="col">Pin 点击</th>
-                  <th scope="col">出站</th>
+                  <th scope="col">Pin贴点击</th>
+                  <th scope="col">Pinterest出站点击</th>
                   <th scope="col">收藏</th>
-                  <th scope="col">Pin CTR</th>
-                  <th scope="col">出站 CTR</th>
+                  <th scope="col">Pin贴 CTR</th>
+                  <th scope="col">Pinterest出站点击率</th>
                   <th scope="col">每 Pin 展示</th>
                 </tr>
               </thead>
@@ -2352,7 +3601,7 @@
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr><th scope="col">类型</th><th scope="col">Pin</th><th scope="col">展示</th><th scope="col">点击</th><th scope="col">出站</th><th scope="col">收藏</th><th scope="col">Pin CTR</th><th scope="col">出站 CTR</th><th scope="col">出站/点击</th></tr>
+                  <tr><th scope="col">类型</th><th scope="col">Pin</th><th scope="col">展示</th><th scope="col">Pin贴点击</th><th scope="col">Pinterest出站点击</th><th scope="col">收藏</th><th scope="col">Pin贴 CTR</th><th scope="col">出站点击率</th><th scope="col">出站/Pin贴点击</th></tr>
                 </thead>
                 <tbody>
                   <tr><td>礼物清单</td><td>3</td><td>556</td><td>21</td><td>0</td><td>1</td><td>3.78%</td><td>0%</td><td>0%</td></tr>
@@ -2393,6 +3642,297 @@
         </div>
       </section>
 
+      <section class="tab-panel" id="panel-skus" role="tabpanel" aria-labelledby="tab-skus" hidden>
+        <div class="section-head">
+          <div>
+            <h2>SKU 与落地页专项</h2>
+            <p>用线上排期的 SKU 字段连接内部站内访问与 Pinterest Pin 表现，优先分析确实产生站内访问的 SKU。</p>
+          </div>
+          <span class="tag">点击 SKU 专项</span>
+        </div>
+
+        <div class="sku-summary">
+          <article class="sku-summary-card"><span>有 UTM站内访问的 SKU</span><strong>9</strong><small>均已在排期表找到对应内容</small></article>
+          <article class="sku-summary-card"><span>UTM可匹配站内访问</span><strong>33 / 39</strong><small>其余 6 次为非 SKU 词或空 UTM</small></article>
+          <article class="sku-summary-card"><span>其中新用户</span><strong>14 / 33</strong><small>可匹配访问中的新用户占比 42.4%</small></article>
+          <article class="sku-summary-card"><span>已记录订单</span><strong>0</strong><small>加购、订单和 GMV 均为 0 或空值</small></article>
+        </div>
+
+        <div class="note-box">
+          内部口径为可复核明细合并：09.21—10.10 已映射明细 + 10.19 新增记录；10.09—10.10 重复行不重复相加，10.21 不计入本月。39 是“日×用户类型×SKU”的访问人数之和，不是跨日去重后的唯一用户数。
+        </div>
+
+        <div class="dashboard-grid" style="margin-top:18px">
+          <section class="panel" aria-labelledby="sku-visits-heading">
+            <div class="panel-header">
+              <div>
+                <h3 id="sku-visits-heading">有 UTM站内访问的 SKU</h3>
+                <p class="panel-sub">按 UTM站内访问人数排序，并显示排期映射的 Board 与 Pin；点击商品缩略图或 SKU 可打开商品页。</p>
+              </div>
+            </div>
+            <div class="sku-card-grid">
+              <article class="sku-card strong">
+                <a class="sku-card-visual" href="https://calliegift.com/4Alannn" target="_blank" rel="noopener noreferrer" aria-label="打开 PL261951 宠物毛毯落地页">
+                  <img src="https://d3ouql8tmwncoe.cloudfront.net/uploads/20260901/7b539447d6e463b8c93695955ed9440c.png?d=1000" alt="PL261951 宠物个性化毛毯商品图" loading="lazy">
+                  <span class="sku-card-rank">#1</span><span class="sku-card-visits">站内 7</span>
+                </a>
+                <div class="sku-card-body">
+                  <a class="sku-code" href="https://calliegift.com/4Alannn" target="_blank" rel="noopener noreferrer">PL261951</a>
+                  <div class="sku-card-title">DE-092201 · Personalisierte Hundedecke</div>
+                  <div class="sku-card-path">Board Haustier-Geschenke · Pin 1023091240370966021</div>
+                  <div class="sku-card-metrics"><span>展示 45</span><span>Pin贴点击 2</span><span>Pinterest出站 1</span><span>新客 3</span></div>
+                  <div class="sku-card-links"><a href="https://calliegift.com/4Alannn" target="_blank" rel="noopener noreferrer">落地页</a><a href="https://www.pinterest.com/pin/1023091240370966021/" target="_blank" rel="noopener noreferrer">Pinterest Pin</a></div>
+                </div>
+              </article>
+              <article class="sku-card strong">
+                <a class="sku-card-visual" href="https://calliegift.com/4dsP4GI" target="_blank" rel="noopener noreferrer" aria-label="打开 CAT1911 雪人挂饰落地页">
+                  <img src="https://d3ouql8tmwncoe.cloudfront.net/uploads/20251117/da54387b72d057dd6b29c005b94e80d6.jpg" alt="CAT1911 雪人 LED 挂饰商品图" loading="lazy">
+                  <span class="sku-card-rank">#2</span><span class="sku-card-visits">站内 5</span>
+                </a>
+                <div class="sku-card-body">
+                  <a class="sku-code" href="https://calliegift.com/4dsP4GI" target="_blank" rel="noopener noreferrer">CAT1911</a>
+                  <div class="sku-card-title">DE-092308 · Schneemann-Ornament mit LED</div>
+                  <div class="sku-card-path">Board Weihnachtsgeschenke · Pin 1023091240371044707</div>
+                  <div class="sku-card-metrics"><span>展示 33</span><span>Pin贴点击 1</span><span>Pinterest出站 1</span><span>新客 3</span></div>
+                  <div class="sku-card-links"><a href="https://calliegift.com/4dsP4GI" target="_blank" rel="noopener noreferrer">落地页</a><a href="https://www.pinterest.com/pin/1023091240371044707/" target="_blank" rel="noopener noreferrer">Pinterest Pin</a></div>
+                </div>
+              </article>
+              <article class="sku-card">
+                <a class="sku-card-visual" href="https://calliegift.com/4rlygXP" target="_blank" rel="noopener noreferrer" aria-label="打开 PL261693 宠物照片托特包落地页">
+                  <img src="https://d3ouql8tmwncoe.cloudfront.net/uploads/20260828/eaad08a43ac323ad2d20a5dbabdfb67c.png" alt="PL261693 宠物照片托特包商品图" loading="lazy">
+                  <span class="sku-card-rank">#3</span><span class="sku-card-visits">站内 5</span>
+                </a>
+                <div class="sku-card-body">
+                  <a class="sku-code" href="https://calliegift.com/4rlygXP" target="_blank" rel="noopener noreferrer">PL261693</a>
+                  <div class="sku-card-title">DE-092203 · Haustier-Foto Tasche</div>
+                  <div class="sku-card-path">Board Haustier-Geschenke · Pin 1023091240370957773</div>
+                  <div class="sku-card-metrics"><span>展示 79</span><span>Pin贴点击 5</span><span>Pinterest出站 3</span><span>新客 0</span></div>
+                  <div class="sku-card-links"><a href="https://calliegift.com/4rlygXP" target="_blank" rel="noopener noreferrer">落地页</a><a href="https://www.pinterest.com/pin/1023091240370957773/" target="_blank" rel="noopener noreferrer">Pinterest Pin</a></div>
+                </div>
+              </article>
+              <article class="sku-card">
+                <a class="sku-card-visual" href="https://calliegift.com/4rClHaW" target="_blank" rel="noopener noreferrer" aria-label="打开 JL25088 首饰套装落地页">
+                  <img src="https://d3ouql8tmwncoe.cloudfront.net/uploads/20250910/770aded9da8646cb6bbb9f7a995241ac.jpg?d=1000" alt="JL25088 个性化首饰商品图" loading="lazy">
+                  <span class="sku-card-rank">#4</span><span class="sku-card-visits">站内 4</span>
+                </a>
+                <div class="sku-card-body">
+                  <a class="sku-code" href="https://calliegift.com/4rClHaW" target="_blank" rel="noopener noreferrer">JL25088 组</a>
+                  <div class="sku-card-title">DE-092801 · Personalisierter Schmuck</div>
+                  <div class="sku-card-path">Board Personalisierter Schmuck · Pin 1023091240371176273</div>
+                  <div class="sku-card-metrics"><span>展示 12</span><span>Pin贴点击 1</span><span>Pinterest出站 0</span><span>新客 2</span></div>
+                  <div class="sku-card-links"><a href="https://calliegift.com/4rClHaW" target="_blank" rel="noopener noreferrer">落地页</a><a href="https://www.pinterest.com/pin/1023091240371176273/" target="_blank" rel="noopener noreferrer">Pinterest Pin</a></div>
+                </div>
+              </article>
+              <article class="sku-card strong">
+                <a class="sku-card-visual" href="https://calliegift.com/3VKGNaZ" target="_blank" rel="noopener noreferrer" aria-label="打开 CAJJ262700 圣诞餐巾落地页">
+                  <img src="https://d3ouql8tmwncoe.cloudfront.net/uploads/20260824/bfcba0cb78941069265be17d195449da.png?d=1000" alt="CAJJ262700 圣诞餐巾商品图" loading="lazy">
+                  <span class="sku-card-rank">#5</span><span class="sku-card-visits">站内 3</span>
+                </a>
+                <div class="sku-card-body">
+                  <a class="sku-code" href="https://calliegift.com/3VKGNaZ" target="_blank" rel="noopener noreferrer">CAJJ262700</a>
+                  <div class="sku-card-title">DE-092305 · Weihnachts-Serviette</div>
+                  <div class="sku-card-path">Board Weihnachtsgeschenke · Pin 1023091240370990841</div>
+                  <div class="sku-card-metrics"><span>展示 47</span><span>Pin贴点击 2</span><span>Pinterest出站 1</span><span>新客 3</span></div>
+                  <div class="sku-card-links"><a href="https://calliegift.com/3VKGNaZ" target="_blank" rel="noopener noreferrer">落地页</a><a href="https://www.pinterest.com/pin/1023091240370990841/" target="_blank" rel="noopener noreferrer">Pinterest Pin</a></div>
+                </div>
+              </article>
+              <article class="sku-card">
+                <a class="sku-card-visual" href="https://calliegift.com/4haSUGY" target="_blank" rel="noopener noreferrer" aria-label="打开 CAPS262968 圣诞卡落地页">
+                  <img src="https://d3ouql8tmwncoe.cloudfront.net/uploads/20260916/27b1c8bd43cb9e0a60edf1b475b01984.png" alt="CAPS262968 宠物照片圣诞卡商品图" loading="lazy">
+                  <span class="sku-card-rank">#6</span><span class="sku-card-visits">站内 3</span>
+                </a>
+                <div class="sku-card-body">
+                  <a class="sku-code" href="https://calliegift.com/4haSUGY" target="_blank" rel="noopener noreferrer">CAPS262968</a>
+                  <div class="sku-card-title">DE-092307 · Weihnachtskarte</div>
+                  <div class="sku-card-path">Board Weihnachtsgeschenke · Pin 1023091240371018453</div>
+                  <div class="sku-card-metrics"><span>展示 43</span><span>Pin贴点击 3</span><span>Pinterest出站 0</span><span>新客 3</span></div>
+                  <div class="sku-card-links"><a href="https://calliegift.com/4haSUGY" target="_blank" rel="noopener noreferrer">落地页</a><a href="https://www.pinterest.com/pin/1023091240371018453/" target="_blank" rel="noopener noreferrer">Pinterest Pin</a></div>
+                </div>
+              </article>
+              <article class="sku-card">
+                <a class="sku-card-visual" href="https://calliegift.com/4dNUk7S" target="_blank" rel="noopener noreferrer" aria-label="打开 CAPS261698 Shopper 落地页">
+                  <img src="https://d3ouql8tmwncoe.cloudfront.net/uploads/20260610/dcfae092398d2e5841737df6c1d220f2.png" alt="CAPS261698 Hundemama Shopper 商品图" loading="lazy">
+                  <span class="sku-card-rank">#7</span><span class="sku-card-visits">站内 2</span>
+                </a>
+                <div class="sku-card-body">
+                  <a class="sku-code" href="https://calliegift.com/4dNUk7S" target="_blank" rel="noopener noreferrer">CAPS261698</a>
+                  <div class="sku-card-title">DE-092204 · Hundemama-Shopper</div>
+                  <div class="sku-card-path">Board Haustier-Geschenke · Pin 1023091240370957756</div>
+                  <div class="sku-card-metrics"><span>展示 75</span><span>Pin贴点击 2</span><span>Pinterest出站 1</span><span>新客 0</span></div>
+                  <div class="sku-card-links"><a href="https://calliegift.com/4dNUk7S" target="_blank" rel="noopener noreferrer">落地页</a><a href="https://www.pinterest.com/pin/1023091240370957756/" target="_blank" rel="noopener noreferrer">Pinterest Pin</a></div>
+                </div>
+              </article>
+              <article class="sku-card">
+                <a class="sku-card-visual" href="https://calliegift.com/3Vo7F0r" target="_blank" rel="noopener noreferrer" aria-label="打开 CBF259 出生花腕链落地页">
+                  <img src="https://d3ouql8tmwncoe.cloudfront.net/uploads/20240802/bd487dac29d923b8eeb500b8f32b28b2.jpeg?d=1000" alt="CBF259 出生花腕链商品图" loading="lazy">
+                  <span class="sku-card-rank">#8</span><span class="sku-card-visits">站内 2</span>
+                </a>
+                <div class="sku-card-body">
+                  <a class="sku-code" href="https://calliegift.com/3Vo7F0r" target="_blank" rel="noopener noreferrer">CBF259 组</a>
+                  <div class="sku-card-title">DE-093004 · Geburtsblumen Armband</div>
+                  <div class="sku-card-path">Board Andenken &amp; Grabschmuck · Pin 1023091240371329102</div>
+                  <div class="sku-card-metrics"><span>展示 6</span><span>Pin贴点击 0</span><span>Pinterest出站 0</span><span>新客 0</span></div>
+                  <div class="sku-card-links"><a href="https://calliegift.com/3Vo7F0r" target="_blank" rel="noopener noreferrer">落地页</a><a href="https://www.pinterest.com/pin/1023091240371329102/" target="_blank" rel="noopener noreferrer">Pinterest Pin</a></div>
+                </div>
+              </article>
+              <article class="sku-card">
+                <a class="sku-card-visual" href="https://calliegift.com/4jusW2o" target="_blank" rel="noopener noreferrer" aria-label="打开 CAT338 生辰石戒指落地页">
+                  <img src="https://d3ouql8tmwncoe.cloudfront.net/uploads/20250121/6b04cf9b6832fbe389ad79b30ca3016a.jpg?d=1000" alt="CAT338 生辰石戒指商品图" loading="lazy">
+                  <span class="sku-card-rank">#9</span><span class="sku-card-visits">站内 2</span>
+                </a>
+                <div class="sku-card-body">
+                  <a class="sku-code" href="https://calliegift.com/4jusW2o" target="_blank" rel="noopener noreferrer">CAT338</a>
+                  <div class="sku-card-title">EN-092902 · Birthstone Ring</div>
+                  <div class="sku-card-path">Board Personalisierter Schmuck · Pin 1023091240371222514</div>
+                  <div class="sku-card-metrics"><span>展示 5</span><span>Pin贴点击 0</span><span>Pinterest出站 0</span><span>新客 0</span></div>
+                  <div class="sku-card-links"><a href="https://calliegift.com/4jusW2o" target="_blank" rel="noopener noreferrer">落地页</a><a href="https://www.pinterest.com/pin/1023091240371222514/" target="_blank" rel="noopener noreferrer">Pinterest Pin</a></div>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <aside class="panel" aria-labelledby="sku-method-heading">
+            <div class="panel-header">
+              <div>
+                <h3 id="sku-method-heading">怎样判断</h3>
+                <p class="panel-sub">点击多不等于成交，必须把各阶段分开。</p>
+              </div>
+            </div>
+            <div class="flow-strip" aria-label="SKU 归因链路">
+              <div class="flow-step"><span>Pin</span><strong>内容是否被点击</strong></div>
+              <div class="flow-step"><span>Outbound</span><strong>是否离开 Pinterest</strong></div>
+              <div class="flow-step"><span>UTM</span><strong>是否落到具体 SKU</strong></div>
+              <div class="flow-step"><span>站内</span><strong>访问与加购订单</strong></div>
+            </div>
+            <div class="sku-note-grid">
+              <div class="opportunity"><h4>当前能判断</h4><p>SKU 是否获得站内访问、访问来自新客还是老客、对应 Pin 的展示与出站表现。</p></div>
+              <div class="opportunity"><h4>当前不能判断</h4><p>商品详情页浏览、加购和订单无法稳定归到每个 SKU；排期表中相关列大量为空。</p></div>
+            </div>
+          </aside>
+        </div>
+
+        <section class="panel" style="margin-top:18px" aria-labelledby="sku-table-heading">
+          <div class="panel-header">
+            <div>
+              <h3 id="sku-table-heading">有点击 SKU 明细</h3>
+              <p class="panel-sub">Pinterest 指标取 09.22—10.20；内部访客为可复核明细合并值，二者不能视为同一事件。</p>
+            </div>
+            <a class="tag" href="https://docs.google.com/spreadsheets/d/1ZeLwvLJpGjVEB0GGx7fwUWSRJv2APERu/edit?gid=626870728" target="_blank" rel="noopener noreferrer" style="text-decoration:none">查看排期表</a>
+          </div>
+          <div class="table-wrap">
+            <table class="sku-table">
+              <thead>
+                <tr>
+                  <th scope="col">SKU</th>
+                  <th scope="col">Pin / 产品</th>
+                  <th scope="col">展示</th>
+                  <th scope="col">Pin贴点击</th>
+                  <th scope="col">Pinterest出站点击</th>
+                  <th scope="col">UTM站内访问</th>
+                  <th scope="col">新用户</th>
+                  <th scope="col">浏览</th>
+                  <th scope="col">订单</th>
+                  <th scope="col">判断</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="strong-row">
+                  <td><span class="sku-code">PL261951</span><div><a href="https://calliegift.com/4Alannn" target="_blank" rel="noopener noreferrer">落地页</a></div></td>
+                  <td><a href="https://www.pinterest.com/pin/1023091240370966021/" target="_blank" rel="noopener noreferrer">DE-092201 · Personalisierte Hundedecke</a><div class="sku-links"><a href="https://docs.google.com/spreadsheets/d/1ZeLwvLJpGjVEB0GGx7fwUWSRJv2APERu/edit?gid=626870728" target="_blank" rel="noopener noreferrer">排期行</a></div></td>
+                  <td>45</td><td>2</td><td>1</td><td>7</td><td>3</td><td>4</td><td>0</td>
+                  <td><span class="match-chip good">强信号</span><br>访问最多，且出站有信号；排期表 Pin 链接指向了错误 Pin，需修正。</td>
+                </tr>
+                <tr class="strong-row">
+                  <td><span class="sku-code">CAT1911</span><div><a href="https://calliegift.com/4dsP4GI" target="_blank" rel="noopener noreferrer">落地页</a></div></td>
+                  <td><a href="https://www.pinterest.com/pin/1023091240371044707/" target="_blank" rel="noopener noreferrer">DE-092308 · Schneemann-Ornament</a><div class="sku-links"><a href="https://docs.google.com/spreadsheets/d/1ZeLwvLJpGjVEB0GGx7fwUWSRJv2APERu/edit?gid=626870728" target="_blank" rel="noopener noreferrer">排期行</a></div></td>
+                  <td>33</td><td>1</td><td>1</td><td>5</td><td>3</td><td>3</td><td>0</td>
+                  <td><span class="match-chip good">强信号</span><br>新用户占 60%，Pinterest 出站和站内访问同时出现；继续做变体。</td>
+                </tr>
+                <tr class="strong-row">
+                  <td><span class="sku-code">CAJJ262700</span><div><a href="https://calliegift.com/3VKGNaZ" target="_blank" rel="noopener noreferrer">落地页</a></div></td>
+                  <td><a href="https://www.pinterest.com/pin/1023091240370990841/" target="_blank" rel="noopener noreferrer">DE-092305 · Weihnachts-Serviette</a><div class="sku-links"><a href="https://docs.google.com/spreadsheets/d/1ZeLwvLJpGjVEB0GGx7fwUWSRJv2APERu/edit?gid=626870728" target="_blank" rel="noopener noreferrer">排期行</a></div></td>
+                  <td>47</td><td>2</td><td>1</td><td>3</td><td>3</td><td>2</td><td>0</td>
+                  <td><span class="match-chip good">强信号</span><br>3 位站内访问者全部为新用户，同时有 1 次出站；值得扩成餐桌系列。</td>
+                </tr>
+                <tr>
+                  <td><span class="sku-code">PL261693</span><div><a href="https://calliegift.com/4rlygXP" target="_blank" rel="noopener noreferrer">落地页</a></div></td>
+                  <td><a href="https://www.pinterest.com/pin/1023091240370957773/" target="_blank" rel="noopener noreferrer">DE-092203 · Haustier-Foto Tasche</a></td>
+                  <td>79</td><td>5</td><td>3</td><td>5</td><td>0</td><td>12</td><td>0</td>
+                  <td><span class="match-chip watch">高点击·待核验</span><br>唯一有明显出站的产品 Pin，但内部 5 次访问均为老用户；12 次浏览受单次 11 页异常访问影响。</td>
+                </tr>
+                <tr>
+                  <td><span class="sku-code">JL25088</span><div><a href="https://calliegift.com/4rClHaW" target="_blank" rel="noopener noreferrer">落地页</a></div></td>
+                  <td><a href="https://www.pinterest.com/pin/1023091240371176273/" target="_blank" rel="noopener noreferrer">DE-092801 · Personalisierter Schmuck</a></td>
+                  <td>12</td><td>1</td><td>0</td><td>4</td><td>2</td><td>2</td><td>0</td>
+                  <td><span class="match-chip watch">低展示·高意图线索</span><br>4 次访问、2 位新用户，但 Pinterest 出站为 0；继续观察，不扩量。</td>
+                </tr>
+                <tr>
+                  <td><span class="sku-code">CAPS262968</span><div><a href="https://calliegift.com/4haSUGY" target="_blank" rel="noopener noreferrer">落地页</a></div></td>
+                  <td><a href="https://www.pinterest.com/pin/1023091240371018453/" target="_blank" rel="noopener noreferrer">DE-092307 · Weihnachtskarte</a></td>
+                  <td>43</td><td>3</td><td>0</td><td>3</td><td>3</td><td>2</td><td>0</td>
+                  <td><span class="match-chip watch">归因不一致</span><br>站内出现 3 位新用户，但 Pinterest 出站为 0；优先检查计费延迟、链接跳转和会话归因。</td>
+                </tr>
+                <tr>
+                  <td><span class="sku-code">CAPS261698</span><div><a href="https://calliegift.com/4dNUk7S" target="_blank" rel="noopener noreferrer">落地页</a></div></td>
+                  <td><a href="https://www.pinterest.com/pin/1023091240370957756/" target="_blank" rel="noopener noreferrer">DE-092204 · Hundemama-Shopper</a></td>
+                  <td>75</td><td>2</td><td>1</td><td>2</td><td>0</td><td>2</td><td>0</td>
+                  <td><span class="match-chip watch">品牌再访</span><br>有 1 次 Pinterest 出站和 2 次站内访问，但都是老用户；需要扩大新客样本。</td>
+                </tr>
+                <tr>
+                  <td><span class="sku-code">CBF259</span><div><a href="https://calliegift.com/3Vo7F0r" target="_blank" rel="noopener noreferrer">落地页</a></div></td>
+                  <td><a href="https://www.pinterest.com/pin/1023091240371329102/" target="_blank" rel="noopener noreferrer">DE-093004 · Geburtsblumen Armband</a></td>
+                  <td>6</td><td>0</td><td>0</td><td>2</td><td>0</td><td>1</td><td>0</td>
+                  <td><span class="match-chip risk">低优先级</span><br>站内只有 2 位老用户，Pinterest 点击与出站均为 0；继续保留但不优先扩量。</td>
+                </tr>
+                <tr>
+                  <td><span class="sku-code">CAT338</span><div><a href="https://calliegift.com/4jusW2o" target="_blank" rel="noopener noreferrer">落地页</a></div></td>
+                  <td><a href="https://www.pinterest.com/pin/1023091240371222514/" target="_blank" rel="noopener noreferrer">EN-092902 · Birthstone Ring</a></td>
+                  <td>5</td><td>0</td><td>0</td><td>2</td><td>0</td><td>1</td><td>0</td>
+                  <td><span class="match-chip risk">低优先级</span><br>仅 2 位老用户访问，样本不足；先检查德语本地化和产品页面，再判断是否停投。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="sku-note-grid">
+          <div class="warning-panel">
+            <div class="warning-mark" aria-hidden="true">!</div>
+            <div><h3>排期数据存在 Pin 链接缺口</h3><p>9 个有点击 SKU 中，排期表大部分“Pin 链接”为空；DE-092201 的 Pin 链接还指向了另一条 Shopper 内容。本次关联结合标题与 Pinterest 官方 Pin 表完成，后续应直接使用唯一 Pinterest Pin ID。</p></div>
+          </div>
+          <div class="warning-panel">
+            <div class="warning-mark" aria-hidden="true">0</div>
+            <div><h3>点击表现不等于成交表现</h3><p>九个 SKU 当前都没有订单与 GMV 记录。不能据此证明哪个 SKU 转化最好，只能说哪些 SKU 已有可复核的站内访问和新客信号。</p></div>
+          </div>
+        </div>
+
+        <section class="panel" style="margin-top:18px" aria-labelledby="sku-actions-heading">
+          <div class="panel-header">
+            <div>
+              <h3 id="sku-actions-heading">SKU 行动结论</h3>
+              <p class="panel-sub">先围绕 9 个已有站内访问的 SKU 做专项优化，不用从零寻找新方向。</p>
+            </div>
+          </div>
+          <div class="direction-grid">
+            <article class="direction-card">
+              <div class="direction-label green">优先扩量</div>
+              <h3>PL261951、CAT1911、CAJJ262700</h3>
+              <ul><li>都有站内访问与 Pinterest 出站双重信号。</li><li>分别对应宠物场景、圣诞饰品、圣诞桌面。</li><li>优先做同产品新图、新标题与相同 SKU 链接测试。</li></ul>
+            </article>
+            <article class="direction-card">
+              <div class="direction-label ochre">先核对再扩量</div>
+              <h3>PL261693、CAPS262968、CAPS261698</h3>
+              <ul><li>有站内访问，但新客、出站或异常访问口径存在冲突。</li><li>检查链接、UTM、Pinterest 出站延迟与跳转速度。</li><li>保持现有量级，优先改善归因完整性。</li></ul>
+            </article>
+            <article class="direction-card">
+              <div class="direction-label">小样本观察</div>
+              <h3>JL25088、CBF259、CAT338</h3>
+              <ul><li>访问量只有 1—4，不能判定产品或落地页失败。</li><li>三者均无订单，且后两者没有 Pinterest 出站。</li><li>继续保留少量测试，除非后续仍无点击。</li></ul>
+            </article>
+          </div>
+        </section>
+      </section>
+
       <section class="tab-panel" id="panel-pins" role="tabpanel" aria-labelledby="tab-pins" hidden>
         <div class="section-head">
           <div>
@@ -2419,9 +3959,9 @@
               <span>排序方式</span>
               <select class="control" id="pinSort">
                 <option value="imp">展示量</option>
-                <option value="clicks">Pin 点击量</option>
-                <option value="out">出站点击量</option>
-                <option value="outRate">出站点击率</option>
+                <option value="clicks">Pin贴点击量</option>
+                <option value="out">Pinterest出站点击量</option>
+                <option value="outRate">Pinterest出站点击率</option>
                 <option value="saves">收藏量</option>
               </select>
             </label>
@@ -2461,15 +4001,15 @@
                 <div class="funnel-number">1,033</div>
               </div>
               <div class="funnel-step">
-                <div><strong>Pin 点击</strong><small>打开 Pin 详情</small></div>
+                <div><strong>Pin贴点击</strong><small>打开 Pin 详情，仍在 Pinterest</small></div>
                 <div class="funnel-number">40</div>
               </div>
               <div class="funnel-step">
-                <div><strong>出站点击</strong><small>离开 Pinterest</small></div>
+                <div><strong>Pinterest平台出站*</strong><small>平台归因记录</small></div>
                 <div class="funnel-number">7</div>
               </div>
             </div>
-            <div class="funnel-rate">Pin 点击率 3.87% · Pin 点击到出站 17.5%</div>
+            <div class="funnel-rate">Pin贴点击率 3.87% · Pin贴点击到 Pinterest出站 17.5%</div>
           </section>
 
           <section class="panel" aria-labelledby="site-funnel-heading">
@@ -2479,7 +4019,7 @@
             </div>
             <div class="funnel">
               <div class="funnel-step">
-                <div><strong>内部访问</strong><small>来自 Pinterest+affiliate</small></div>
+                <div><strong>UTM站内访问</strong><small>内部后台 · Pinterest+affiliate</small></div>
                 <div class="funnel-number">15</div>
               </div>
               <div class="funnel-step">
@@ -2502,7 +4042,7 @@
         <div class="warning-panel">
           <div class="warning-mark" aria-hidden="true">!</div>
           <div>
-            <h3>7 次 Pinterest 出站点击与 15 次内部访问不能直接相减</h3>
+            <h3>7 次 Pinterest 出站记录不能代表实际离站人数</h3>
             <p>内部明细包含 10 月 21 日记录，且页面人数与按钮点击不是同一事件。当前能确认的是“没有订单记录”，不能据此证明落地页失效。下一周期需要 Pin URL → UTM → 商品浏览 → 加购 → 订单的唯一链路。</p>
           </div>
         </div>
@@ -2516,7 +4056,7 @@
               </div>
             </div>
             <div class="role-list">
-              <div class="role-item"><div class="role-index">01</div><div><h3>清单到商品</h3><p>三条 Gift Guide 获得 556 次展示和 21 次 Pin 点击，但出站为 0。</p></div></div>
+              <div class="role-item"><div class="role-index">01</div><div><h3>清单到商品</h3><p>三条 Gift Guide 获得 556 次展示和 21 次 Pin贴点击，但 Pinterest出站点击为 0。</p></div></div>
               <div class="role-item"><div class="role-index">02</div><div><h3>产品链接缺失</h3><p>化妆包 Pin 有 166 次展示，现场未检出 callie/calliegift 外链。</p></div></div>
               <div class="role-item"><div class="role-index">03</div><div><h3>样本过小</h3><p>全账号只有 7 次出站和 15 次内部访问，订单转化尚无统计判断力。</p></div></div>
             </div>
@@ -2661,6 +4201,7 @@
               <li><strong>Pinterest Analytics</strong>：2026.09.22—10.20，德国账号概览、Top Boards、Top Pins 和 Pin 级指标。</li>
               <li><strong>Pinterest Audience Insights</strong>：2026.10.19 受众快照。</li>
               <li><strong>内部联盟后台</strong>：Pinterest + affiliate 渠道访问、浏览、加购与订单汇总。</li>
+              <li><strong>线上排期表</strong>：Pin 内容 ID、标题、发布日期、SKU、落地页与 Pinterest Pin 链接；读取于 2026.10.22。</li>
               <li><strong>Pin 页面</strong>：20 张 Pin 的标题、Pin URL、图片 URL 与已配置的外链状态。</li>
             </ul>
           </section>
@@ -2673,9 +4214,10 @@
               <li><strong>无对比月：</strong>所有同比和环比增长率均不可计算。</li>
               <li><strong>发布数：</strong>20 是区间内有展示的 Pin 数，不等于已发布 Pin 总数。</li>
               <li><strong>内部数据：</strong>明细包含 10 月 21 日，汇总结果未与 Pinterest 出站点击严格对账。</li>
+              <li><strong>数据拼接：</strong>内部访问使用前期已映射明细与 10 月 19 日增量合并，访问人数按日汇总，未做跨日去重；排期表部分 Pin 链接缺失。</li>
               <li><strong>关键词：</strong>没有搜索词级数据，关键词方向仅为基于标题和受众的待验证假设。</li>
               <li><strong>成交归因：</strong>无法把订单归因到具体 Pin；当前导出订单为 0，佣金字段缺失。</li>
-              <li><strong>小样本：</strong>7 次出站、15 次内部访问、1 次收藏不足以判断长期转化能力。</li>
+              <li><strong>小样本与口径差异：</strong>Pinterest 平台仅记录 7 次出站，内部访问另有计数口径；两者都不足以判断长期转化能力。</li>
             </ul>
           </section>
         </div>
@@ -2701,6 +4243,7 @@
       <span>Callie · Pinterest 德国首月运营看板</span>
       <span>目标区间外数据未纳入本月总计</span>
     </footer>
+    </section>
   </div>
 
   <script>
@@ -2750,21 +4293,21 @@
         { id: "1023091240371018006", short: "1018006", title: "Top 10 Weihnachtsdeko Ideen – personalisiert mit Namen", category: "gift", imp: 210, clicks: 7, out: 0, saves: 1, image: "56/61/f1/5661f1751b6eaa6d3b249f65b0d0d059.jpg", link: "https://calliegift.com/4rsl0AV?utm_source=Pinterest&utm_medium=organic" },
         { id: "1023091240371479296", short: "1479296", title: "7 Weihnachtsgeschenke für Oma und Opa – personalisiert und mit Name", category: "gift", imp: 180, clicks: 11, out: 0, saves: 0, image: "0e/ce/d7/0eced7d6baffb6f4b8d070b703feca78.jpg", link: "https://calliegift.com/4dxffvX?utm_source=Pinterest&utm_medium=organic" },
         { id: "1023091240371028325", short: "1028325", title: "Personalized Cosmetic Bags – 7 Styles to Pick From", category: "gift", imp: 166, clicks: 3, out: 0, saves: 0, image: "bb/26/4a/bb264a17d2a014d72eea32d3fa2a4c5d.jpg", link: null },
-        { id: "1023091240370957773", short: "0957773", title: "Personalisierte Haustier-Foto Tasche mit Namen – Geschenk für Hundemamas und Katzenfans", category: "personal", imp: 79, clicks: 5, out: 3, saves: 0, image: "f2/e8/02/f2e8029e7525b2239d7f80c3893fb29c.jpg", link: "https://calliegift.com/4rlygXP?utm_source=Pinterest&utm_medium=organic" },
-        { id: "1023091240370957756", short: "0957756", title: "Personalisierter Hundemama-Shopper mit Geburtsblumen – Geschenk für Frauchen", category: "personal", imp: 75, clicks: 2, out: 1, saves: 0, image: "f9/3a/df/f93adf5f5d27244af9df900581ad37fa.jpg", link: "https://calliegift.com/4dNUk7S?utm_source=Pinterest&utm_medium=organic" },
+        { id: "1023091240370957773", short: "0957773", title: "Personalisierte Haustier-Foto Tasche mit Namen – Geschenk für Hundemamas und Katzenfans", category: "personal", imp: 79, clicks: 5, out: 3, saves: 0, internal: 5, image: "f2/e8/02/f2e8029e7525b2239d7f80c3893fb29c.jpg", link: "https://calliegift.com/4rlygXP?utm_source=Pinterest&utm_medium=organic" },
+        { id: "1023091240370957756", short: "0957756", title: "Personalisierter Hundemama-Shopper mit Geburtsblumen – Geschenk für Frauchen", category: "personal", imp: 75, clicks: 2, out: 1, saves: 0, internal: 2, image: "f9/3a/df/f93adf5f5d27244af9df900581ad37fa.jpg", link: "https://calliegift.com/4dNUk7S?utm_source=Pinterest&utm_medium=organic" },
         { id: "1023091240370990868", short: "0990868", title: "Weihnachtlicher Tischläufer mit Familienname – inkl. Platzsets", category: "seasonal", imp: 48, clicks: 2, out: 0, saves: 0, image: "de/9d/5b/de9d5bcb03acffa3ced15dc7a0fa37fd.jpg", link: "https://calliegift.com/4Au5pEO?utm_source=Pinterest&utm_medium=organic" },
-        { id: "1023091240370990841", short: "0990841", title: "Personalisierte Weihnachts-Serviette aus Baumwolle – mit Namen", category: "seasonal", imp: 47, clicks: 2, out: 1, saves: 0, image: "f0/cd/c3/f0cdc3b9294a497c4866637f2e8dd15e.jpg", link: "https://calliegift.com/3VKGNaZ?utm_source=Pinterest&utm_medium=organic" },
-        { id: "1023091240370966021", short: "0966021", title: "Geschenkidee für Hundebesitzer – personalisierte Decke", category: "emotional", imp: 45, clicks: 2, out: 1, saves: 0, image: "5f/7f/6f/5f7f6f5cdeb3bcc94a15588f160a4bcd.jpg", link: "https://calliegift.com/4Alannn?utm_source=Pinterest&utm_medium=organic" },
-        { id: "1023091240371018453", short: "1018453", title: "Weihnachtskarte mit Aquarell-Haustierfoto – personalisiert", category: "seasonal", imp: 43, clicks: 3, out: 0, saves: 0, image: "a8/0d/63/a80d63c80cc48a9b0d9446bea4b5e11a.jpg", link: "https://calliegift.com/4haSUGY?utm_source=Pinterest&utm_medium=organic" },
-        { id: "1023091240371044707", short: "1044707", title: "Schneemann-Ornament aus Holz mit LED-Licht – mit Namen", category: "seasonal", imp: 33, clicks: 1, out: 1, saves: 0, image: "bc/fe/56/bcfe56d493cfe2202af39642da7bab48.jpg", link: "https://calliegift.com/4dsP4GI?utm_source=Pinterest&utm_medium=organic" },
+        { id: "1023091240370990841", short: "0990841", title: "Personalisierte Weihnachts-Serviette aus Baumwolle – mit Namen", category: "seasonal", imp: 47, clicks: 2, out: 1, saves: 0, internal: 3, image: "f0/cd/c3/f0cdc3b9294a497c4866637f2e8dd15e.jpg", link: "https://calliegift.com/3VKGNaZ?utm_source=Pinterest&utm_medium=organic" },
+        { id: "1023091240370966021", short: "0966021", title: "Geschenkidee für Hundebesitzer – personalisierte Decke", category: "emotional", imp: 45, clicks: 2, out: 1, saves: 0, internal: 7, image: "5f/7f/6f/5f7f6f5cdeb3bcc94a15588f160a4bcd.jpg", link: "https://calliegift.com/4Alannn?utm_source=Pinterest&utm_medium=organic" },
+        { id: "1023091240371018453", short: "1018453", title: "Weihnachtskarte mit Aquarell-Haustierfoto – personalisiert", category: "seasonal", imp: 43, clicks: 3, out: 0, saves: 0, internal: 3, image: "a8/0d/63/a80d63c80cc48a9b0d9446bea4b5e11a.jpg", link: "https://calliegift.com/4haSUGY?utm_source=Pinterest&utm_medium=organic" },
+        { id: "1023091240371044707", short: "1044707", title: "Schneemann-Ornament aus Holz mit LED-Licht – mit Namen", category: "seasonal", imp: 33, clicks: 1, out: 1, saves: 0, internal: 5, image: "bc/fe/56/bcfe56d493cfe2202af39642da7bab48.jpg", link: "https://calliegift.com/4dsP4GI?utm_source=Pinterest&utm_medium=organic" },
         { id: "1023091240371268744", short: "1268744", title: "Solar Grablicht für den Außenbereich – wetterfest und beleuchtet", category: "emotional", imp: 22, clicks: 1, out: 0, saves: 0, image: "a8/d2/2a/a8d22a446bacc9874bbbf55caabd97d0.jpg", link: "https://calliegift.com/47pixxN?utm_source=Pinterest&utm_medium=organic" },
         { id: "1023091240371138834", short: "1138834", title: "Personalisierter Weihnachtsstrumpf mit Namen – 3D-Motiv", category: "seasonal", imp: 22, clicks: 0, out: 0, saves: 0, image: "bc/56/90/bc56905500d55620e0c777bf38d994ad.jpg", link: "https://calliegift.com/3VLyj3m?utm_source=Pinterest&utm_medium=organic" },
         { id: "1023091240371147513", short: "1147513", title: "Engraved Couples Ring with Names – Anniversary Gift Idea", category: "personal", imp: 17, clicks: 0, out: 0, saves: 0, image: "ee/f3/d1/eef3d1a5c3eac81cb47754a3f2de7ddf.jpg", link: "https://calliegift.com/4dVz3Jt?utm_source=Pinterest&utm_medium=organic" },
-        { id: "1023091240371176273", short: "1176273", title: "Personalisierter Schmuck mit Gravur – Schmuck mit Bedeutung", category: "personal", imp: 12, clicks: 1, out: 0, saves: 0, image: "78/85/87/788587be98f9ad284bd8ea2ee57e94f6.jpg", link: "https://calliegift.com/4rClHaW?utm_source=Pinterest&utm_medium=organic" },
+        { id: "1023091240371176273", short: "1176273", title: "Personalisierter Schmuck mit Gravur – Schmuck mit Bedeutung", category: "personal", imp: 12, clicks: 1, out: 0, saves: 0, internal: 4, image: "78/85/87/788587be98f9ad284bd8ea2ee57e94f6.jpg", link: "https://calliegift.com/4rClHaW?utm_source=Pinterest&utm_medium=organic" },
         { id: "1023091240371194895", short: "1194895", title: "Holz-Ornament: gemeinsame Jahre zählen – mit Name und Jahr", category: "seasonal", imp: 7, clicks: 0, out: 0, saves: 0, image: "7e/37/37/7e37376e118a5d78196c1162bb18b10a.jpg", link: "https://calliegift.com/4yQ449I?utm_source=Pinterest&utm_medium=organic" },
-        { id: "1023091240371329102", short: "1329102", title: "Geburtsblumen Armband mit Namen – personalisiertes Geschenk für Mama", category: "personal", imp: 6, clicks: 0, out: 0, saves: 0, image: "96/a0/6d/96a06d949e799ef4ca28e431bdd6ee14.jpg", link: "https://calliegift.com/3Vo7F0r?utm_source=Pinterest&utm_medium=organic" },
+        { id: "1023091240371329102", short: "1329102", title: "Geburtsblumen Armband mit Namen – personalisiertes Geschenk für Mama", category: "personal", imp: 6, clicks: 0, out: 0, saves: 0, internal: 2, image: "96/a0/6d/96a06d949e799ef4ca28e431bdd6ee14.jpg", link: "https://calliegift.com/3Vo7F0r?utm_source=Pinterest&utm_medium=organic" },
         { id: "1023091240371269658", short: "1269658", title: "Couple Rings – engraved sterling silver gift for couples", category: "personal", imp: 6, clicks: 0, out: 0, saves: 0, image: "be/e0/48/bee0484d10b5083caee08076bf729235.jpg", link: "https://calliegift.com/4jtYeGL?utm_source=Pinterest&utm_medium=organic" },
-        { id: "1023091240371222514", short: "1222514", title: "Personalised Birthstone Ring – handmade wire wrapped gift", category: "personal", imp: 5, clicks: 0, out: 0, saves: 0, image: "a1/c6/fc/a1c6fc145a70586686e4c1b1e417a026.jpg", link: "https://calliegift.com/4jusW2o?utm_source=Pinterest&utm_medium=organic" },
+        { id: "1023091240371222514", short: "1222514", title: "Personalised Birthstone Ring – handmade wire wrapped gift", category: "personal", imp: 5, clicks: 0, out: 0, saves: 0, internal: 2, image: "a1/c6/fc/a1c6fc145a70586686e4c1b1e417a026.jpg", link: "https://calliegift.com/4jusW2o?utm_source=Pinterest&utm_medium=organic" },
         { id: "1023091240371478802", short: "1478802", title: "Personalisierte Weihnachtsdeko – Strümpfe und Geschenkpapier", category: "seasonal", imp: 5, clicks: 0, out: 0, saves: 0, image: "a6/18/87/a61887d273f22d1f3e8baab740ed72db.jpg", link: "https://calliegift.com/4AYQfI7?utm_source=Pinterest&utm_medium=organic" },
         { id: "1023091240371299856", short: "1299856", title: "Personalisierter Gedenkstein mit Foto – Herz mit Engelsflügeln", category: "emotional", imp: 5, clicks: 0, out: 0, saves: 0, image: "d7/ee/ab/d7eeabeabf9849f7fd05c66b0dd2be6a.jpg", link: "https://calliegift.com/4hycmMq?utm_source=Pinterest&utm_medium=organic" }
       ];
@@ -2778,8 +4321,8 @@
 
       const boardLabels = {
         imp: "展示",
-        clicks: "Pin 点击",
-        out: "出站点击",
+        clicks: "Pin贴点击",
+        out: "Pinterest出站点击",
         saves: "收藏"
       };
 
@@ -2830,8 +4373,9 @@
         { name: "Vehicles", reach: 44.3, affinity: 1.618 }
       ];
 
-      const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-      const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+      const octoberView = document.getElementById('period-october');
+      const tabs = Array.from(octoberView.querySelectorAll('[role="tab"]'));
+      const panels = Array.from(octoberView.querySelectorAll('[role="tabpanel"]'));
       const dailyBars = document.getElementById('dailyBars');
       const dailyLabels = document.getElementById('dailyLabels');
       const chartPopover = document.getElementById('chartPopover');
@@ -2856,7 +4400,7 @@
         if (tab.id === 'tab-audience') {
           renderAffinityChart();
         }
-        if (history.replaceState) {
+        if (history.replaceState && !octoberView.hidden) {
           history.replaceState(null, '', `#${tab.id.replace('tab-', '')}`);
         }
       }
@@ -3240,6 +4784,12 @@
             warning.textContent = '样本小';
             tags.appendChild(warning);
           }
+          if (pin.internal) {
+            const internal = document.createElement('span');
+            internal.className = 'tag';
+            internal.textContent = `站内 ${pin.internal}`;
+            tags.appendChild(internal);
+          }
 
           const title = document.createElement('h3');
           title.className = 'pin-title';
@@ -3250,8 +4800,8 @@
           metrics.className = 'pin-metrics';
           [
             ['展示', pin.imp],
-            ['点击', pin.clicks],
-            ['出站', pin.out],
+            ['Pin贴点击', pin.clicks],
+            ['Pinterest出站', pin.out],
             ['收藏', pin.saves]
           ].forEach(([label, value]) => {
             const item = document.createElement('div');
@@ -3266,7 +4816,7 @@
 
           const rates = document.createElement('div');
           rates.className = 'pin-rates';
-          rates.textContent = `Pin CTR ${((pin.clicks / pin.imp) * 100).toFixed(2)}% · 出站率 ${((pin.out / pin.imp) * 100).toFixed(2)}%`;
+          rates.textContent = `Pin贴 CTR ${((pin.clicks / pin.imp) * 100).toFixed(2)}% · Pinterest出站点击率 ${((pin.out / pin.imp) * 100).toFixed(2)}%${pin.internal ? ` · UTM站内访问 ${pin.internal}` : ''}`;
 
           const links = document.createElement('div');
           links.className = 'pin-links';
@@ -3329,6 +4879,564 @@
       renderBoards();
       renderPins();
       renderAffinityChart();
+    })();
+  </script>
+  <script>
+    (() => {
+      const periodButtons = Array.from(document.querySelectorAll('[data-period-target]'));
+      const periodViews = Array.from(document.querySelectorAll('.period-view'));
+
+      function activatePeriod(button) {
+        const targetId = button.dataset.periodTarget;
+        periodButtons.forEach((item) => {
+          item.setAttribute('aria-pressed', String(item === button));
+        });
+        periodViews.forEach((view) => {
+          view.hidden = view.id !== targetId;
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      periodButtons.forEach((button) => {
+        button.addEventListener('click', () => activatePeriod(button));
+      });
+
+      const novDaily = [
+        { date: '10-23', value: 81 },
+        { date: '10-24', value: 45 },
+        { date: '10-25', value: 53 },
+        { date: '10-26', value: 49 },
+        { date: '10-27', value: 51 },
+        { date: '10-28', value: 52 },
+        { date: '10-29', value: 40 },
+        { date: '10-30', value: 91 },
+        { date: '10-31', value: 42 },
+        { date: '11-01', value: 97 },
+        { date: '11-02', value: 81 },
+        { date: '11-03', value: 227 },
+        { date: '11-04', value: 240 },
+        { date: '11-05', value: 124 },
+        { date: '11-06', value: 140 },
+        { date: '11-07', value: 96 },
+        { date: '11-08', value: 117 },
+        { date: '11-09', value: 184 },
+        { date: '11-10', value: 84 },
+        { date: '11-11', value: 83 },
+        { date: '11-12', value: 86 },
+        { date: '11-13', value: 135 },
+        { date: '11-14', value: 86 },
+        { date: '11-15', value: 149 },
+        { date: '11-16', value: 105 },
+        { date: '11-17', value: 504 },
+        { date: '11-18', value: 345 },
+        { date: '11-19', value: 353 },
+        { date: '11-20', value: 211 },
+        { date: '11-21', value: 168 },
+        { date: '11-22', value: 196 },
+        { date: '11-23', value: 203 }
+      ];
+
+      const novSkus = [
+        {
+          sku: 'CAPS262968',
+          title: 'Weihnachtskarte mit Aquarell-Haustierfoto',
+          board: 'Weihnachtsgeschenke',
+          visitors: 6, views: 6, newUsers: 6, oldUsers: 0,
+          imp: 13, clicks: 0, out: 0,
+          pinId: '1023091240371018453', contentId: 'DE-092307',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20260916/27b1c8bd43cb9e0a60edf1b475b01984.png',
+          productUrl: 'https://www.callie.de/personalized-snowflake-merry-christmas-watercolor-pet-photo-greeting-card-with-title-and-text-christmas-gift-for-family-friends-pet-lovers?callie_ref=category&level1=Weihnachten&utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=caps262968'
+        },
+        {
+          sku: 'PL261951',
+          title: 'Personalisierte Haustierdecke mit Wasserfarben-Foto',
+          board: 'Haustier-Geschenke',
+          visitors: 6, views: 6, newUsers: 6, oldUsers: 0,
+          imp: 15, clicks: 0, out: 0,
+          pinId: '1023091240370966021', contentId: 'DE-092201',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20260901/7b539447d6e463b8c93695955ed9440c.png',
+          productUrl: 'https://www.callie.de/personalized-watercolor-pet-photo-pumpkin-checked-pet-blanket-with-name-and-soft-dotted-backing-home-decor-halloween-gift-for-pet-owners?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=pl261951'
+        },
+        {
+          sku: 'CAJJ252331',
+          title: 'Stechpalmen-Serviette mit Namen für den Weihnachtstisch',
+          board: 'Küche & Tischdeko',
+          visitors: 6, views: 5, newUsers: 4, oldUsers: 2,
+          imp: 26, clicks: 1, out: 0,
+          pinId: '1023091240372283071', contentId: 'DE-110302',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20251111/53b2dfff39fc959ac3bcaee88d1286c3.png',
+          productUrl: 'https://www.callie.de/personalized-holly-initial-100-cotton-red-table-napkin-with-name-table-decor-christmas-gift-for-family-friend?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cajj252331'
+        },
+        {
+          sku: 'JL25088 组',
+          title: 'Personalisierter Schmuck mit Gravur – Schmuck-Set',
+          board: 'Personalisierter Schmuck',
+          visitors: 4, views: 4, newUsers: 4, oldUsers: 0,
+          imp: 13, clicks: 0, out: 0,
+          pinId: '1023091240371176273', contentId: 'DE-092801',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20250910/770aded9da8646cb6bbb9f7a995241ac.jpg',
+          productUrl: 'https://www.callie.de/personalized-tennis-ball-racket-birthstone-bracelet-stud-earrings-necklace-set-dainty-jewelry-creative-birthday-game-day-gift-for-tennis-player-women?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=jl25088'
+        },
+        {
+          sku: 'CAJJ262700',
+          title: 'Weihnachts-Serviette aus Baumwolle mit Namen',
+          board: 'Weihnachtsgeschenke',
+          visitors: 4, views: 4, newUsers: 4, oldUsers: 0,
+          imp: 11, clicks: 0, out: 0,
+          pinId: '1023091240370990841', contentId: 'DE-092305',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20260824/bfcba0cb78941069265be17d195449da.png',
+          productUrl: 'https://www.callie.de/personalized-christmas-theme-pattern-100-cotton-reusable-table-napkin-with-name-table-decor-christmas-birthday-gift-for-family?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cajj262700'
+        },
+        {
+          sku: 'RU683',
+          title: 'Wärmeaktiviertes Fotoarmband mit Gravur',
+          board: 'Personalisierter Schmuck',
+          visitors: 4, views: 4, newUsers: 3, oldUsers: 1,
+          imp: 25, clicks: 1, out: 1,
+          pinId: '1023091240372255429', contentId: 'DE-110301',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20260810/9258453563079a350ac20c70593b680b.png',
+          productUrl: 'https://www.callie.de/personalized-heatactivated-photo-bracelet-with-engraved-text-birthday-anniversary-memorable-gift-for-women-men?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=ru683'
+        },
+        {
+          sku: 'CAT1911',
+          title: 'Schneemann-Ornament aus Holz mit LED-Licht',
+          board: 'Weihnachtsgeschenke',
+          visitors: 4, views: 4, newUsers: 4, oldUsers: 0,
+          imp: 16, clicks: 0, out: 0,
+          pinId: '1023091240371044707', contentId: 'DE-092308',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20251117/da54387b72d057dd6b29c005b94e80d6.jpg',
+          productUrl: 'https://www.callie.de/personalized-cute-snowman-led-light-wooden-ornament-with-name-christmas-tree-stocking-decor-winter-holiday-party-favors-gift-for-family-kids?callie_ref=category&level1=Weihnachten&utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cat1911'
+        },
+        {
+          sku: 'CAJJ263579',
+          title: 'Haustier-Weihnachtsdecke mit Foto und Namen',
+          board: 'Haustier-Geschenke',
+          visitors: 3, views: 3, newUsers: 3, oldUsers: 0,
+          imp: 32, clicks: 0, out: 0,
+          pinId: '1023091240371992853', contentId: 'DE-102102',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20260923/dffe54e51532494fdd17536f7ba48984.png',
+          productUrl: 'https://www.callie.de/personalized-cozy-pet-photo-santa-hat-christmas-throw-blanket-with-name-home-decor-christmas-gift-for-pet-owners-pet-lovers?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cajj263579'
+        },
+        {
+          sku: 'CAJJ263735',
+          title: 'Personalisierte Weihnachtsbecher als Gastgeschenk',
+          board: 'Küche & Tischdeko',
+          visitors: 3, views: 3, newUsers: 3, oldUsers: 0,
+          imp: 85, clicks: 0, out: 0,
+          pinId: '1023091240371831198', contentId: 'DE-101601',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20261015/eaea4cf3caea933e42871838cf750325.png',
+          productUrl: 'https://www.callie.de/personalized-family-christmas-element-1216-oz-plastic-cup-with-text-and-name-christmas-family-gathering-party-gifts-for-family-guests-23158-pdp-76472?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cajj263735'
+        },
+        {
+          sku: 'CAJJ263402',
+          title: 'Personalisierte Weihnachtskugel mit Namen',
+          board: 'Weihnachtsgeschenke',
+          visitors: 3, views: 3, newUsers: 3, oldUsers: 0,
+          imp: 63, clicks: 1, out: 0,
+          pinId: '1023091240371955569', contentId: 'DE-102003',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20260923/b36b2dc97a6b7ba51fada2aa7b7bdb8c.png',
+          productUrl: 'https://www.callie.de/personalized-christmas-letter-name-bow-santa-hat-wooden-ornament-home-decor-christmas-gift-for-kids-family-friends?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cajj263402'
+        },
+        {
+          sku: 'CAJJ252052 组',
+          title: 'Weihnachtlicher Tischläufer mit Familienname',
+          board: 'Weihnachtsgeschenke',
+          visitors: 2, views: 2, newUsers: 2, oldUsers: 0,
+          imp: 10, clicks: 0, out: 0,
+          pinId: '1023091240370990868', contentId: 'DE-092304',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20251121/44e73b0e050371e52572cd50102f499d.jpg',
+          productUrl: 'https://www.callie.de/personalized-table-set-santa-claus-reindeer-christmas-table-runner-matching-placemats-with-family-name-christmas-gift-for-family-friend?callie_ref=category&level1=Weihnachten&utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cajj252052'
+        },
+        {
+          sku: 'CAJJ262330',
+          title: 'Partner-Foto-Geschenkbox zum Jahrestag',
+          board: 'Fotogeschenke',
+          visitors: 2, views: 2, newUsers: 2, oldUsers: 0,
+          imp: 42, clicks: 2, out: 1,
+          pinId: '1023091240372508963', contentId: 'DE-111103',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20260820/c34ff2923aa86cc410eb5d637758e0d0.png',
+          productUrl: 'https://www.callie.de/personalized-film-8-16-photos-wooden-led-light-flip-book-frame-animation-machine-box-with-text-date-fun-dating-birthday-gift-for-family?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cajj262330'
+        },
+        {
+          sku: 'CAT204',
+          title: 'Weihnachtskaffee-Set: Tasse und Wärmer mit Namen',
+          board: 'Küche & Tischdeko',
+          visitors: 1, views: 1, newUsers: 1, oldUsers: 0,
+          imp: 41, clicks: 0, out: 0,
+          pinId: '1023091240372324986', contentId: 'DE-110303',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20211029/018fa1697a3b0616cff1d3fbf98eef72.jpeg',
+          productUrl: 'https://www.callie.de/christmas-personalized-expression-mug-mug-sleeve-set?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cat204'
+        },
+        {
+          sku: 'CAJJ263229',
+          title: 'Haustier-Nachtlicht mit Foto und Namen',
+          board: 'Haustier-Geschenke',
+          visitors: 1, views: 1, newUsers: 1, oldUsers: 0,
+          imp: 29, clicks: 2, out: 0,
+          pinId: '1023091240372227172', contentId: '',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20260929/539000bfc31fef2b0e2dbbc0f5764894.jpg',
+          productUrl: 'https://www.callie.de/personalized-watercolor-pet-photo-dimmable-touch-control-led-night-light-with-name-and-adjustable-light-colors-christmas-gift-for-pet-lovers?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cajj263229'
+        },
+        {
+          sku: 'CAJJ231169',
+          title: 'Weihnachtsdeko-Idee: personalisierte Namens-Tasse',
+          board: 'Weihnachtsgeschenke',
+          visitors: 1, views: 1, newUsers: 1, oldUsers: 0,
+          imp: 3, clicks: 0, out: 0,
+          pinId: '1023091240372682933', contentId: 'DE-111801', multiSku: true,
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20231128/c4f6e3b42b34a58a6b8c735426699337.jpeg',
+          productUrl: 'https://www.callie.de/personalized-christmas-word-mug-with-name-11oz15oz-coffee-cup-home-decoration-birthday-christmas-gift-for-family-friend-couple?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cajj231169'
+        },
+        {
+          sku: 'CAJJ252227',
+          title: 'Personalisiertes Whiskyglas mit Namen und Initiale',
+          board: 'Geschenke für Familie',
+          visitors: 1, views: 1, newUsers: 1, oldUsers: 0,
+          imp: 1, clicks: 0, out: 0,
+          pinId: '1023091240372742610', contentId: 'DE-111804',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20260509/6351fd7c039073a31ae5d6e71aca1360.jpg',
+          productUrl: 'https://www.callie.de/personalized-golden-3d-badge-initial-name-10-oz-rock-whiskey-glass-old-fashioned-birthday-christmas-gift-for-man-bartender-whiskey-enthusiast?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cajj252227'
+        },
+        {
+          sku: 'FA231',
+          title: 'Familien-Halskette mit Namen und Geburtssteinen',
+          board: 'Personalisierter Schmuck',
+          visitors: 1, views: 1, newUsers: 0, oldUsers: 1,
+          imp: 373, clicks: 7, out: 1,
+          pinId: '1023091240371894087', contentId: 'DE-102004',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20260701/aea735fb219cc6453d93a5113ae57886.jpg',
+          productUrl: 'https://www.callie.de/personalized-name-and-birthstone-family-heart-necklace?utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=fa231'
+        },
+        {
+          sku: 'CAFS260482',
+          title: 'Passende Weihnachtspyjamas für die Familie',
+          board: 'Weihnachtsgeschenke',
+          visitors: 1, views: 1, newUsers: 0, oldUsers: 1,
+          imp: 110, clicks: 1, out: 0,
+          pinId: '1023091240372019564', contentId: 'DE-102701',
+          productImage: 'https://d3ouql8tmwncoe.cloudfront.net/uploads/20261019/a874bbd59b1990e386c28a2a66652c87.png',
+          productUrl: 'https://www.callie.de/personalized-colorful-christmas-reindeer-family-pajama-set-with-name-soft-daily-wear-christmas-gift-for-parents-kids-23476-pdp-77215?callie_ref=category&level1=Accessoires+%26+Kleidung&level2=Pyjamas&utm_source=pinterest&utm_medium=affiliate&utm_campaign=home&utm_term=cafs260482'
+        }
+      ];
+
+      const novTopPins = [
+        {
+          id: '1023091240371479296',
+          title: '7 Weihnachtsgeschenke für Oma und Opa – personalisiert und mit Name',
+          image: 'https://i.pinimg.com/474x/0e/ce/d7/0eced7d6baffb6f4b8d070b703feca78.jpg',
+          category: 'Gift Guide', imp: 1998, clicks: 72, out: 3, saves: 1,
+          productUrl: 'https://calliegift.com/4dxffvX',
+          action: '复制清单结构，补 3 个单品入口，并继续测试“7 vs 9”数量型标题。'
+        },
+        {
+          id: '1023091240372358636',
+          title: 'Christmas Gift Ideas for Her – Personalisierte Weihnachtsgeschenke & Geschenkideen',
+          image: 'https://i.pinimg.com/474x/6b/12/62/6b12625505ac66ca083c1f24e10d8387.jpg',
+          category: 'Gift Guide', imp: 787, clicks: 4, out: 0, saves: 1,
+          productUrl: 'https://calliegift.com/4imeAjX',
+          action: '改为德语人群词，首屏加入 3 个可购买 SKU，重建商品 CTA。'
+        },
+        {
+          id: '1023091240371894087',
+          title: 'Familien-Halskette mit Namen und Geburtssteinen ❤️',
+          image: 'https://i.pinimg.com/474x/8c/f1/83/8cf183538fcab7262f8209e6b67e4e05.jpg',
+          category: '首饰', imp: 373, clicks: 7, out: 1, saves: 0,
+          productUrl: 'https://calliegift.com/4zKvYVg',
+          action: '商品展示与出站均优于账号均值，扩测 3 个家庭组合与礼物故事变体。'
+        },
+        {
+          id: '1023091240371018006',
+          title: 'Top 10 Weihnachtsdeko Ideen 🎄 personalisiert mit Namen',
+          image: 'https://i.pinimg.com/474x/56/61/f1/5661f1751b6eaa6d3b249f65b0d0d059.jpg',
+          category: 'Gift Guide', imp: 112, clicks: 2, out: 1, saves: 0,
+          productUrl: 'https://calliegift.com/4rsl0AV',
+          action: '保留“Top 10”框架，增加 10 个商品编号与对应商品入口。'
+        },
+        {
+          id: '1023091240372019564',
+          title: 'Passende Weihnachtspyjamas für die ganze Familie',
+          image: 'https://i.pinimg.com/474x/94/09/33/940933f749c63e873ab52393d423d3ef.jpg',
+          category: '节日产品', imp: 110, clicks: 1, out: 0, saves: 0,
+          productUrl: 'https://calliegift.com/3UK5og9',
+          action: '替换为全家穿搭场景与姓名展示，测试商品近景和家庭合照两种首图。'
+        },
+        {
+          id: '1023091240371571437',
+          title: '6 Ideen für personalisierte Weihnachtsstrümpfe – mit Name und Foto',
+          image: 'https://i.pinimg.com/474x/aa/0a/01/aa0a011f0ebe56f391474bf31cd72802.jpg',
+          category: 'Gift Guide', imp: 96, clicks: 0, out: 0, saves: 0,
+          productUrl: 'https://calliegift.com/4ztCVKl',
+          action: '96 展示但 0 次 Pin贴点击，优先重做首图层级和标题利益点，不大幅扩量。'
+        },
+        {
+          id: '1023091240371831198',
+          title: 'Weihnachtsessen mit Familie: personalisierte Becher als Gastgeschenk',
+          image: 'https://i.pinimg.com/474x/57/c2/c9/57c2c9352196c30815868a7556786864.jpg',
+          category: '节日产品', imp: 85, clicks: 0, out: 0, saves: 0,
+          productUrl: 'https://calliegift.com/4eqkPkb',
+          action: '85 展示但 0 次 Pin贴点击；改餐桌场景、姓名特写和具体赠礼对象。'
+        },
+        {
+          id: '1023091240372050146',
+          title: 'Personalized Christmas Ornament with Family Photo',
+          image: 'https://i.pinimg.com/474x/5a/63/00/5a6300c798271d447c7629c807561d1e.jpg',
+          category: '节日产品', imp: 82, clicks: 1, out: 0, saves: 0,
+          productUrl: 'https://calliegift.com/4zg7V0E',
+          action: '英语单品标题，保留少量测试；同步做德语“Familienfoto”版本对照。'
+        },
+        {
+          id: '1023091240371028325',
+          title: 'Personalized Cosmetic Bags 🎀 7 Styles to Pick From',
+          image: 'https://i.pinimg.com/474x/bb/26/4a/bb264a17d2a014d72eea32d3fa2a4c5d.jpg',
+          category: 'Gift Guide', imp: 65, clicks: 0, out: 0, saves: 0,
+          productUrl: 'https://calliegift.com/4hJueW3',
+          action: '高曝光零点击；改德语标题，突出姓名定制与 7 种款式，不做泛审美图。'
+        },
+        {
+          id: '1023091240371955569',
+          title: 'Weihnachtskugel mit Namen – Baumschmuck personalisiert 🎄',
+          image: 'https://i.pinimg.com/474x/99/f0/ed/99f0ed0fb59f4ad7be29138c1e2f4949.jpg',
+          category: '首饰', imp: 63, clicks: 1, out: 0, saves: 0,
+          productUrl: 'https://calliegift.com/4Bk2v6b',
+          action: '63 展示、1 次 Pin贴点击；加强商品独占画面与姓名可见度，继续小量观察。'
+        }
+      ];
+
+      const novTabs = Array.from(document.querySelectorAll('#period-november [role="tab"]'));
+      const novPanels = Array.from(document.querySelectorAll('#period-november [role="tabpanel"]'));
+
+      function activateNovTab(tab) {
+        novTabs.forEach((item) => {
+          const selected = item === tab;
+          item.setAttribute('aria-selected', String(selected));
+          item.tabIndex = selected ? 0 : -1;
+        });
+        novPanels.forEach((panel) => {
+          panel.hidden = panel.id !== tab.getAttribute('aria-controls');
+        });
+      }
+
+      novTabs.forEach((tab, index) => {
+        tab.tabIndex = index === 0 ? 0 : -1;
+        tab.addEventListener('click', () => activateNovTab(tab));
+        tab.addEventListener('keydown', (event) => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          let nextIndex = index;
+          if (event.key === 'ArrowRight') nextIndex = (index + 1) % novTabs.length;
+          if (event.key === 'ArrowLeft') nextIndex = (index - 1 + novTabs.length) % novTabs.length;
+          if (event.key === 'Home') nextIndex = 0;
+          if (event.key === 'End') nextIndex = novTabs.length - 1;
+          novTabs[nextIndex].focus();
+          activateNovTab(novTabs[nextIndex]);
+        });
+      });
+
+      function renderNovDaily() {
+        const bars = document.getElementById('novDailyBars');
+        const labels = document.getElementById('novDailyLabels');
+        const popover = document.getElementById('novChartPopover');
+        const max = Math.max(...novDaily.map((item) => item.value));
+        bars.style.gridTemplateColumns = `repeat(${novDaily.length}, minmax(0, 1fr))`;
+        labels.style.gridTemplateColumns = `repeat(${novDaily.length}, minmax(0, 1fr))`;
+
+        novDaily.forEach((item, index) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'day';
+          button.dataset.zero = String(item.value === 0);
+          button.setAttribute('aria-label', `${item.date} 展示 ${item.value} 次`);
+          const bar = document.createElement('span');
+          bar.className = 'day-bar';
+          bar.style.setProperty('--h', `${Math.max(2, (item.value / max) * 100)}%`);
+          button.appendChild(bar);
+          const showTip = () => {
+            popover.textContent = `${item.date} · ${item.value.toLocaleString('zh-CN')} 次展示`;
+            popover.classList.add('visible');
+          };
+          const hideTip = () => popover.classList.remove('visible');
+          button.addEventListener('mouseenter', showTip);
+          button.addEventListener('focus', showTip);
+          button.addEventListener('mouseleave', hideTip);
+          button.addEventListener('blur', hideTip);
+          bars.appendChild(button);
+
+          const label = document.createElement('span');
+          label.className = 'day-label';
+          label.textContent = (index === 0 || index === 9 || index === 20 || index === novDaily.length - 1)
+            ? item.date.replace('-', '.')
+            : '';
+          labels.appendChild(label);
+        });
+      }
+
+      function appendSkuLink(container, href, text) {
+        if (!href) return;
+        const link = document.createElement('a');
+        link.href = href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = text;
+        container.appendChild(link);
+      }
+
+      function renderNovSkus() {
+        const grid = document.getElementById('novSkuGrid');
+        novSkus.forEach((item, index) => {
+          const card = document.createElement('article');
+          card.className = index < 4 ? 'sku-card strong' : 'sku-card';
+
+          const visual = document.createElement('a');
+          visual.className = 'sku-card-visual';
+          visual.href = item.productUrl;
+          visual.target = '_blank';
+          visual.rel = 'noopener noreferrer';
+          visual.setAttribute('aria-label', `打开 ${item.sku} 商品页`);
+          const image = document.createElement('img');
+          image.src = item.productImage;
+          image.alt = `${item.sku} 商品图`;
+          image.loading = 'lazy';
+          image.referrerPolicy = 'no-referrer';
+          visual.appendChild(image);
+
+          const body = document.createElement('div');
+          body.className = 'sku-card-body';
+
+          const title = document.createElement('div');
+          title.className = 'sku-card-title';
+          const titleLink = document.createElement('a');
+          titleLink.href = item.productUrl;
+          titleLink.target = '_blank';
+          titleLink.rel = 'noopener noreferrer';
+          titleLink.textContent = item.title;
+          title.appendChild(titleLink);
+
+          const sku = document.createElement('a');
+          sku.className = 'sku-code';
+          sku.href = item.productUrl;
+          sku.target = '_blank';
+          sku.rel = 'noopener noreferrer';
+          sku.textContent = item.sku;
+
+          const mapping = document.createElement('div');
+          mapping.className = 'sku-card-path';
+          mapping.textContent = `Board ${item.board} · 内容 ${item.contentId || '待补'} · Pin ${item.pinId || '待补'}${item.multiSku ? ' · 多 SKU 内容，Pin 指标不可单独归因到本 SKU' : ''}`;
+
+          const metrics = document.createElement('div');
+          metrics.className = 'sku-card-metrics';
+          metrics.textContent = `UTM站内访问 ${item.visitors} · 浏览 ${item.views} · 新 ${item.newUsers} / 老 ${item.oldUsers}`;
+
+          const pinMetrics = document.createElement('div');
+          pinMetrics.className = 'sku-card-metrics';
+          pinMetrics.textContent = item.imp === null
+            ? 'Pin贴点击 / Pinterest出站点击：Pin 未匹配'
+            : `Pinterest ${item.imp.toLocaleString('zh-CN')} 展示 · Pin贴点击 ${item.clicks} · Pinterest出站点击 ${item.out}`;
+
+          const links = document.createElement('div');
+          links.className = 'sku-card-links';
+          appendSkuLink(links, item.productUrl, '商品页');
+          if (item.pinId) {
+            appendSkuLink(links, `https://www.pinterest.com/pin/${item.pinId}/`, 'Pinterest Pin URL');
+          }
+          if (item.contentId) {
+            const id = document.createElement('span');
+            id.textContent = item.contentId;
+            links.appendChild(id);
+          } else {
+            const missing = document.createElement('span');
+            missing.className = 'link-missing';
+            missing.textContent = '内容 ID 待补';
+            links.appendChild(missing);
+          }
+
+          body.append(title, sku, mapping, metrics, pinMetrics, links);
+          card.append(visual, body);
+          grid.appendChild(card);
+        });
+      }
+
+      function renderNovPins() {
+        const grid = document.getElementById('novPinGrid');
+        novTopPins.forEach((pin, index) => {
+          const card = document.createElement('article');
+          card.className = 'pin-card';
+
+          const visual = document.createElement('a');
+          visual.className = 'pin-visual';
+          visual.href = `https://www.pinterest.com/pin/${pin.id}/`;
+          visual.target = '_blank';
+          visual.rel = 'noopener noreferrer';
+          visual.setAttribute('aria-label', `打开 Pinterest Pin：${pin.title}`);
+          const image = document.createElement('img');
+          image.src = pin.image;
+          image.alt = pin.title;
+          image.loading = 'lazy';
+          image.referrerPolicy = 'no-referrer';
+          visual.appendChild(image);
+          const rank = document.createElement('span');
+          rank.className = 'rank-badge';
+          rank.textContent = `展示 #${index + 1}`;
+          visual.appendChild(rank);
+
+          const body = document.createElement('div');
+          body.className = 'pin-body';
+          const tags = document.createElement('div');
+          tags.className = 'pin-tags';
+          const category = document.createElement('span');
+          category.className = 'tag';
+          category.textContent = pin.category;
+          tags.appendChild(category);
+          if (pin.imp < 50) {
+            const warning = document.createElement('span');
+            warning.className = 'tag warning';
+            warning.textContent = '样本小';
+            tags.appendChild(warning);
+          }
+
+          const title = document.createElement('h3');
+          title.className = 'pin-title';
+          title.textContent = pin.title;
+
+          const metrics = document.createElement('div');
+          metrics.className = 'pin-metrics';
+          [
+            [pin.imp.toLocaleString('zh-CN'), '展示'],
+            [pin.clicks, 'Pin贴点击'],
+            [pin.out, 'Pinterest出站'],
+            [pin.saves, '收藏']
+          ].forEach(([value, label]) => {
+            const cell = document.createElement('div');
+            cell.className = 'pin-metric';
+            const strong = document.createElement('strong');
+            strong.textContent = value;
+            const span = document.createElement('span');
+            span.textContent = label;
+            cell.append(strong, span);
+            metrics.appendChild(cell);
+          });
+
+          const rates = document.createElement('div');
+          rates.className = 'pin-rates';
+          rates.textContent = `Pin贴 CTR ${((pin.clicks / pin.imp) * 100).toFixed(2)}% · Pinterest出站点击率 ${((pin.out / pin.imp) * 100).toFixed(2)}%`;
+
+          const links = document.createElement('div');
+          links.className = 'pin-links';
+          appendSkuLink(links, `https://www.pinterest.com/pin/${pin.id}/`, `Pin ${pin.id.slice(-7)}`);
+          appendSkuLink(links, pin.productUrl, '商品 / 落地页');
+
+          const action = document.createElement('div');
+          action.className = 'pin-rates';
+          action.textContent = pin.action;
+
+          body.append(tags, title, metrics, rates, links, action);
+          card.append(visual, body);
+          grid.appendChild(card);
+        });
+      }
+
+      renderNovDaily();
+      renderNovSkus();
+      renderNovPins();
     })();
   </script>
 </body>
